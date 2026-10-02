@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2
+
+- A instalação directa a partir do Git deixa de compilar durante `prepare`, evitando depender da disponibilidade de `tsc` no ambiente npm do utilizador. A solução anterior da versão 0.8.1 não resolveu o problema em todos os ambientes npm. Os artefactos compilados de `dist/` passam a ser versionados e instalados directamente; a compilação continua a ser verificada no CI.
+
 ## 0.8.1
 
 - Corrigida a instalação directa a partir do GitHub: as dependências de compilação usadas pelo ciclo `prepare` passam a estar em `dependencies`, para que `tsc` esteja disponível em ambientes npm que não expõem dependências de desenvolvimento durante a preparação de dependências Git.

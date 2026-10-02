@@ -5,7 +5,9 @@ yarn-lock.json
 yarn-error.log*
 
 # Build
-dist/
+dist/**/*.map
+dist/**/*.d.ts
+dist/tests/
 *.tsbuildinfo
 build/
 

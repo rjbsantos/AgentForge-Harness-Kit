@@ -1,6 +1,6 @@
 {
   "name": "agentforge-harness-kit",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Project-local, multi-role and multi-CLI AgentForge harness installer",
   "type": "module",
   "bin": {
@@ -10,7 +10,6 @@
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
     "test": "npm run build && node scripts/test.mjs",
-    "prepare": "npm run build",
     "smoke": "npm run build && node scripts/smoke.mjs"
   },
   "engines": {
@@ -34,7 +33,7 @@
     "url": "https://github.com/rjbsantos/AgentForge-Harness-Kit/issues"
   },
   "homepage": "https://github.com/rjbsantos/AgentForge-Harness-Kit#readme",
-  "dependencies": {
+  "devDependencies": {
     "@types/node": "^20.19.43",
     "typescript": "^5.9.3"
   }

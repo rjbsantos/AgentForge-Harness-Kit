@@ -46,11 +46,11 @@ agentforge status --project D:\caminho\do\projeto
 Também é possível instalar o ficheiro `.tgz` disponível na secção Releases do GitHub, sem autenticação Git:
 
 ```powershell
-npm install -g D:\transferencias\agentforge-harness-kit-0.8.0.tgz
+npm install -g D:\transferencias\agentforge-harness-kit-0.8.2.tgz
 ```
 
 O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases).
-Na instalação directa a partir do Git, o npm prepara o pacote antes de o instalar; por isso, as dependências de compilação necessárias estão incluídas no pacote e não é necessário instalar o TypeScript manualmente.
+O repositório inclui a versão compilada necessária à instalação directa pelo Git, pelo que não é preciso instalar o TypeScript no computador de destino.
 
 O parâmetro `--cli` aceita `opencode`, `codex`, `claude`, `antigravity` ou `all`. A instalação pode ser repetida para actualizar ficheiros geridos ou acrescentar outro CLI:
 
