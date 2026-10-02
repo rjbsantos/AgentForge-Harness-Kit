@@ -51,4 +51,8 @@ Os fluxos podem declarar grupos de tarefas paralelas, dependências, agentes e c
 
 O instalador em `src/installer.ts` utiliza um manifesto com resumos de integridade e propriedade dos ficheiros, recusa substituir alterações do utilizador e preserva o estado de trabalho. Decisões de impacto, operações destrutivas, publicação e integração externa requerem aprovação adequada.
 
+O instalador resolve os caminhos geridos contra a raiz do projecto e recusa traversal e ligações simbólicas que escapem dessa raiz. As instruções do Harness aplicam o mesmo limite às alterações e artefactos produzidos pelos agentes. Esta política orienta os CLIs anfitriões, mas não substitui as permissões de sistema operativo nem uma sandbox; as leituras de ficheiros externos só devem ocorrer quando explicitamente solicitadas.
+
+`forge-hygiene`, incluída em `repository-audit`, procura código, ficheiros e dependências potencialmente mortos ou obsoletos. Verifica pontos de entrada e referências dinâmicas, classifica a confiança e exige aprovação antes de remoções, seguida de testes relevantes.
+
 Para acrescentar capacidades, estenda primeiro os catálogos existentes, valide as dependências e actualize os testes e a documentação. Consulte a [auditoria](AUDIT.md), os [catálogos](../roles/CATALOG.md) e o [trabalho futuro](../operations/BACKLOG.md).

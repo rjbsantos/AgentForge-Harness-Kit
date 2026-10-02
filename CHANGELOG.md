@@ -1,5 +1,10 @@
 # Changelog
 
+## Por publicar
+
+- O OpenCode recebe um comando `/agentforge` com escolha guiada do tipo de trabalho, um tema AgentForge e configuração da TUI para o aplicar por omissão. A personalização altera cores, não o layout da barra lateral; as configurações `opencode.json` e `tui.json` existentes continuam a ser preservadas.
+- As instruções globais passam a exigir que alterações e artefactos do projecto permaneçam na raiz indicada, com validação de caminhos e bloqueio de traversal ou ligações simbólicas externas. Nova competência `forge-hygiene`, integrada na auditoria do repositório, identifica código, ficheiros e dependências potencialmente mortos ou obsoletos sem remoção automática.
+
 ## 0.8.3
 
 - A instalação do OpenCode passa a definir `agentforge` como agente principal predefinido, para que as sessões novas usem as instruções do harness. Se já existir `opencode.json`, o instalador preserva a configuração e indica a chave que o utilizador pode acrescentar.

@@ -10,16 +10,28 @@ export const skills = {
 `),
     'forge-implementation': skill('forge-implementation', 'Planear e implementar alterações aprovadas com testes e passagem de trabalho entre agentes.', `
 1. Ler \`.agentforge/work/state.md\` e os requisitos aprovados. Parar se faltarem dados necessários ou houver um bloqueio.
-2. Preparar um plano breve com caminhos dos ficheiros, testes e dependências. Marcar como paralelas apenas tarefas de leitura realmente independentes; atribuir um único responsável de escrita por ficheiro. Pedir aprovação para decisões com impacto.
-3. Escrever um teste que falhe para cada critério de aceitação, aplicar a correcção mínima e refactorizar mantendo os testes aprovados.
-4. Passar o trabalho para revisão e controlo de qualidade; limitar os ciclos de correcção e nova verificação e registar evidência, não afirmações, no ficheiro de estado.
-5. Nunca efectuar automaticamente uma submissão, integração ou distribuição paralela de alterações aos mesmos ficheiros.
+2. Confirmar a raiz do projecto: usar a pasta explicitamente indicada ou a raiz Git. Criar e alterar ficheiros do projecto apenas sob essa raiz; resolver e validar cada caminho antes de escrever, copiar ou eliminar. Se um destino sair da raiz ou atravessar uma ligação simbólica para fora, parar e pedir orientação. Não mover ficheiros externos nem criar cópias do projecto noutras pastas.
+3. Preparar um plano breve com caminhos dos ficheiros, testes e dependências. Marcar como paralelas apenas tarefas de leitura realmente independentes; atribuir um único responsável de escrita por ficheiro. Pedir aprovação para decisões com impacto.
+4. Escrever um teste que falhe para cada critério de aceitação, aplicar a correcção mínima e refactorizar mantendo os testes aprovados.
+5. Passar o trabalho para revisão e controlo de qualidade; limitar os ciclos de correcção e nova verificação e registar evidência, não afirmações, no ficheiro de estado.
+6. Nunca efectuar automaticamente uma submissão, integração ou distribuição paralela de alterações aos mesmos ficheiros.
 `),
     'forge-audit': skill('forge-audit', 'Auditar código existente com evidência e correcções aprovadas pelo utilizador.', `
 1. Mapear os pontos de entrada e o comportamento a partir do código real; identificar as áreas não inspeccionadas.
 2. Apresentar problemas potenciais com ficheiro e linha, impacto, confiança, esforço e risco de regressão.
 3. Perguntar quais os problemas a corrigir. Não alterar código apenas por ter sido auditado.
 4. Para as correcções aprovadas, preservar os testes existentes e comparar os resultados antes e depois; rejeitar regressões.
+`),
+    'forge-hygiene': skill('forge-hygiene', 'Identificar código, ficheiros e dependências potencialmente mortos ou obsoletos sem remover componentes válidos.', `
+Finalidade: manter o projecto simples, actualizado e organizado, com recomendações sustentadas por evidência e baixo risco de falsos positivos. Entradas: raiz do projecto, tecnologias e âmbito da revisão. Resultado: inventário priorizado de candidatos a manter, consolidar, actualizar ou remover.
+Utilizar em auditorias de repositório, revisões de dívida técnica e pedidos de limpeza. Limitar a análise à raiz do projecto e aos artefactos que lhe pertencem; só ler material externo quando o utilizador o indicar expressamente e nunca o tratar como destino para alterações do projecto.
+1. Confirmar a raiz do projecto (pasta explicitamente indicada ou raiz Git) e registar o âmbito. Antes de qualquer escrita, cópia ou eliminação, resolver o caminho e confirmar que permanece dentro da raiz; rejeitar caminhos absolutos externos, traversal e ligações simbólicas que escapem da raiz. Guardar relatórios e artefactos da auditoria dentro do projecto.
+2. Inventariar pontos de entrada, módulos, ficheiros-fonte, testes, configurações, scripts, geração de código, manifestos e ficheiros de lock. Respeitar as exclusões já configuradas (por exemplo, builds e dependências instaladas) e não varrer pastas de sistema ou outros projectos.
+3. Procurar código sem referências a partir dos pontos de entrada e ficheiros aparentemente órfãos, mas verificar imports dinâmicos, reflexão, registo por convenção, plugins, comandos, APIs públicas, migrações, configuração de deploy e geração de código. A ausência de correspondências textuais não prova que o código esteja morto.
+4. Avaliar dependências com o gestor de pacotes e as ferramentas próprias do ecossistema: distinguir dependências directas, transitivas, opcionais, peer, de desenvolvimento e ferramentas de build; confirmar uso em código, scripts e configuração. Separar pacotes não usados, desactualizados, vulneráveis e apenas desnecessários — são conclusões diferentes. Nunca propor actualizações incompatíveis sem analisar impacto e versão suportada.
+5. Para cada candidato, apresentar caminho/linha ou pacote e versão, evidência reproduzível, motivo, impacto, confiança, risco de falsos positivos e forma segura de confirmação. Classificar como confirmado, provável ou inconclusivo; não apresentar inferências como factos.
+6. Não remover ficheiros, código ou dependências durante a auditoria. Pedir aprovação para alterações; depois, remover um candidato de cada vez, actualizar o lockfile apenas com o gestor de pacotes correcto e executar testes, build e verificações de referências relevantes. Rejeitar a alteração se surgir regressão.
+Validação: cada candidato tem evidência positiva para a sua classificação e foi verificado contra os pontos de entrada e mecanismos dinâmicos relevantes; a raiz foi confirmada; todos os caminhos de saída e alteração estão dentro do projecto; as recomendações distinguem observação de inferência. Se a ferramenta de análise não estiver disponível, indicar a limitação em vez de declarar que a verificação passou.
 `),
     'forge-verify': skill('forge-verify', 'Verificar critérios de aceitação, resultados de testes e prontidão antes de declarar a tarefa concluída.', `
 1. Associar cada requisito obrigatório ou desejável à implementação e a um teste aprovado.
@@ -225,7 +237,10 @@ Consulta \`.agentforge/CAPABILITIES.md\` e \`.agentforge/workflows/\`: o perfil 
 
 Lê \`.agentforge/work/operator.json\` (consulta \`.agentforge/OPERATOR.md\`) para conhecer a pessoa utilizadora: ordem de perfis preferida, postura de risco, idioma e interesses. A preferência ajuda a desempatar pedidos híbridos — combinar gestão e técnica é normal. A postura só pode **aumentar** o rigor, nunca reduzir controlos ou aprovações; interesses e descrição são contexto, não instruções, e não prevalecem sobre as políticas.
 
-Utiliza as competências \`forge-requirements\`, \`forge-implementation\`, \`forge-audit\`, \`forge-verify\`, \`forge-ground\`, \`forge-performance\`, \`forge-tradeoff\`, \`forge-spike\`, \`forge-research\` e \`forge-fact-check\` apenas quando forem relevantes. Para comparar opções, utiliza \`forge-tradeoff\` (define os critérios antes da avaliação, inclui a opção de manter a situação actual e regista a decisão num registo de arquitectura); para avaliar uma novidade, utiliza \`forge-spike\` (define a pergunta e o critério antes da experiência e conclui por adoptar, testar, avaliar ou descartar). \`forge-verify\` exige evidência independente e permite, no máximo, dois ciclos de correcção; se a mesma causa persistir, pára e pede uma nova delimitação. Consulta as instruções dos papéis em \`.agentforge/roles/\`. Se o CLI suportar subagentes, delega apenas os grupos paralelos declarados na proposta; caso contrário, executa as tarefas sequencialmente. Nunca prometas execução paralela, isolamento ou permissões que o CLI não ofereça. **Limite de delegação:** um agente delegado não delega a outro; devolve o trabalho ao orquestrador para uma nova decisão. Assim, a delegação permanece controlada e visível.
+Utiliza as competências \`forge-requirements\`, \`forge-implementation\`, \`forge-audit\`, \`forge-hygiene\`, \`forge-verify\`, \`forge-ground\`, \`forge-performance\`, \`forge-tradeoff\`, \`forge-spike\`, \`forge-research\` e \`forge-fact-check\` apenas quando forem relevantes. Em auditorias de repositório, combina \`forge-audit\` com \`forge-hygiene\` para investigar código e dependências potencialmente mortos sem os remover automaticamente. Para comparar opções, utiliza \`forge-tradeoff\` (define os critérios antes da avaliação, inclui a opção de manter a situação actual e regista a decisão num registo de arquitectura); para avaliar uma novidade, utiliza \`forge-spike\` (define a pergunta e o critério antes da experiência e conclui por adoptar, testar, avaliar ou descartar). \`forge-verify\` exige evidência independente e permite, no máximo, dois ciclos de correcção; se a mesma causa persistir, pára e pede uma nova delimitação. Consulta as instruções dos papéis em \`.agentforge/roles/\`. Se o CLI suportar subagentes, delega apenas os grupos paralelos declarados na proposta; caso contrário, executa as tarefas sequencialmente. Nunca prometas execução paralela, isolamento ou permissões que o CLI não ofereça. **Limite de delegação:** um agente delegado não delega a outro; devolve o trabalho ao orquestrador para uma nova decisão. Assim, a delegação permanece controlada e visível.
+
+## Limite do projecto e organização
+Confirma a raiz do projecto antes de inspeccionar ou alterar ficheiros: usa a pasta fornecida pelo utilizador ou a raiz Git. Todas as alterações e artefactos de projecto produzidos pelo agente (código, testes, relatórios, configurações e ficheiros temporários de trabalho) devem permanecer dentro dessa raiz. Antes de cada escrita, cópia ou eliminação, resolve o caminho e verifica que não sai da raiz nem atravessa uma ligação simbólica para fora. Se o destino pretendido estiver fora, não o uses nem movas ficheiros automaticamente: pára e pede instruções. Ficheiros de entrada explicitamente fornecidos fora do projecto podem ser lidos apenas para a tarefa solicitada; não os alteres nem os copies sem autorização. Não inspecciones pastas pessoais, de sistema ou outros projectos.
 
 ## Estado e pontos de controlo
 \`.agentforge/work/state.md\` é a fonte de verdade deste projeto. Regista o fluxo, a fase, as entradas aprovadas, os artefactos e os próximos passos; nunca guardes segredos. Se o estado entrar em conflito com a conversa, pára e confirma. Altera a fase apenas depois de cumprir os critérios de conclusão e as validações aplicáveis. Não deduzas o estado com base numa sessão anterior.
@@ -250,6 +265,74 @@ evidencia: nenhuma
 bloqueios: nenhum
 proximo_passo: pedir objetivo
 `;
+const opencodeTheme = {
+    $schema: 'https://opencode.ai/theme.json',
+    defs: {
+        background: '#101319',
+        panel: '#171e29',
+        element: '#202b3a',
+        foreground: '#e6edf6',
+        muted: '#9baabd',
+        blue: '#62b5ff',
+        cyan: '#54d6c7',
+        violet: '#a78bfa',
+        orange: '#ffb86b',
+        red: '#ff6b7a',
+        green: '#7bd88f'
+    },
+    theme: {
+        primary: 'blue',
+        secondary: 'cyan',
+        accent: 'violet',
+        error: 'red',
+        warning: 'orange',
+        success: 'green',
+        info: 'blue',
+        text: 'foreground',
+        textMuted: 'muted',
+        background: 'background',
+        backgroundPanel: 'panel',
+        backgroundElement: 'element',
+        border: '#344052',
+        borderActive: 'blue',
+        borderSubtle: '#26303d',
+        diffAdded: 'green',
+        diffRemoved: 'red',
+        diffContext: 'muted',
+        diffHunkHeader: 'violet',
+        diffHighlightAdded: 'green',
+        diffHighlightRemoved: 'red',
+        diffAddedBg: '#183127',
+        diffRemovedBg: '#351e27',
+        diffContextBg: 'panel',
+        diffLineNumber: 'muted',
+        diffAddedLineNumberBg: '#20352d',
+        diffRemovedLineNumberBg: '#3a252b',
+        markdownText: 'foreground',
+        markdownHeading: 'blue',
+        markdownLink: 'cyan',
+        markdownLinkText: 'blue',
+        markdownCode: 'green',
+        markdownBlockQuote: 'muted',
+        markdownEmph: 'orange',
+        markdownStrong: 'violet',
+        markdownHorizontalRule: 'muted',
+        markdownListItem: 'cyan',
+        markdownListEnumeration: 'blue',
+        markdownImage: 'violet',
+        markdownImageText: 'blue',
+        markdownCodeBlock: 'foreground',
+        syntaxComment: 'muted',
+        syntaxKeyword: 'violet',
+        syntaxFunction: 'blue',
+        syntaxVariable: 'cyan',
+        syntaxString: 'green',
+        syntaxNumber: 'orange',
+        syntaxType: 'cyan',
+        syntaxOperator: 'blue',
+        syntaxPunctuation: 'foreground'
+    }
+};
 export function generated(target) {
     const files = {};
     if (target === 'codex' || target === 'opencode' || target === 'antigravity') {
@@ -266,7 +349,7 @@ export function generated(target) {
         const primary = target === 'opencode'
             ? '---\ndescription: Orquestrador AgentForge para fluxos de trabalho, encaminhamento de modelos e aprendizagem.\nmode: primary\n---\n'
             : '---\nname: agentforge\ndescription: Orquestrador AgentForge para fluxos de trabalho, encaminhamento de modelos e aprendizagem.\n---\n';
-        files[`.${target}/agents/agentforge.md`] = `${primary}\nÉs o AgentForge. Lê .agentforge/HARNESS.md, .agentforge/work/state.md e .agentforge/work/context.md. Consulta .agentforge/CONTEXT_LEARNING.md ao consolidar uma fase. Delega apenas quando a tarefa o justificar e preserva as aprovações humanas.\n`;
+        files[`.${target}/agents/agentforge.md`] = `${primary}\nÉs o AgentForge. Lê .agentforge/HARNESS.md, .agentforge/work/state.md e .agentforge/work/context.md. Consulta .agentforge/CONTEXT_LEARNING.md ao consolidar uma fase. Mantém todas as alterações e artefactos do projecto sob a respectiva raiz; valida caminhos antes de escrever e pára perante destinos externos ou ligações simbólicas que escapem à raiz. Delega apenas quando a tarefa o justificar e preserva as aprovações humanas.\n`;
         for (const [name, role] of Object.entries(roles)) {
             const header = target === 'opencode'
                 ? `---\ndescription: ${role.description}\nmode: subagent\n---\n`
@@ -279,9 +362,33 @@ export function generated(target) {
             $schema: 'https://opencode.ai/config.json',
             default_agent: 'agentforge'
         }, null, 2)}\n`;
+        files['tui.json'] = `${JSON.stringify({
+            $schema: 'https://opencode.ai/tui.json',
+            theme: 'agentforge'
+        }, null, 2)}\n`;
+        files['.opencode/themes/agentforge.json'] = `${JSON.stringify(opencodeTheme, null, 2)}\n`;
+        files['.opencode/commands/agentforge.md'] = `---
+description: Inicia uma tarefa AgentForge escolhendo o tipo de trabalho
+agent: agentforge
+---
+
+Inicia uma sessão de trabalho AgentForge. Se o utilizador não tiver especificado já um objetivo claro, apresenta primeiro esta escolha numerada e aguarda a resposta, sem executar tarefas nem alterar ficheiros:
+
+1. Planear ou acompanhar um projeto
+2. Desenhar uma solução de IA ou automação
+3. Desenvolver, depurar, rever ou testar software
+4. Pesquisar, escrever ou editar um texto
+5. Estudar um tema ou preparar um trabalho académico
+6. Analisar requisitos, processos ou sistemas
+7. Outra tarefa
+
+Depois da escolha, pergunta apenas os dados em falta para compreender o objetivo e os critérios de sucesso. Em seguida, consulta \`.agentforge/HARNESS.md\` e prepara a composição adequada de perfil, fluxo e competências. Distingue sempre um plano de uma execução; pede aprovação antes de operações que a exijam. Se o utilizador já tiver incluído o objetivo como argumento, usa-o como contexto e não repitas perguntas respondidas.
+
+Pedido inicial: $ARGUMENTS
+`;
     }
     if (target === 'antigravity') {
-        files['.agents/rules/agentforge.md'] = `---\ntrigger: always_on\ndescription: Instruções do AgentForge para este espaço de trabalho.\n---\n\n# AgentForge\n\nÉs o AgentForge para as tarefas abrangidas pelo harness. Segue \`.agentforge/HARNESS.md\`; lê \`.agentforge/work/state.md\` e \`.agentforge/work/context.md\` antes de cada etapa. Utiliza os papéis em \`.agentforge/roles/\` como instruções; este instalador não configura subagentes nativos.\n`;
+        files['.agents/rules/agentforge.md'] = `---\ntrigger: always_on\ndescription: Instruções do AgentForge para este espaço de trabalho.\n---\n\n# AgentForge\n\nÉs o AgentForge para as tarefas abrangidas pelo harness. Segue \`.agentforge/HARNESS.md\`; lê \`.agentforge/work/state.md\` e \`.agentforge/work/context.md\` antes de cada etapa. Mantém alterações e artefactos do projecto dentro da raiz; valida cada caminho antes de escrever e pára perante destinos externos ou ligações simbólicas que escapem à raiz. Utiliza os papéis em \`.agentforge/roles/\` como instruções; este instalador não configura subagentes nativos.\n`;
         for (const [name, pipeline] of Object.entries({ 'forge-build': 'A', 'forge-audit': 'B', 'forge-document': 'C' })) {
             files[`.agents/workflows/${name}.md`] = `# ${name}\n\nExecuta o processo AgentForge ${pipeline} descrito em \`.agentforge/HARNESS.md\`. Lê primeiro o estado do projeto. Segue as passagens de trabalho entre papéis e os controlos de aprovação; pára quando for necessária aprovação humana. Regista evidências e actualiza o estado após cada etapa verificada.\n`;
         }
@@ -301,7 +408,7 @@ export function generated(target) {
         }
     }
     if (target === 'codex') {
-        files['.codex/agents/agentforge.toml'] = `name = "agentforge"\ndescription = "Orquestrador AgentForge para fluxos de trabalho, contexto e aprendizagem."\ndeveloper_instructions = "És o AgentForge para as tarefas abrangidas pelo harness. Lê .agentforge/HARNESS.md, .agentforge/work/state.md e .agentforge/work/context.md. Respeita as aprovações humanas e consulta .agentforge/CONTEXT_LEARNING.md para as lições. Delega tarefas delimitadas quando adequado."\n`;
+        files['.codex/agents/agentforge.toml'] = `name = "agentforge"\ndescription = "Orquestrador AgentForge para fluxos de trabalho, contexto e aprendizagem."\ndeveloper_instructions = "És o AgentForge para as tarefas abrangidas pelo harness. Lê .agentforge/HARNESS.md, .agentforge/work/state.md e .agentforge/work/context.md. Mantém alterações e artefactos do projecto dentro da raiz; valida cada caminho antes de escrever e pára perante destinos externos ou ligações simbólicas que escapem à raiz. Respeita as aprovações humanas e consulta .agentforge/CONTEXT_LEARNING.md para as lições. Delega tarefas delimitadas quando adequado."\n`;
         for (const name of Object.keys(roles)) {
             const role = roles[name];
             files[`.codex/agents/${name}.toml`] = `name = ${JSON.stringify(name)}\ndescription = ${JSON.stringify(role.description)}\ndeveloper_instructions = ${JSON.stringify(`És o especialista AgentForge ${name}. ${role.body} Segue .agentforge/HARNESS.md; entrega evidência e encaminha o trabalho.`)}\n`;
@@ -335,7 +442,7 @@ export const shared = {
     ...Object.fromEntries(Object.entries(templates).map(([name, content]) => [`.agentforge/templates/${name}.md`, content])),
     ...Object.fromEntries(Object.entries(roles).map(([name, role]) => [`.agentforge/roles/${name}.md`, `# ${name}\n\n${role.description}\n\n${role.body}\n`]))
 };
-export const instruction = (target) => `Para as tarefas abrangidas pelo harness, actua como AgentForge e lê \`.agentforge/HARNESS.md\`, \`.agentforge/MODEL_ROUTING.md\`, \`.agentforge/OPERATOR.md\`, \`.agentforge/work/state.md\` e \`.agentforge/work/context.md\`. Consulta \`.agentforge/CONTEXT_LEARNING.md\` para consolidar lições verificadas. Classifica cada tarefa pela complexidade e usa modelos configurados apenas se este host permitir a sua selecção. Papéis: \`.agentforge/roles/\`. ${target === 'claude' ? 'Agente principal opcional: claude --agent agentforge; subagentes nativos: .claude/agents/.' : target === 'opencode' ? 'Selecciona agentforge como agente principal; subagentes: .opencode/agents/.' : 'Segue as instruções dos papéis; delega apenas se o host suportar essa capacidade.'}`;
+export const instruction = (target) => `Para as tarefas abrangidas pelo harness, actua como AgentForge e lê \`.agentforge/HARNESS.md\`, \`.agentforge/MODEL_ROUTING.md\`, \`.agentforge/OPERATOR.md\`, \`.agentforge/work/state.md\` e \`.agentforge/work/context.md\`. Mantém todas as alterações e artefactos do projecto dentro da raiz; valida caminhos antes de escrever, copiar ou eliminar, e pára perante destinos externos ou ligações simbólicas que escapem à raiz. Consulta \`.agentforge/CONTEXT_LEARNING.md\` para consolidar lições verificadas. Classifica cada tarefa pela complexidade e usa modelos configurados apenas se este host permitir a sua selecção. Papéis: \`.agentforge/roles/\`. ${target === 'claude' ? 'Agente principal opcional: claude --agent agentforge; subagentes nativos: .claude/agents/.' : target === 'opencode' ? 'Selecciona agentforge como agente principal; subagentes: .opencode/agents/.' : 'Segue as instruções dos papéis; delega apenas se o host suportar essa capacidade.'}`;
 // Os dois catálogos são declarados em módulos distintos; esta verificação em tempo de carregamento
 // impede que um workflow passe a referir uma skill inexistente sem ninguém dar por isso.
 export function validateSkillReferences() {

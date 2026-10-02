@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { mkdtemp, readFile, rm, writeFile, mkdir, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { install, remove, status } from '../installer.js';
+import { install, remove, safe, status } from '../installer.js';
 
 async function project(fn: (root: string) => Promise<void>): Promise<void> {
   const root = await mkdtemp(join(tmpdir(), 'agentforge-kit-'));
@@ -24,6 +24,9 @@ test('installs all CLI surfaces, keeps user instructions and supports idempotenc
   assert.match(await readFile(join(root, '.agents/rules/agentforge.md'), 'utf8'), /trigger: always_on/);
   assert.match(await readFile(join(root, '.opencode/agents/agentforge.md'), 'utf8'), /mode: primary/);
   assert.equal(JSON.parse(await readFile(join(root, 'opencode.json'), 'utf8')).default_agent, 'agentforge');
+  assert.equal(JSON.parse(await readFile(join(root, 'tui.json'), 'utf8')).theme, 'agentforge');
+  assert.match(await readFile(join(root, '.opencode/themes/agentforge.json'), 'utf8'), /"primary": "blue"/);
+  assert.match(await readFile(join(root, '.opencode/commands/agentforge.md'), 'utf8'), /Inicia uma sessão de trabalho AgentForge/);
   assert.match(await readFile(join(root, '.claude/agents/agentforge.md'), 'utf8'), /name: agentforge/);
   assert.match(await readFile(join(root, '.codex/agents/agentforge.toml'), 'utf8'), /name = "agentforge"/);
   assert.match(await readFile(join(root, '.agentforge/CONTEXT_LEARNING.md'), 'utf8'), /aprendizagem/);
@@ -36,11 +39,18 @@ test('configures AgentForge as OpenCode default and preserves an existing config
   const config = join(root, 'opencode.json');
   const original = '{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "provider/model"\n}\n';
   await writeFile(config, original);
+  const tuiConfig = join(root, 'tui.json');
+  const originalTui = '{\n  "$schema": "https://opencode.ai/tui.json",\n  "keybinds": {}\n}\n';
+  await writeFile(tuiConfig, originalTui);
   const changes = await install(root, ['opencode']);
   assert.equal(await readFile(config, 'utf8'), original);
+  assert.equal(await readFile(tuiConfig, 'utf8'), originalTui);
   assert.ok(changes.some(change => change.includes('"default_agent": "agentforge"')));
+  assert.ok(changes.some(change => change.includes('"theme": "agentforge"')));
+  assert.match(await readFile(join(root, '.opencode/commands/agentforge.md'), 'utf8'), /agent: agentforge/);
   await remove(root, ['opencode']);
   assert.equal(await readFile(config, 'utf8'), original);
+  assert.equal(await readFile(tuiConfig, 'utf8'), originalTui);
 }));
 
 test('removes one CLI without removing shared assets or user files', async () => project(async root => {
@@ -118,6 +128,8 @@ test('upgrades 0.3 instruction blocks while retaining an existing active state',
 }));
 
 test('blocks generated paths through symlinks', async () => project(async root => {
+  assert.throws(() => safe(root, '..\\outside.txt'), /Caminho inválido/);
+  assert.throws(() => safe(root, join(root, 'outside.txt')), /Caminho inválido/);
   const external = await mkdtemp(join(tmpdir(), 'agentforge-external-'));
   try {
     await symlink(external, join(root, '.agentforge'), process.platform === 'win32' ? 'junction' : 'dir');

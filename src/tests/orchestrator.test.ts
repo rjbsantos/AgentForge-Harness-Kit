@@ -19,6 +19,7 @@ const cases = [
   ['ai-engineer', 'ai-evaluation', 'Preciso de uma avaliação de RAG'],
   ['senior-developer', 'bug-investigation', 'Analisa este erro da aplicação'],
   ['senior-developer', 'repository-audit', 'Faz uma auditoria ao repositório'],
+  ['senior-developer', 'repository-audit', 'Identifica código morto, ficheiros obsoletos e dependências não utilizadas'],
   ['magazine-editor', 'magazine-article', 'Escreve um artigo para revista'],
   ['university-student', 'academic-research', 'Faz uma pesquisa académica com fontes'],
   ['university-student', 'study-session', 'Prepara flashcards para exame'],
@@ -114,6 +115,10 @@ test('every workflow yields a bounded, non-executed proposal and generated outpu
       role: 'magazine-editor', workflow: 'ai-evaluation'
     }), /não pertence/);
     assert.match(await readFile(join(root, '.agentforge/CAPABILITIES.md'), 'utf8'), /Analista de Sistemas/);
+    assert.match(await readFile(join(root, '.agents/skills/forge-hygiene/SKILL.md'), 'utf8'), /ligações simbólicas que escapem/);
+    assert.match(await readFile(join(root, '.agentforge/HARNESS.md'), 'utf8'), /Limite do projecto e organização/);
+    assert.ok(workflows['repository-audit'].skills.includes('forge-hygiene'));
+    assert.match(workflows['repository-audit'].validation.join(' '), /dentro do projecto/);
     assert.match((await status(root))[1], /nenhum/);
     await remove(root, ['antigravity']);
     await assert.rejects(readFile(join(root, '.agents/workflows/magazine-article.md')));

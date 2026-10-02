@@ -9,6 +9,7 @@ Fonte de verdade: `skills` em `src/catalog.ts`. As competências são capacidade
 | `forge-requirements` | Recolher, priorizar e validar requisitos e critérios de aceitação |
 | `forge-implementation` | Implementar alterações aprovadas com testes e revisão |
 | `forge-audit` | Inspeccionar um projeto e propor correcções fundamentadas |
+| `forge-hygiene` | Identificar código, ficheiros e dependências mortos ou obsoletos com evidência e controlo de falsos positivos |
 | `forge-verify` | Verificar critérios de aceitação com evidência independente |
 | `forge-ground` | Confirmar APIs, tipos e convenções existentes antes de escrever código |
 | `forge-performance` | Identificar problemas de desempenho com impacto fundamentado |
@@ -20,6 +21,10 @@ Fonte de verdade: `skills` em `src/catalog.ts`. As competências são capacidade
 | `forge-fact-check` | Validar afirmações e referências com fontes verificáveis |
 
 As competências transversais são partilhadas entre perfis. Por exemplo, investigação e verificação de factos servem os perfis académico, editorial e técnico; requisitos e validação servem gestão de projetos, engenharia de IA e análise de sistemas. Não se cria uma cópia por perfil.
+
+`forge-hygiene` é utilizada pela auditoria de repositório. Confirma pontos de entrada e referências dinâmicas antes de classificar código como morto, distingue dependências não usadas de vulneráveis ou desactualizadas e não elimina componentes durante a auditoria. Cada candidato é apresentado com caminho, evidência, confiança e risco de falsos positivos; qualquer remoção posterior exige aprovação e testes.
+
+Todas as competências que lêem ou produzem artefactos de projecto respeitam a raiz indicada ou a raiz Git. Antes de alterar ficheiros validam os caminhos, recusam destinos externos e ligações simbólicas para fora da raiz e não movem ficheiros de outras pastas do computador. Entradas externas só são lidas quando explicitamente fornecidas pelo utilizador.
 
 ## Regras de validação e aprendizagem
 

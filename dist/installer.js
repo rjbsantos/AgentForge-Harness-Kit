@@ -94,9 +94,12 @@ export async function install(project, selected, dryRun = false) {
     const notices = [];
     for (const target of selected) {
         for (const [key, content] of Object.entries({ ...shared, ...generated(target) })) {
-            if (target === 'opencode' && key === 'opencode.json' &&
+            if (target === 'opencode' && ['opencode.json', 'tui.json'].includes(key) &&
                 !manifest.files[key] && await text(root, key) !== undefined) {
-                notices.push('opencode.json existente preservado; para iniciar no AgentForge, defina "default_agent": "agentforge" na configuração existente.');
+                const setting = key === 'opencode.json'
+                    ? '"default_agent": "agentforge"'
+                    : '"theme": "agentforge"';
+                notices.push(`${key} existente preservado; para activar a personalização AgentForge, acrescente ${setting} à configuração existente.`);
                 continue;
             }
             const slot = desired[key] ??= { content, owners: [] };

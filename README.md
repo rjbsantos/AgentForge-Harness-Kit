@@ -7,13 +7,15 @@ O kit suporta **OpenCode, Codex CLI, Claude Code e Google Antigravity**. Instala
 ## O que oferece
 
 - **Sete perfis de trabalho:** gestor de projetos, gestor de projetos de sistemas de informação, engenheiro de IA, programador sénior, editor de revistas, estudante universitário e analista de sistemas.
-- **Competências reutilizáveis:** análise de requisitos, investigação, verificação de factos, auditoria, implementação, testes, análise de desempenho, tomada de decisão, experimentação técnica, encaminhamento de modelos e gestão de contexto.
+- **Competências reutilizáveis:** análise de requisitos, investigação, verificação de factos, auditoria e higiene do código, implementação, testes, análise de desempenho, tomada de decisão, experimentação técnica, encaminhamento de modelos e gestão de contexto.
+- **Higiene do projecto:** identifica código, ficheiros e dependências potencialmente mortos ou obsoletos, com evidência e verificação contra referências dinâmicas; não remove nada sem aprovação.
 - **Fluxos de trabalho verificáveis:** análise de incidentes, auditoria de repositórios, desenho e avaliação de soluções de IA, análise de sistemas, exploração técnica, automação de processos, entre outros.
 - **Encaminhamento por complexidade:** recomenda modelos de raciocínio para decisões incertas ou de risco elevado e modelos económicos para execução delimitada e aprovada. Só selecciona um modelo quando o CLI suporta essa opção e existe um modelo configurado.
 - **Contexto e memória locais:** guarda o estado do projeto, um resumo activo e lições com evidência, âmbito e aprovação humana. O contexto pode ser limitado por um orçamento estimado.
 - **Melhoria contínua auditável:** agrega execuções registadas e evidencia erros recorrentes sem alterar automaticamente instruções ou aprovar lições.
 - **Coordenação de subagentes condicionada ao CLI:** identifica trabalho independente que pode ser delegado, com dependências, papel, competências e limites explícitos. Se o CLI não suportar subagentes, a execução é sequencial.
 - **Instalação reversível e segura:** detecta conflitos, preserva alterações do utilizador e mantém os dados de trabalho durante actualizações e desinstalações.
+- **Limite à raiz do projecto:** as instruções exigem que alterações e artefactos fiquem sob a pasta do projecto e mandam parar perante destinos externos ou ligações simbólicas para fora. O instalador valida caminhos e recusa traversal e symlinks; as operações dos agentes continuam sujeitas às capacidades e permissões do CLI anfitrião.
 
 ## Modelo de funcionamento
 
@@ -56,7 +58,9 @@ agentforge install --project ~/WorkSpace/Groot --cli opencode
 
 O tarball da versão contém os ficheiros compilados e não exige ferramentas de desenvolvimento no computador cliente. Como o repositório é privado, `gh auth login` permite descarregar o activo da versão. Para actualizar, descarregue o tarball da versão pretendida e repita `npm install -g .\ficheiro.tgz` (PowerShell) ou `npm install -g ./ficheiro.tgz` (Linux/macOS). A instalação directa com URL Git continua disponível para desenvolvimento; nesse caso, clone o repositório e execute `npm link` a partir da pasta persistente.
 
-Na instalação do OpenCode, o AgentForge é configurado como agente principal predefinido quando o projeto ainda não tem `opencode.json`. Se esse ficheiro já existir, o instalador preserva-o e indica a configuração a acrescentar: `"default_agent": "agentforge"`. O nome da aplicação continua a ser OpenCode — o AgentForge é o agente seleccionado dentro dela. Reinicie o OpenCode depois da instalação; a interface deve identificar o agente activo como `agentforge`.
+Na instalação do OpenCode, o AgentForge é configurado como agente principal predefinido quando o projeto ainda não tem `opencode.json`. Se esse ficheiro já existir, o instalador preserva-o e indica a configuração a acrescentar: `"default_agent": "agentforge"`. O nome da aplicação continua a ser OpenCode — o AgentForge é o agente seleccionado dentro dela. Reinicie o OpenCode depois da instalação; a interface deve identificar o agente activo como `agentforge`. Para iniciar uma sessão com a escolha guiada do tipo de trabalho, escreva `/agentforge`.
+
+O OpenCode recebe também o comando `/agentforge`, que apresenta na conversa uma escolha inicial entre gestão de projeto, IA e automação, desenvolvimento, escrita e pesquisa, estudo, análise de sistemas ou outra tarefa. Depois de escolher, o agente esclarece o objectivo e prepara o fluxo adequado; não é um menu gráfico nem inicia alterações sem as aprovações necessárias. O kit instala ainda um tema de cores AgentForge e configura-o na TUI através de `tui.json`. O tema pode colorir os elementos e realces da barra lateral, mas a estrutura e disposição dessa área continuam a ser controladas pelo OpenCode. Se já existir `tui.json`, o instalador preserva-o e indica a opção `"theme": "agentforge"` a acrescentar. Consulte [comandos personalizados](https://opencode.ai/docs/commands/), [temas](https://opencode.ai/docs/themes/) e [configuração da TUI](https://opencode.ai/docs/tui/) para os detalhes suportados pelo OpenCode.
 
 O tarball também pode ser instalado a partir de qualquer localização local:
 

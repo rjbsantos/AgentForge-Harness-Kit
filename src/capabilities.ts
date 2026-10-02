@@ -149,13 +149,14 @@ export const workflows: Record<string, Workflow> = {
   'repository-audit': flow('Auditoria técnica com recomendações', 'Pedido de auditoria ao repositório',
     ['Mapear arquitectura, limites e testes',
       'Inspeccionar qualidade, manutenibilidade e regressões com evidência',
+      'Identificar código, ficheiros e dependências potencialmente mortos ou obsoletos, verificando referências dinâmicas e pontos de entrada',
       'Inspeccionar segurança com evidência',
       'Inspeccionar desempenho com evidência',
-      'Consolidar e priorizar candidatos sem duplicação',
+      'Consolidar candidatos com caminhos dentro da raiz do projecto, evidência, confiança e risco de falsos positivos',
       'Pedir aprovação antes de alterar código'],
-    ['forge-audit', 'forge-research', 'forge-performance', 'forge-verify'], ['file-system', 'git', 'terminal'],
+    ['forge-audit', 'forge-hygiene', 'forge-research', 'forge-performance', 'forge-verify'], ['file-system', 'git', 'terminal'],
     'Relatório de auditoria', 'repository-audit',
-    ['Todos os achados têm ficheiro:linha, impacto e confiança'],
+    ['Todos os achados têm caminho dentro do projecto, evidência, impacto e confiança; código dinâmico e pontos de entrada foram considerados; nenhuma remoção é feita sem aprovação'],
     [{
       after: [1],
       workers: [
