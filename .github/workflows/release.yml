@@ -1,0 +1,30 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run smoke
+      # A tag tem de corresponder à versão do package.json; sem isto publica-se
+      # um tarball com versão diferente daquela que a tag anuncia.
+      - name: Confirmar que a tag corresponde à versão
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(node -p "require('./package.json').version")"
+          test "$tag" = "$version" || { echo "tag $tag != versão $version"; exit 1; }
+      - run: npm pack --pack-destination dist-release
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist-release/*.tgz
+          generate_release_notes: true
