@@ -31,17 +31,33 @@ O AgentForge separa conceitos para evitar duplicação: um **perfil** define a p
 
 ## Instalação
 
-Requer Node.js 20 ou posterior. O repositório é privado, pelo que a conta Git da máquina tem de ter acesso.
+Requer Node.js 20 ou posterior. O repositório é privado, pelo que a conta Git da máquina tem de ter acesso. Em npm 10.9.8, a instalação global directa por URL Git pode deixar o executável ligado a uma pasta temporária. Clone o repositório e use `npm link` para registar a CLI a partir de uma pasta persistente.
 
+**Windows (PowerShell):**
 ```powershell
 gh auth login
 gh auth setup-git
-npm install -g git+https://github.com/rjbsantos/AgentForge-Harness-Kit.git
+git clone https://github.com/rjbsantos/AgentForge-Harness-Kit.git "$HOME\WorkSpace\AgentForge-Harness-Kit"
+Set-Location "$HOME\WorkSpace\AgentForge-Harness-Kit"
+npm link
+Get-Command agentforge
 agentforge install --project D:\caminho\do\projeto --cli all
 agentforge status --project D:\caminho\do\projeto
 ```
 
-`gh auth setup-git` configura o Git para utilizar a autenticação do GitHub CLI; é necessário porque o npm chama o Git directamente. Em alternativa, configure uma chave SSH e utilize `git+ssh://git@github.com/rjbsantos/AgentForge-Harness-Kit.git`.
+**Linux e macOS:**
+```bash
+gh auth login
+gh auth setup-git
+npm uninstall -g agentforge-harness-kit
+git clone https://github.com/rjbsantos/AgentForge-Harness-Kit.git ~/WorkSpace/AgentForge-Harness-Kit
+cd ~/WorkSpace/AgentForge-Harness-Kit
+npm link
+command -v agentforge
+agentforge install --project ~/WorkSpace/Groot --cli opencode
+```
+
+`gh auth setup-git` configura o Git para utilizar a autenticação do GitHub CLI. Em npm 10.9.8, `npm install -g git+https://...` pode deixar o executável global a apontar para uma pasta temporária da cache, que desaparece após a instalação. Para esse caso, remova o registo global incompleto, clone o repositório e execute `npm link`; este comando cria a ligação global para o clone persistente. Mantenha o clone no computador e execute `git pull` dentro dele para obter actualizações. Em alternativa, configure uma chave SSH para clonar através de `git@github.com:rjbsantos/AgentForge-Harness-Kit.git`.
 
 Também é possível instalar o ficheiro `.tgz` disponível na secção Releases do GitHub, sem autenticação Git:
 
@@ -50,7 +66,7 @@ npm install -g D:\transferencias\agentforge-harness-kit-0.8.2.tgz
 ```
 
 O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases).
-O repositório inclui a versão compilada necessária à instalação directa pelo Git, pelo que não é preciso instalar o TypeScript no computador de destino.
+O repositório inclui a versão compilada necessária ao `npm link`, pelo que não é preciso instalar o TypeScript no computador de destino.
 
 O parâmetro `--cli` aceita `opencode`, `codex`, `claude`, `antigravity` ou `all`. A instalação pode ser repetida para actualizar ficheiros geridos ou acrescentar outro CLI:
 
