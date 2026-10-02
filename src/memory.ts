@@ -16,6 +16,8 @@ export interface Lesson {
 interface Ledger { version: 1; lessons: Lesson[] }
 const maxPendingReusable = 5;
 const reusableLessonLimit = 320;
+const defaultContextBudget = 1200;
+const maxContextBudget = 32000;
 const ledgerKey = '.agentforge/work/lessons.json';
 const contextKey = '.agentforge/work/context.md';
 const stateKey = '.agentforge/work/state.md';
@@ -131,17 +133,46 @@ export async function saveContext(project: string, summary: string, next: string
   await write(root, contextKey, `# Contexto ativo AgentForge\n\n${brief}\n\nPróximo passo: ${action}\n`);
 }
 
-export async function getContext(project: string, topic?: string): Promise<{
-  state: string; summary: string; lessons: Lesson[];
+function estimateTokens(value: string): number {
+  return Math.ceil(value.length / 4);
+}
+
+export async function getContext(project: string, topic?: string, budgetTokens = defaultContextBudget): Promise<{
+  state: string;
+  summary: string;
+  lessons: Lesson[];
+  budget: { limitTokens: number; estimatedTokens: number; omittedLessons: number; estimate: 'chars-divided-by-4' };
 }> {
+  if (!Number.isInteger(budgetTokens) || budgetTokens < 1 || budgetTokens > maxContextBudget) {
+    throw new Error(`Orçamento de contexto inválido (1-${maxContextBudget} tokens)`);
+  }
   const root = rootOf(project);
-  const store = await ledger(root);
+  const [state, summary, store] = await Promise.all([
+    read(root, stateKey), read(root, contextKey), ledger(root)
+  ]);
   const query = topic?.trim().toLowerCase();
   const approved = store.lessons.filter(item => item.status === 'approved' &&
-    (!query || `${item.lesson} ${item.evidence}`.toLowerCase().includes(query)));
+    (!query || `${item.lesson} ${item.evidence} ${item.anchor ?? ''}`.toLowerCase().includes(query)));
+  const fixedTokens = estimateTokens(`${state}\n${summary}`) + 16;
+  if (fixedTokens > budgetTokens) {
+    throw new Error(`Estado e resumo activos excedem o orçamento (${fixedTokens}/${budgetTokens} tokens estimados); compacte work/context.md ou aumente --budget-tokens`);
+  }
+  let estimatedTokens = fixedTokens;
+  let omittedLessons = 0;
+  const lessons: Lesson[] = [];
+  for (const item of approved.slice().reverse()) {
+    const itemTokens = estimateTokens(JSON.stringify(item));
+    if (lessons.length >= 5 || estimatedTokens + itemTokens > budgetTokens) {
+      omittedLessons++;
+      continue;
+    }
+    lessons.push(item);
+    estimatedTokens += itemTokens;
+  }
   return {
-    state: await read(root, stateKey),
-    summary: await read(root, contextKey),
-    lessons: approved.slice(-5).reverse()
+    state,
+    summary,
+    lessons,
+    budget: { limitTokens: budgetTokens, estimatedTokens, omittedLessons, estimate: 'chars-divided-by-4' }
   };
 }

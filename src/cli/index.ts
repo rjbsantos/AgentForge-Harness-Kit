@@ -5,12 +5,13 @@ import { route } from '../routing.js';
 import { addLesson, changeLesson, getContext, listLessons, saveContext } from '../memory.js';
 import { plan } from '../orchestrator.js';
 import { loadOperator, setOperator } from '../operator.js';
-import { recordRun, type RunRecord } from '../operations.js';
+import { operationInsights, recordRun, type RunRecord } from '../operations.js';
 import { profiles, type Profile } from '../capabilities.js';
 
-const help = 'Uso: agentforge <install|status|uninstall|route|plan|record|context|learn|operator> [--project CAMINHO]\n' +
-  '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO]\n' +
+const help = 'Uso: agentforge <install|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
+  '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
   '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID>\n' +
+  '  insights  resume execuções verificadas e padrões de erro recorrentes\n' +
   '  operator <show|set [--headline TEXTO] [--roles PERFIL,PERFIL] [--language TAG] [--risk cautious|balanced|exploratory] [--interests A,B]>\n' +
   '  plan --cli NOME --prompt TEXTO [--role PERFIL --workflow FLUXO] [--planned --approved] [--high-risk]\n' +
   '  record --role PERFIL --workflow FLUXO --result passed|failed|blocked --validation passed|failed|not-run --duration-ms N [--tools LISTA --skills LISTA] [--retries N --tokens N --cost N --error-code CODIGO]';
@@ -25,7 +26,7 @@ async function main(args: string[]): Promise<void> {
     console.log(help);
     return;
   }
-  if (!action || !['install', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'operator'].includes(action)) usage();
+  if (!action || !['install', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action)) usage();
   const subcommand = (action === 'learn' || action === 'operator') && args[0] && !args[0].startsWith('--') ? args.shift()
     : action === 'context' && args[0] === 'save' ? args.shift() : undefined;
   let project = process.cwd();
@@ -59,6 +60,7 @@ async function main(args: string[]): Promise<void> {
   let tokens: number | undefined;
   let cost: number | undefined;
   let errorCode: string | undefined;
+  let budgetTokens: number | undefined;
   while (args.length) {
     const arg = args.shift();
     if (arg === '--project') {
@@ -89,6 +91,11 @@ async function main(args: string[]): Promise<void> {
     } else if (arg === '--topic') {
       topic = args.shift();
       if (!topic) usage();
+    } else if (arg === '--budget-tokens') {
+      const value = args.shift();
+      if (!value || !/^\d+$/.test(value)) usage();
+      budgetTokens = Number(value);
+      if (!Number.isSafeInteger(budgetTokens) || budgetTokens < 1 || budgetTokens > 32000) usage();
     } else if (arg === '--lesson') {
       lesson = args.shift();
       if (!lesson) usage();
@@ -163,6 +170,7 @@ async function main(args: string[]): Promise<void> {
     }
     if (action !== 'record' && (retries !== undefined || tokens !== undefined || cost !== undefined || errorCode || skillsUsed)) usage();
     if (action !== 'operator' && (headline || roles || language || riskPosture || interests)) usage();
+    if (action !== 'context' && budgetTokens !== undefined) usage();
   }
   if (action === 'operator') {
     if (cli !== 'all' || dryRun || prompt || planned || approved || highRisk || role || workflow ||
@@ -179,12 +187,12 @@ async function main(args: string[]): Promise<void> {
   if (action === 'context' || action === 'learn') {
     if (cli !== 'all' || dryRun || prompt || planned || approved || highRisk || role || workflow || result || validation || durationMs !== undefined || toolsUsed.length) usage();
     if (action === 'context' && subcommand === 'save') {
-      if (!summary || !next || topic || lesson || evidence || id || scope || anchor) usage();
+      if (!summary || !next || topic || budgetTokens !== undefined || lesson || evidence || id || scope || anchor) usage();
       await saveContext(project, summary, next);
       console.log('Contexto ativo atualizado.');
     } else if (action === 'context' && !subcommand) {
       if (summary || next || lesson || evidence || id || scope || anchor) usage();
-      console.log(JSON.stringify(await getContext(project, topic), null, 2));
+      console.log(JSON.stringify(await getContext(project, topic, budgetTokens), null, 2));
     } else if (action === 'learn' && subcommand === 'add') {
       if (!lesson || !evidence || id || summary || next || topic) usage();
       console.log(JSON.stringify(await addLesson(project, lesson, evidence, { scope, anchor })));
@@ -195,6 +203,13 @@ async function main(args: string[]): Promise<void> {
       if (!id || lesson || evidence || summary || next || topic || scope || anchor) usage();
       console.log(JSON.stringify(await changeLesson(project, id, subcommand)));
     } else usage();
+    return;
+  }
+  if (action === 'insights') {
+    if (cli !== 'all' || dryRun || prompt || planned || approved || highRisk || role || workflow ||
+      result || validation || durationMs !== undefined || toolsUsed.length || budgetTokens !== undefined ||
+      summary || next || topic || lesson || evidence || id || scope || anchor) usage();
+    console.log(JSON.stringify(await operationInsights(project), null, 2));
     return;
   }
   if (summary || next || topic || lesson || evidence || id || scope || anchor) usage();

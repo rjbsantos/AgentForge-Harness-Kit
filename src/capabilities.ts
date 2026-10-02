@@ -1,22 +1,22 @@
 export const profiles = {
   'project-manager': {
-    title: 'Gestor de Projectos',
+    title: 'Gestor de Projetos',
     agent: 'product-manager',
     workflows: ['project-status', 'meeting-followup', 'risk-review', 'requirements-analysis']
   },
   'it-project-manager': {
-    title: 'Gestor de Projectos de SI',
+    title: 'Gestor de Projetos de SI',
     agent: 'solution-advisor',
     workflows: ['solution-briefing', 'automation-opportunity', 'tech-exploration', 'continuous-improvement',
       'requirements-analysis', 'system-analysis', 'project-status']
   },
   'ai-engineer': {
-    title: 'AI Engineer',
+    title: 'Engenheiro de IA',
     agent: 'ai-engineer',
     workflows: ['ai-solution-design', 'ai-evaluation', 'requirements-analysis']
   },
   'senior-developer': {
-    title: 'Senior Developer',
+    title: 'Programador Sénior',
     agent: 'lead-developer',
     workflows: ['bug-investigation', 'repository-audit', 'forge-build']
   },
@@ -26,7 +26,7 @@ export const profiles = {
     workflows: ['magazine-article']
   },
   'university-student': {
-    title: 'Estudante Universitario',
+    title: 'Estudante Universitário',
     agent: 'academic-tutor',
     workflows: ['academic-research', 'study-session']
   },
@@ -52,16 +52,25 @@ export interface Workflow {
   output: string;
   postcondition: string;
   template: string;
+  parallelGroups: {
+    after: number[];
+    workers: { step: number; role: string; skills: string[] }[];
+  }[];
 }
 
 const flow = (description: string, trigger: string, steps: string[], skills: string[],
-  tools: string[], output: string, template: string, validation: string[]): Workflow => ({
+  tools: string[], output: string, template: string, validation: string[],
+  parallelGroups: {
+    after: number[];
+    workers: { step: number; role: string; skills: string[] }[];
+  }[] = []): Workflow => ({
   description, trigger,
-  preconditions: ['Confirmar objectivo, limites, aprovações e ferramentas disponíveis'],
-  inputs: ['Pedido do utilizador', 'Artefactos fornecidos e estado actual'],
+  preconditions: ['Confirmar objetivo, limites, aprovações e ferramentas disponíveis'],
+  inputs: ['Pedido do utilizador', 'Artefactos fornecidos e estado atual'],
   steps, skills, tools, output, template, validation,
-  errorHandling: 'Parar, indicar informação/ferramenta indisponível e pedir decisão; não inventar resultados',
-  postcondition: 'Entregar resultado verificável e registar o próximo passo no contexto activo'
+  errorHandling: 'Parar, indicar informação ou ferramenta indisponível e pedir uma decisão; não inventar resultados',
+  parallelGroups,
+  postcondition: 'Entregar um resultado verificável e registar o próximo passo no contexto ativo'
 });
 
 export const workflows: Record<string, Workflow> = {
@@ -115,7 +124,7 @@ export const workflows: Record<string, Workflow> = {
   'continuous-improvement': flow('Retrospectiva orientada a evidência que gera melhorias e lições',
     'Pedido de retrospectiva, lições aprendidas ou melhoria contínua',
     ['Delimitar o período, o trabalho e as fontes de evidência em análise',
-      'Recolher execuções, incidentes, desvios e retrabalho a partir de registos, não de memória',
+      'Executar `agentforge insights` para agregar execuções verificadas; analisar incidentes, desvios e retrabalho a partir de evidência, não de memória',
       'Separar causas sistémicas de ocorrências isoladas',
       'Priorizar melhorias por impacto e esforço, com responsável e critério de verificação',
       'Converter apenas o que generaliza em lição com âmbito e âncora para aprovação'],
@@ -138,10 +147,23 @@ export const workflows: Record<string, Workflow> = {
     ['file-system', 'terminal', 'git'], 'Relatório e correcção validada', 'bug-report',
     ['Reprodução e teste de regressão documentados']),
   'repository-audit': flow('Auditoria técnica com recomendações', 'Pedido de auditoria ao repositório',
-    ['Mapear arquitectura e testes', 'Inspeccionar qualidade, segurança e desempenho com evidência', 'Priorizar candidatos', 'Pedir aprovação antes de alterar código'],
+    ['Mapear arquitectura, limites e testes',
+      'Inspeccionar qualidade, manutenibilidade e regressões com evidência',
+      'Inspeccionar segurança com evidência',
+      'Inspeccionar desempenho com evidência',
+      'Consolidar e priorizar candidatos sem duplicação',
+      'Pedir aprovação antes de alterar código'],
     ['forge-audit', 'forge-research', 'forge-performance', 'forge-verify'], ['file-system', 'git', 'terminal'],
     'Relatório de auditoria', 'repository-audit',
-    ['Todos os achados têm ficheiro:linha, impacto e confiança']),
+    ['Todos os achados têm ficheiro:linha, impacto e confiança'],
+    [{
+      after: [1],
+      workers: [
+        { step: 2, role: 'code-critic', skills: ['forge-audit'] },
+        { step: 3, role: 'secops', skills: ['forge-audit'] },
+        { step: 4, role: 'reverse-engineer', skills: ['forge-performance'] }
+      ]
+    }]),
   'forge-build': flow('Construção aprovada com testes e revisão', 'Pedido de implementação',
     ['Aprovar requisitos e arquitectura', 'Planeamento e TDD', 'Revisão e QA independentes', 'Verificar gates e aprovação para publicação'],
     ['forge-requirements', 'forge-ground', 'forge-implementation', 'forge-verify'],
@@ -210,6 +232,20 @@ export function validateCatalog(): void {
     if (!workflow.steps.length || !workflow.validation.length || !workflow.skills.length ||
       !workflow.tools.every(tool => tool in tools) || !(workflow.template in templates)) {
       throw new Error(`Workflow inválido: ${name}`);
+    }
+    const parallelSteps = new Set<number>();
+    for (const group of workflow.parallelGroups) {
+      const workerSteps = group.workers.map(worker => worker.step);
+      if (group.workers.length < 2 ||
+        workerSteps.some(step => !Number.isInteger(step) || step < 1 ||
+          step > workflow.steps.length || parallelSteps.has(step)) ||
+        group.after.length === 0 ||
+        group.after.some(step => !Number.isInteger(step) || step < 1 ||
+          step >= Math.min(...workerSteps)) ||
+        new Set(group.after).size !== group.after.length) {
+        throw new Error(`Grupo paralelo inválido: ${name}`);
+      }
+      for (const step of workerSteps) parallelSteps.add(step);
     }
   }
 }

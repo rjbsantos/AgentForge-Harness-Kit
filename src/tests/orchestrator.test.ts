@@ -41,6 +41,12 @@ test('catalog contracts: all roles, workflows, skills, tools and templates resol
     assert.ok(workflow.skills.every(skill => skill in skills), name);
     assert.ok(workflow.tools.every(tool => tool in tools), name);
     assert.ok(workflow.template in templates, name);
+    for (const group of workflow.parallelGroups) {
+      for (const worker of group.workers) {
+        assert.ok(worker.role in roles, `${name}: worker role ${worker.role}`);
+        assert.ok(worker.skills.every(skill => skill in skills), `${name}: worker skills`);
+      }
+    }
     for (const field of ['trigger', 'description', 'output', 'postcondition', 'errorHandling'] as const) {
       assert.ok(workflow[field].trim(), `${name}.${field}`);
     }
@@ -61,22 +67,49 @@ test('every workflow yields a bounded, non-executed proposal and generated outpu
   const root = await mkdtemp(join(tmpdir(), 'agentforge-roles-'));
   try {
     await install(root, ['opencode', 'claude', 'codex', 'antigravity']);
+    for (const worker of ['code-critic', 'secops', 'reverse-engineer']) {
+      assert.ok((await readFile(join(root, `.codex/agents/${worker}.toml`), 'utf8')).includes(`name = "${worker}"`));
+    }
     for (const [role, workflow, prompt] of cases) {
       const proposal = await plan(root, 'codex', prompt);
       assert.deepEqual([proposal.role, proposal.workflow, proposal.status, proposal.toolStatus],
         [role, workflow, 'proposed', 'unverified']);
+      assert.equal(proposal.coordination.maxDelegationDepth, 1);
+      assert.equal(proposal.coordination.singleWriter, true);
       assert.ok(proposal.skills.every(skill => skill in skills));
       assert.ok(proposal.validation.length && proposal.steps.length);
       assert.match(await readFile(join(root, proposal.template), 'utf8'), /^#/);
       assert.match(await readFile(join(root, `.agentforge/workflows/${workflow}.json`), 'utf8'), /validation/);
       const native = await readFile(join(root, `.agents/workflows/${workflow}.md`), 'utf8');
-      for (const marker of ['Trigger:', 'Preconditions:', 'Inputs:', 'Skills:', 'Tools', 'Validation:', 'Output:', 'If blocked:', 'Postcondition:']) {
+      for (const marker of ['Gatilho:', 'Pré-condições:', 'Entradas:', 'Competências:', 'Ferramentas', 'Validação:', 'Resultado:', 'Se houver bloqueio:', 'Pós-condição:']) {
         assert.ok(native.includes(marker), `${workflow}: ${marker}`);
       }
     }
     assert.deepEqual((await plan(root, 'claude', 'Prepare requirements', {
       role: 'systems-analyst', workflow: 'requirements-analysis'
     })).skills, workflows['requirements-analysis'].skills);
+    const audit = await plan(root, 'codex', 'Run repository audit', {
+      role: 'senior-developer', workflow: 'repository-audit'
+    });
+    assert.deepEqual(audit.coordination, {
+      mode: 'parallel-if-host-supports',
+      parallelGroups: [{
+        after: [1],
+        workers: [
+          { step: 2, role: 'code-critic', skills: ['forge-audit'], agent: 'code-critic' },
+          { step: 3, role: 'secops', skills: ['forge-audit'], agent: 'secops' },
+          { step: 4, role: 'reverse-engineer', skills: ['forge-performance'], agent: 'reverse-engineer' }
+        ]
+      }],
+      maxConcurrentAgents: 3,
+      maxDelegationDepth: 1,
+      singleWriter: true
+    });
+    const sequential = await plan(root, 'codex', 'Plan a magazine article', {
+      role: 'magazine-editor', workflow: 'magazine-article'
+    });
+    assert.deepEqual(sequential.coordination.parallelGroups, []);
+    assert.equal(sequential.coordination.mode, 'sequential');
     await assert.rejects(plan(root, 'codex', 'hello', {
       role: 'magazine-editor', workflow: 'ai-evaluation'
     }), /não pertence/);

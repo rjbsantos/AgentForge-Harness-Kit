@@ -1,41 +1,50 @@
 # Changelog
 
+## 0.8.0
+
+- Auditoria funcional ao ECC (`docs/architecture/AUDIT.md`): mantidos os mecanismos já existentes de contexto, memória, routing e verificação; adoptadas melhorias sem importar código nem hooks específicos de fornecedor.
+- `agentforge context --budget-tokens N [--topic TEXTO]`: recuperação limitada por orçamento, no máximo cinco lições aprovadas, prioridade a lições recentes e contagem de omissões. Estimativa explícita caracteres/4; falha se estado e resumo obrigatórios excederem o limite, sem truncagem silenciosa.
+- `agentforge insights`: agrega registos explícitos de `operations.jsonl` por resultado e fluxo, tokens, custo, duração e repetições; identifica códigos de erro recorrentes e as linhas de origem. Um registo malformado provoca um erro com o número da linha; nenhuma lição é criada ou aprovada automaticamente.
+- `forge-verify`: ciclo de recuperação documentado com máximo de duas correcções, alteração efectiva obrigatória e escalonamento ao repetir a mesma causa.
+- Os fluxos podem declarar grupos paralelos com dependências, papéis e competências por responsável. `repository-audit` atribui qualidade a `code-critic`, segurança a `secops` e desempenho a `reverse-engineer` após o passo 1; `plan` devolve o modo de coordenação, a concorrência máxima, a profundidade de delegação 1 e a regra de escrita única. Todos os papéis passam a ter agentes Codex nativos. A execução depende do suporte do CLI e é sequencial quando não há delegação; não foram instalados mecanismos universais nem simulada a execução de subagentes.
+- Novos testes para orçamento de contexto, parsing/agrupamento de execuções, erros recorrentes e contrato de coordenação paralela.
+
 ## 0.7.1
 
-- `npm run smoke` (`scripts/smoke.mjs`): teste de empacotamento ponta-a-ponta que embala, instala o tarball num projeto limpo e exercita `install`, `operator`, `plan`, `status` e `uninstall` a partir do pacote publicável. `npm test` corre sobre o `dist/` local e, por isso, não deteta módulos ausentes do campo `files` nem artefactos obsoletos — exactamente os dois erros encontrados em 0.7.0.
-- CI alargado: matriz Linux/Windows/macOS em Node 20 e 22, com `npm run smoke` a substituir `npm pack --dry-run`, que não instalava nada e dava falsos positivos.
-- Workflow `Release`: corre testes e smoke numa tag `v*`, confirma que a tag corresponde à versão do `package.json` e anexa o tarball ao GitHub Release.
-- Corrigida a execução de testes em Node 20 e em Windows: `node --test dist/tests/*.test.js` dependia de a shell expandir o glob (o que a PowerShell e o `cmd` não fazem) e o Node 20 e o 22+ interpretam um caminho de directório de forma diferente. `scripts/test.mjs` passa agora a lista explícita de ficheiros, igual em todas as versões e sistemas.
-- Metadados `repository`, `bugs` e `homepage` no `package.json`; `*.tgz` e `dist-release/` ignorados pelo Git.
-- Removidas as pastas vazias `config/` e `templates/`, resíduos da arquitetura anterior.
+- `npm run smoke` (`scripts/smoke.mjs`): teste de empacotamento completo que cria e instala o arquivo comprimido num projeto limpo e executa `install`, `operator`, `plan`, `status` e `uninstall` a partir do pacote distribuível. `npm test` utiliza a pasta `dist/` local e não detecta módulos ausentes de `files` nem ficheiros obsoletos — os dois problemas encontrados na versão 0.7.0.
+- A integração contínua passou a testar Linux, Windows e macOS com Node.js 20 e 22. `npm run smoke` substituiu `npm pack --dry-run`, que não instalava o pacote nem detectava erros de instalação.
+- O fluxo de publicação `Release` executa os testes e o teste de empacotamento quando recebe uma etiqueta `v*`, confirma que corresponde à versão de `package.json` e anexa o arquivo comprimido à versão do GitHub.
+- Corrigida a execução de testes em Node.js 20 e Windows: `node --test dist/tests/*.test.js` dependia da expansão de padrões pela shell, que a PowerShell e o `cmd` não fazem; além disso, o Node.js 20 e as versões posteriores tratavam os caminhos de diretórios de forma diferente. `scripts/test.mjs` passa agora a lista explícita de ficheiros em todos os sistemas.
+- Acrescentados os metadados `repository`, `bugs` e `homepage` a `package.json`; `*.tgz` e `dist-release/` são ignorados pelo Git.
+- Removidas as pastas vazias `config/` e `templates/`, que já não faziam parte da estrutura do projeto.
 
 ## 0.7.0
 
 - Auditoria de adequação ao perfil do operador (`docs/architecture/AUDIT.md`): o harness era sólido mas genérico — tratava pedidos híbridos gestão+técnica como erro de ambiguidade e não tinha a ponte entre necessidade de negócio e solução.
 - Novo **perfil do operador** (`src/operator.ts`, `agentforge operator show|set`, `.agentforge/work/operator.json`, `.agentforge/OPERATOR.md`): ordem de perfis preferida, postura de risco, idioma e interesses. A ordem desempata deterministicamente pedidos que cruzam vários perfis (`selectedBy: "operator"`), mantendo o erro quando a preferência não cobre os candidatos. O ficheiro é local, preservado em reinstalação/desinstalação e vazio no pacote publicado.
 - A postura de risco é assimétrica por desenho: `cautious` escala para `thinking` com o motivo registado; `exploratory` **não** desliga gates, aprovações nem verificação.
-- Novo perfil `it-project-manager` (Gestor de Projectos de SI) e papel `solution-advisor`, que produz opções com custo, risco e reversibilidade e regista a decisão — espaço que nem `product-manager`, nem `architect`, nem `systems-analyst` ocupavam. Não implementa: entrega após aprovação.
-- Novos workflows `solution-briefing`, `automation-opportunity`, `tech-exploration` e `continuous-improvement`, reutilizando `forge-research`, `forge-verify`, `forge-requirements` e `forge-context`; novos templates `solution-brief`, `decision-record` (ADR), `automation-plan`, `tech-exploration` e `improvement-plan`.
-- Novas skills transversais `forge-tradeoff` (critérios e pesos fixados antes de pontuar, linha de base "manter o estado actual", risco aceite e o que inverteria a decisão, proibição de inventar preços/benchmarks de fornecedores) e `forge-spike` (pergunta e critério antes da experiência, veredicto adoptar/testar/avaliar/descartar, `assess` quando o tempo acaba sem resposta).
-- `plan` passa a devolver `selectedBy` e `operator`, tornando visível porque foi escolhido aquele perfil.
-- `validateSkillReferences()` verifica no carregamento que todas as skills e agentes referidos pelos workflows e perfis existem, fechando a desincronização possível entre `src/capabilities.ts` e `src/catalog.ts`.
-- Actualização de instruções a partir de 0.6 sem duplicar blocos nem perder texto do utilizador.
+- Novo perfil `it-project-manager` (Gestor de Projetos de Sistemas de Informação) e agente `solution-advisor`, que compara opções segundo custo, risco e reversibilidade e regista a decisão. Não implementa: encaminha o trabalho após aprovação.
+- Novos fluxos `solution-briefing`, `automation-opportunity`, `tech-exploration` e `continuous-improvement`, que reutilizam `forge-research`, `forge-verify`, `forge-requirements` e `forge-context`; novos modelos `solution-brief`, `decision-record` (registo de decisão de arquitectura), `automation-plan`, `tech-exploration` e `improvement-plan`.
+- Novas competências transversais `forge-tradeoff` (define previamente critérios e ponderações, inclui a opção de manter a situação actual, identifica riscos e proíbe inventar preços ou comparações de fornecedores) e `forge-spike` (define a pergunta e o critério antes da experiência; conclui por adoptar, experimentar, avaliar ou abandonar; utiliza `assess` quando não há resposta no prazo previsto).
+- `plan` devolve `selectedBy` e `operator`, tornando explícita a razão da selecção do perfil.
+- `validateSkillReferences()` confirma durante o carregamento que os fluxos e perfis referenciam competências e agentes existentes, evitando divergências entre `src/capabilities.ts` e `src/catalog.ts`.
+- As instruções existentes podem ser actualizadas sem duplicar blocos nem perder texto do utilizador.
 
 ## 0.6.0
 
-- Auditoria ao harness `D:\Workspace\Edge\.atomica` (Atomica Code): reutilizados conceitos de disciplina de verificação, severidade estruturada e grounding antes de compor; nenhum código/engine de terceiros importado (ver `docs/architecture/AUDIT.md`).
-- `forge-verify` e o papel `qa` passam a exigir veredicto PASS/FAIL/PARTIAL por verificação, com comando e output reais, e nomeiam os modos de falha a evitar (ler código em vez de testar; parar nos primeiros 80% fáceis).
-- `code-critic` ganhou níveis de severidade (Critical/Important/Minor) e checklist de cobertura de testes/i18n/breaking changes; `secops` ganhou checklist estruturada estilo OWASP.
-- Novas skills transversais `forge-ground` (resolver tipos/APIs reais e ler um exemplar antes de compor código, nunca inventar nomes) e `forge-performance` (N+1, alocações, async bloqueante, caching), ligadas a `lead-developer`, `bug-investigation`, `repository-audit` e `forge-build`.
-- `memory.ts`/`agentforge learn` distinguem lições `project` (âmbito deste código) de `reusable` (generalizam entre projetos; exigem `--anchor` com tecnologia/versão e estão limitadas a 5 activas) para impedir lições fora de contexto ou desactualizadas por versão.
-- Documentado o limite de profundidade de delegação (um subagente nunca delega para outro) em `HARNESS.md`/`MODEL_ROUTING.md`.
+- Auditoria ao harness `D:\Workspace\Edge\.atomica` (Atomica Code): foram aproveitados princípios de verificação disciplinada, gravidade estruturada e fundamentação em código existente. Não foi importado código nem motor de execução de terceiros; ver `docs/architecture/AUDIT.md`.
+- `forge-verify` e o papel `qa` passaram a exigir um veredicto `PASS`, `FAIL` ou `PARTIAL` por verificação, com comando e saída reais, e a prevenir erros como ler código em vez de o executar ou ignorar casos relevantes.
+- `code-critic` recebeu níveis de gravidade — crítico, importante e menor — e uma lista de verificação de cobertura de testes, tradução e compatibilidade. `secops` recebeu uma lista estruturada baseada nas áreas de risco OWASP.
+- Novas competências transversais `forge-ground` (confirma tipos e APIs reais e consulta um exemplo antes de escrever código) e `forge-performance` (analisa consultas repetidas, alocações, operações assíncronas bloqueantes e cache), associadas a `lead-developer`, `bug-investigation`, `repository-audit` e `forge-build`.
+- `memory.ts` e `agentforge learn` distinguem lições `project` (específicas do código actual) de lições `reusable` (aplicáveis a outros projetos; exigem `--anchor` com tecnologia e versão e estão limitadas a cinco activas).
+- Documentado o limite de profundidade da delegação: um subagente não pode delegar para outro. A regra consta de `HARNESS.md` e `MODEL_ROUTING.md`.
 
 ## 0.5.0
 
 - Auditoria do kit e referência AgentForge antes de ampliar seis perfis.
-- Catálogo declarativo de roles, workflows, tools e templates, com skills partilhadas de pesquisa e fact-check e quatro especialistas necessários.
-- `agentforge plan` propõe role/agent/skills/workflow e deteta pedidos ambíguos sem afirmar execução; `agentforge record` regista resultados declarados, validação e métricas opcionais.
-- Testes de matriz, regressão de instalação/roteamento/contexto e documentação de arquitectura, operação e backlog.
+- Catálogo declarativo de perfis, fluxos, ferramentas e modelos, com competências partilhadas de investigação e verificação de factos e quatro agentes especializados.
+- `agentforge plan` propõe perfil, agente, competências e fluxo de trabalho, e identifica pedidos ambíguos sem afirmar que os executou; `agentforge record` regista resultados declarados, validação e métricas opcionais.
+- Testes dos perfis, fluxos e regressões de instalação, encaminhamento e contexto; documentação de arquitectura, operação e funcionalidades futuras.
 
 ## 0.4.0
 

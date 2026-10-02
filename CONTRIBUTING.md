@@ -1,7 +1,7 @@
-# Contribuir
+# Contribuir para o projeto
 
-Requer Node.js 20+. `npm ci`, `npm test`, `npm run smoke`. Os templates portáteis vivem em `src/catalog.ts`; o instalador em `src/installer.ts`. Adicione testes para qualquer novo destino ou alteração de ownership, conflitos e desinstalação. Não inclua estado real, tokens, chaves ou caminhos privados nos templates.
+O desenvolvimento requer Node.js 20 ou posterior. Instale as dependências com `npm ci` e execute `npm test` e `npm run smoke`. Os modelos portáveis encontram-se em `src/catalog.ts`; o instalador está em `src/installer.ts`. Acrescente testes para cada novo destino e para alterações à gestão de propriedade dos ficheiros, aos conflitos ou à desinstalação. Não inclua estado real, tokens, chaves ou caminhos privados nos modelos.
 
-`npm test` corre sobre o `dist/` local e **não** deteta erros de empacotamento: um módulo ausente do campo `files` do `package.json` só falha depois de publicado. Corra `npm run smoke` antes de abrir PR — embala, instala o tarball num projeto limpo e valida a instalação nas quatro superfícies. O CI corre ambos em Linux, Windows e macOS, em Node 20 e 22.
+`npm test` executa sobre a pasta `dist/` local e **não** detecta erros de empacotamento: a ausência de um módulo na propriedade `files` do `package.json` só é revelada depois de publicar. Execute `npm run smoke` antes de abrir um pedido de integração; este comando empacota o projeto, instala o arquivo comprimido num projeto limpo e valida a instalação nos quatro CLIs. A integração contínua executa ambos os comandos em Linux, Windows e macOS, com Node.js 20 e 22.
 
-Alterar o texto de `instruction()` em `src/catalog.ts` obriga a acrescentar o texto anterior exacto a `superseded()` em `src/installer.ts`; caso contrário as instalações existentes passam a falhar com `Bloco de instruções alterado`.
+Se alterar o texto de `instruction()` em `src/catalog.ts`, acrescente o texto anterior exacto à lista devolvida por `superseded()` em `src/installer.ts`. Caso contrário, as instalações existentes deixarão de poder ser actualizadas e apresentarão o erro `Bloco de instruções alterado`.

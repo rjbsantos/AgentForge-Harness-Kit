@@ -1,7 +1,7 @@
-# Backlog futuro — não implementado nesta fase
+# Trabalho futuro — ainda não disponível
 
-1. Integrações autenticadas para browser, calendários, email, GitHub e bases de dados: requerem permissões, contratos reais, testes de integração e controlo de segredos. Não indicar estas ferramentas como disponíveis apenas porque constam de workflows.
-2. Execução automática e observabilidade de agents/skills em todos os hosts: requer eventos oficiais de cada CLI e aprovação para instalar hooks; o kit atual propõe e permite registar resultados verificados explicitamente.
-3. Avaliação de qualidade de respostas por perfil: datasets com autorização de uso, critérios editoriais/académicos e métricas reproduzíveis; os testes atuais verificam contratos e selecção, não verdade factual dos outputs de modelos.
-4. Pesquisa semântica/recuperação dinâmica avançada de conhecimento e custos reais de modelos: requer provider, política de privacidade e métricas reais; contexto curto e lições aprovadas existentes permanecem como baseline.
-5. Expansão para gestão completa de projectos, BPMN/UML gerado e automações de publicação editorial: só após casos de uso e aprovações concretos; evitar proliferação de skills especializadas.
+1. **Integrações autenticadas** com navegação na Web, calendários, correio electrónico, GitHub e bases de dados. Exigem permissões, contratos de integração reais, testes e gestão segura de credenciais. A presença de uma ferramenta num fluxo não significa que esteja instalada ou disponível.
+2. **Execução automática e observabilidade de agentes e competências em todos os CLIs.** Dependem de eventos oficiais de cada ferramenta e de autorização explícita para instalar mecanismos de execução. Actualmente, o kit propõe planos e permite registar manualmente resultados verificados.
+3. **Avaliação da qualidade das respostas por perfil.** Requer conjuntos de dados autorizados, critérios editoriais ou académicos e métricas reproduzíveis. Os testes actuais verificam contratos e selecção de fluxos, não a veracidade das respostas produzidas pelos modelos.
+4. **Pesquisa semântica, recuperação avançada de conhecimento e medição exacta do custo dos modelos.** Requerem fornecedores, políticas de privacidade e métricas reais. `context --budget-tokens` usa actualmente pesquisa textual e uma estimativa de caracteres por token; não utiliza representações vectoriais nem tokenizadores específicos.
+5. **Gestão integral de projetos, geração de diagramas BPMN/UML e publicação editorial automatizada.** Só devem ser consideradas após a identificação de casos de utilização e aprovações concretas, evitando a criação desnecessária de competências especializadas.

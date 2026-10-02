@@ -75,8 +75,10 @@ try {
     '.agentforge/HARNESS.md', '.agentforge/OPERATOR.md', '.agentforge/manifest.json',
     '.agentforge/work/operator.json', '.agentforge/roles/solution-advisor.md',
     '.agentforge/templates/decision-record.md', '.agentforge/workflows/automation-opportunity.json',
+    '.agentforge/workflows/repository-audit.json', '.agents/workflows/repository-audit.md',
     '.agents/skills/forge-tradeoff/SKILL.md', '.agents/skills/forge-spike/SKILL.md',
     '.claude/agents/solution-advisor.md', '.codex/agents/solution-advisor.toml',
+    '.codex/agents/code-critic.toml', '.codex/agents/secops.toml', '.codex/agents/reverse-engineer.toml',
     '.opencode/agents/solution-advisor.md',
   ]) check(`gera ${file}`, existsSync(join(withProfile, ...file.split('/'))));
 
@@ -89,6 +91,19 @@ try {
   check('pedido híbrido resolve pelo perfil', decision.selectedBy === 'operator', String(decision.selectedBy));
   check('pedido híbrido escolhe it-project-manager', decision.role === 'it-project-manager', String(decision.role));
   check('postura cautelosa escala o tier', decision.model?.tier === 'thinking', String(decision.model?.tier));
+  check('pedido de auditoria declara paralelismo limitado',
+    JSON.stringify(JSON.parse(cli(withProfile, ['plan', '--cli', 'opencode', '--role', 'senior-developer',
+      '--workflow', 'repository-audit', '--prompt', 'Audit repository'])).coordination.parallelGroups) ===
+      '[{"after":[1],"workers":[{"step":2,"role":"code-critic","skills":["forge-audit"],"agent":"code-critic"},{"step":3,"role":"secops","skills":["forge-audit"],"agent":"secops"},{"step":4,"role":"reverse-engineer","skills":["forge-performance"],"agent":"reverse-engineer"}]}]');
+  check('contexto respeita orçamento estimado',
+    JSON.parse(cli(withProfile, ['context', '--budget-tokens', '600'])).budget.limitTokens === 600);
+  cli(withProfile, ['record', '--role', 'it-project-manager', '--workflow', 'continuous-improvement',
+    '--result', 'failed', '--validation', 'failed', '--duration-ms', '5', '--tokens', '17', '--error-code', 'SMOKE_FAILURE']);
+  cli(withProfile, ['record', '--role', 'it-project-manager', '--workflow', 'continuous-improvement',
+    '--result', 'failed', '--validation', 'failed', '--duration-ms', '7', '--tokens', '19', '--error-code', 'SMOKE_FAILURE']);
+  const insights = JSON.parse(cli(withProfile, ['insights']));
+  check('insights agregam execuções e erro recorrente',
+    insights.totalRuns === 2 && insights.recurringErrors[0]?.occurrences === 2);
 
   // Sem perfil, a ambiguidade continua a ser um erro: a melhoria não pode
   // transformar-se numa adivinha silenciosa.

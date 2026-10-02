@@ -78,7 +78,7 @@ test('risk posture only escalates reasoning and is reported in the proposal', as
     const risky = await plan(root, 'codex', 'Rever a arquitectura de autenticação em produção',
       { role: 'it-project-manager', workflow: 'solution-briefing', planned: true, approved: true });
     assert.equal(risky.model.tier, 'thinking');
-    assert.match(await readFile(join(root, '.agentforge/OPERATOR.md'), 'utf8'), /só escala, nunca baixa/);
+    assert.match(await readFile(join(root, '.agentforge/OPERATOR.md'), 'utf8'), /só pode aumentar o rigor/);
     assert.match(await readFile(join(root, '.agentforge/templates/decision-record.md'), 'utf8'), /Opções consideradas/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

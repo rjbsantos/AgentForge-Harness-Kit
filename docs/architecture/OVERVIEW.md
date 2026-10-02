@@ -1,23 +1,54 @@
-# Arquitectura — actual e alvo
+# Arquitectura do AgentForge Harness Kit
 
-Auditoria prévia: [AUDIT.md](AUDIT.md). O kit original tem um router de **complexidade** (`src/routing.ts`), templates/skills/agentes gerados (`src/catalog.ts`), instalador seguro (`src/installer.ts`) e estado local (`src/memory.ts`); o host executa a IA. Não havia deteção de role/fluxo, catálogo de ferramentas, templates multi-role nem registo de resultados.
+O AgentForge Harness Kit instala orientações, agentes, competências e fluxos de trabalho num projeto. O CLI de IA escolhido interpreta e executa essas instruções, dentro das suas capacidades e das permissões do utilizador.
+
+## Fluxo de funcionamento
 
 ```text
-Pedido -> perfil do operador (src/operator.ts: preferência de role, postura de risco)
-       -> seleção de role/intent (src/orchestrator.ts)
-       -> catálogo declarativo (src/capabilities.ts)
-       -> rota thinking/economy (src/routing.ts)
-       -> proposta: agent + skills + workflow + ferramentas por confirmar
-       -> host e aprovação humana executam passos, se possível
-       -> validação contra critérios + template de output
-       -> registo explícito de resultados (src/operations.ts)
-       -> contexto e lições aprovadas (src/memory.ts)
+Pedido do utilizador
+  → perfil do operador e classificação da intenção
+  → perfil profissional e fluxo de trabalho
+  → competências, ferramentas e coordenação necessárias
+  → recomendação do modelo e proposta de execução
+  → execução e aprovações pelo CLI e pelo utilizador
+  → validação baseada em evidência
+  → registo explícito da operação
+  → indicadores e lições sujeitas a revisão humana
 ```
 
-**Separação:** role é perspetiva do utilizador; agent é executor especializado; skill é capacidade transversal carregada sob procura; workflow é sequência com condições e validação; tool é capability real do host, nunca garantida pelo kit; template é estrutura de saída, não prova de execução. Os sete perfis referem workflows compartilhados em `src/capabilities.ts`, a fonte de verdade geradora de `.agentforge/CAPABILITIES.md`, `.agentforge/workflows/*.json`, `.agentforge/templates/*.md` e workflows do Antigravity. As skills/protocolos e agentes de cada CLI permanecem em `src/catalog.ts`. Sem correspondência, o erro é explícito e requer clarificação (`--role`, `--workflow`), sem adivinhação.
+O perfil do operador, definido em `src/operator.ts`, ajuda a desempatar pedidos que correspondam a vários perfis e a aplicar uma postura de risco. A preferência não adivinha um perfil quando não existe correspondência. A classificação e a escolha do fluxo são implementadas em `src/orchestrator.ts`; os perfis e respectivos fluxos são definidos em `src/capabilities.ts`. O encaminhamento por complexidade e modelo encontra-se em `src/routing.ts`.
 
-**Perfil do operador (`src/operator.ts`):** o kit é partilhado, o operador é local (`.agentforge/work/operator.json`, nunca empacotado com dados reais). Resolve um problema concreto: um pedido que cruza gestão e técnica era tratado como erro de ambiguidade, quando para um perfil híbrido é o caso normal. Com uma ordem de perfis declarada, `plan` desempata deterministicamente e assinala `selectedBy: "operator"`; sem ela, mantém o erro em vez de adivinhar. Um perfil fora da lista nunca é escolhido por omissão. A postura de risco é **assimétrica por desenho**: `cautious` escala para `thinking` acrescentando o motivo à decisão, `exploratory` não desliga gates, aprovações nem verificação — reduzir custo faz-se aprovando um plano (`--planned --approved`), não relaxando a identidade do operador. `headline` e `interests` são contexto para escolher exemplos e reconhecer domínios recorrentes, explicitamente **dados e não instruções**: não sobrepõem políticas nem requisitos.
+## Conceitos
 
-**Contexto:** estado e resumo curto primeiro; apenas skill e evidência necessária depois. Lições só entram após aprovação explícita. `plan` não altera código nem executa ferramentas, `record` regista resultados fornecidos **depois** de verificados. Pipeline A/B/C mantém aprovações e QA. Dúvidas, ações destrutivas, publicação e integração externa param para confirmação.
+| Conceito | Responsabilidade |
+| --- | --- |
+| Perfil | Define a perspectiva profissional adequada ao pedido |
+| Agente | Representa um especialista responsável por uma tarefa |
+| Competência | Descreve uma capacidade reutilizável |
+| Fluxo de trabalho | Define entradas, passos, dependências, validações e resultados |
+| Ferramenta | Identifica uma capacidade do CLI que deve ser confirmada |
+| Modelo de saída | Define a estrutura esperada do resultado |
 
-**Extensão:** adicionar um workflow ao catálogo com role, skills existentes, tools já inventariadas, validação e template; adicionar skill/agent apenas perante uma lacuna funcional demonstrada. Atualizar testes de matriz e documentação. O instalador protege ficheiros editados, preserva estado e não importa dados da instalação original.
+Os sete perfis partilham competências através de `src/capabilities.ts`. O catálogo é gerado em `.agentforge/CAPABILITIES.md`, `.agentforge/workflows/`, `.agentforge/templates/` e nos formatos nativos suportados pelo CLI seleccionado. As instruções e definições dos agentes encontram-se em `src/catalog.ts`.
+
+## Limite entre proposta e execução
+
+`agentforge plan` selecciona uma composição e devolve uma proposta com ferramentas ainda não verificadas. Não altera código, não executa comandos ou testes, não chama APIs nem inicia agentes delegados. O CLI anfitrião confirma capacidades, solicita aprovações quando necessário, executa as tarefas e verifica os resultados. `agentforge record` regista dados fornecidos explicitamente após a execução; não recolhe telemetria automática.
+
+## Contexto e aprendizagem
+
+O contexto mantém o estado e o resumo do projeto e selecciona até cinco lições aprovadas dentro de um orçamento estimado. O limite predefinido é 1200 tokens estimados, com uma aproximação de caracteres divididos por quatro. Se o estado e o resumo obrigatórios excederem o limite, o comando falha em vez de os truncar silenciosamente.
+
+`agentforge insights` agrega exclusivamente os registos locais de `operations.jsonl`, incluindo erros recorrentes com linhas de origem. Os indicadores não criam nem aprovam lições. Todas as lições exigem evidência e aprovação humana antes de serem reutilizadas.
+
+## Verificação e delegação
+
+`forge-verify` exige evidência por verificação e limita as correcções a dois ciclos; não permite repetir uma tentativa sem alterar a implementação ou a configuração. Se a mesma causa persistir, o agente deve parar e pedir uma nova delimitação.
+
+Os fluxos podem declarar grupos de tarefas paralelas, dependências, agentes e competências. A auditoria ao repositório pode delegar a análise de qualidade, segurança e desempenho depois do mapeamento inicial. A proposta inclui o limite de concorrência, exige um único responsável por escrita e limita a delegação a um nível. O paralelismo só ocorre se o CLI suportar subagentes; caso contrário, as tarefas são executadas sequencialmente.
+
+## Segurança e evolução
+
+O instalador em `src/installer.ts` utiliza um manifesto com resumos de integridade e propriedade dos ficheiros, recusa substituir alterações do utilizador e preserva o estado de trabalho. Decisões de impacto, operações destrutivas, publicação e integração externa requerem aprovação adequada.
+
+Para acrescentar capacidades, estenda primeiro os catálogos existentes, valide as dependências e actualize os testes e a documentação. Consulte a [auditoria](AUDIT.md), os [catálogos](../roles/CATALOG.md) e o [trabalho futuro](../operations/BACKLOG.md).

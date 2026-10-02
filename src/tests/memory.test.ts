@@ -67,6 +67,23 @@ test('active summary is bounded and missing state is not hidden', () => project(
   await assert.rejects(saveContext(root, 'ok', 'next'), /ENOENT/);
 }));
 
+test('context retrieval stays within an estimated token budget and reports omitted lessons', () => project(async root => {
+  await writeFile(join(root, 'evidence.txt'), 'verified');
+  const first = await addLesson(root, 'Recent lesson with a concise action and evidence', 'evidence.txt:1');
+  await changeLesson(root, first.id, 'approve');
+  const second = await addLesson(root, 'Another relevant lesson with an independently useful action', 'evidence.txt:1');
+  await changeLesson(root, second.id, 'approve');
+  const full = await getContext(root, 'lesson', 1200);
+  assert.equal(full.lessons.length, 2);
+  assert.equal(full.lessons[0].id, second.id);
+  assert.ok(full.budget.estimatedTokens <= full.budget.limitTokens);
+  assert.equal(full.budget.estimate, 'chars-divided-by-4');
+  const tight = await getContext(root, 'lesson', full.budget.estimatedTokens - 1);
+  assert.ok(tight.budget.omittedLessons > 0);
+  assert.ok(tight.budget.estimatedTokens <= tight.budget.limitTokens);
+  await assert.rejects(getContext(root, 'lesson', 0), /Orçamento de contexto inválido/);
+}));
+
 test('CLI supports lesson capture, approval and concise retrieval', () => project(async root => {
   const cli = fileURLToPath(new URL('../cli/index.js', import.meta.url));
   const run = (...args: string[]) => JSON.parse(execFileSync(process.execPath,
@@ -81,4 +98,7 @@ test('CLI supports lesson capture, approval and concise retrieval', () => projec
     '--scope', 'reusable', '--anchor', 'Node 20');
   assert.equal(reusable.scope, 'reusable');
   assert.equal(reusable.anchor, 'Node 20');
+  const context = run('context', '--budget-tokens', '1000');
+  assert.equal(context.budget.limitTokens, 1000);
+  assert.ok(context.budget.estimatedTokens <= 1000);
 }));

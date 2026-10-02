@@ -1,23 +1,23 @@
-# Catálogo de roles
+# Catálogo de perfis
 
-Fonte de verdade: `src/capabilities.ts:profiles`; o catálogo gerado por instalação está em `.agentforge/CAPABILITIES.md`. Os roles não duplicam agentes:
+Fonte de verdade: `profiles` em `src/capabilities.ts`; o catálogo instalado no projeto encontra-se em `.agentforge/CAPABILITIES.md`. Cada perfil escolhe um agente e compõe fluxos de trabalho existentes:
 
-| Role | Agente principal | Composições de workflow |
+| Perfil | Agente principal | Fluxos de trabalho |
 | --- | --- | --- |
-| Gestor de Projectos | product-manager existente | estado, reunião, riscos, requisitos |
-| Gestor de Projectos de SI | solution-advisor (lacuna preenchida) | briefing de solução, automação, exploração técnica, melhoria contínua, requisitos, análise de sistemas, estado |
-| AI Engineer | ai-engineer (lacuna preenchida) | desenho IA, avaliação, requisitos |
-| Senior Developer | lead-developer existente | debug, auditoria, construção |
-| Escritor/Editor de Revistas | editor (lacuna preenchida) | artigo com fact-check |
-| Estudante Universitário | academic-tutor (lacuna preenchida) | pesquisa e estudo |
-| Analista de Sistemas | systems-analyst (lacuna preenchida) | AS-IS/TO-BE, incidente, requisitos |
+| Gestor de Projetos | `product-manager` | estado, reuniões, riscos e requisitos |
+| Gestor de Projetos de Sistemas de Informação | `solution-advisor` | decisão de solução, automação, exploração técnica, melhoria contínua, requisitos, análise de sistemas e estado |
+| Engenheiro de IA | `ai-engineer` | concepção e avaliação de soluções de IA, requisitos |
+| Programador Sénior | `lead-developer` | investigação de defeitos, auditoria de repositórios e implementação |
+| Escritor e Editor de Revistas | `editor` | artigos com verificação de factos |
+| Estudante Universitário | `academic-tutor` | investigação académica e estudo |
+| Analista de Sistemas | `systems-analyst` | análise actual e futura, incidentes e requisitos |
 
-Um role não define ferramentas ou poderes novos: use `agentforge plan` para ver os requisitos do workflow e confirmar disponibilidade/consentimento.
+Um perfil não concede ferramentas nem permissões. Utilize `agentforge plan` para consultar os requisitos do fluxo e confirme a disponibilidade e as autorizações antes da execução.
 
-## Reforços (2025, pós-auditoria ao `.atomica`)
+## Competências de revisão, segurança e fundamentação
 
-`code-critic` passou a usar níveis de severidade explícitos (Critical/Important/Minor) e a verificar cobertura de testes, strings não localizáveis e mudanças de contrato/API quando aplicável. `secops` ganhou uma checklist estruturada no estilo OWASP (injeção, autenticação/sessão, autorização/IDOR, exposição de dados, configuração insegura, dependências vulneráveis, segredos, CSRF/SSRF). `qa` exige agora veredicto PASS/FAIL/PARTIAL por verificação, com comando e output reais — nunca apenas "os testes do implementador passaram". `lead-developer` lê também `forge-ground`: resolver tipos/APIs e ler um exemplar real antes de compor, nunca inventar um método que "parece certo".
+`code-critic` classifica os problemas por gravidade e verifica a cobertura de testes, a localizabilidade do texto e as alterações de contratos ou APIs, quando aplicável. `secops` utiliza uma lista de verificação estruturada que abrange, entre outros, injeção, autenticação, autorização, exposição de dados, configuração insegura, dependências vulneráveis, segredos e falsificação de pedidos. `qa` exige um veredicto `PASS`, `FAIL` ou `PARTIAL` para cada verificação, com o comando e a saída reais; não basta afirmar que os testes do implementador passaram. `lead-developer` utiliza também `forge-ground`: confirma tipos e APIs e consulta um exemplo real antes de escrever código.
 
-## `solution-advisor` — porque é um papel novo e não uma variante
+## Função do agente `solution-advisor`
 
-A lacuna não era "mais um gestor": `product-manager` produz requisitos, `architect` produz componentes e `systems-analyst` produz AS-IS/TO-BE. Nenhum produzia a **decisão** — opções comparáveis com custo, risco, reversibilidade e dependência de fornecedor, e um registo do que foi decidido e porquê. `solution-advisor` ocupa esse espaço e **não implementa**: depois da aprovação entrega a `architect` ou a `systems-analyst`, mantendo os mesmos gates. As suas duas regras duras são a linha de base "manter o estado actual" em todas as comparações e a proibição de inventar preços, benchmarks ou capacidades de fornecedores — os dois modos de falha mais caros deste tipo de análise.
+O `product-manager` define requisitos, o `architect` desenha componentes e o `systems-analyst` descreve os processos e sistemas actuais e futuros. O `solution-advisor` compara opções com base em custo, risco, reversibilidade e dependência de fornecedores, e regista a decisão e a sua fundamentação. Não implementa: após aprovação, encaminha o trabalho para arquitectura ou análise de sistemas. As comparações incluem sempre a opção de manter a situação actual; preços, medições e capacidades de fornecedores nunca são inventados.

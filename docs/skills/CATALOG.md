@@ -1,9 +1,45 @@
-# Skills transversais
+# Catálogo de competências
 
-Fonte: `src/catalog.ts:skills`. `forge-requirements`, `forge-implementation`, `forge-audit`, `forge-verify`, `forge-routing` e `forge-context` foram **reutilizadas**. `forge-research` e `forge-fact-check` foram criadas como capacidades transversais para editorial, académico, IA e análise técnica; não há uma cópia por role. `forge-ground` e `forge-performance` foram adicionadas (2025, inspiradas na auditoria ao harness `D:\Workspace\Edge\.atomica`): a primeira exige resolver tipos/APIs reais e ler um exemplar existente antes de escrever código, para impedir nomes inventados; a segunda estrutura a análise de desempenho (N+1, alocações, async bloqueante, caching) com achados mensuráveis. Os ficheiros `SKILL.md` gerados têm name/description e instruções operacionais; inputs, outputs, ferramentas, validação, limites, exemplos e modos de falha constam do corpo das skills novas e as dependências por workflow constam de `src/capabilities.ts:workflows`.
+Fonte de verdade: `skills` em `src/catalog.ts`. As competências são capacidades reutilizáveis, carregadas apenas quando são relevantes para o pedido e para o fluxo de trabalho. A lista de dependências de cada fluxo encontra-se em `src/capabilities.ts`.
 
-`forge-verify` passou a exigir um veredicto explícito por verificação (`PASS`/`FAIL`/`PARTIAL`, nunca "parece correto") e nomeia os dois modos de falha mais comuns a evitar: evitar a verificação em si (ler código em vez de o correr) e ser seduzido pelos primeiros 80% fáceis sem testar o caso limite. `forge-context` passou a distinguir lições `project` (específicas deste código, sem âncora) de `reusable` (generalizam para outros projetos, exigem `--anchor` com tecnologia/versão e estão limitadas a 5 activas em simultâneo) — ver `agentforge learn add --scope reusable --anchor "..."`.
+## Competências disponíveis
 
-`forge-tradeoff` e `forge-spike` (2025) cobrem a decisão e a descoberta, que nenhuma skill anterior cobria. `forge-tradeoff` obriga a fixar critérios e pesos **antes** de pontuar (a pontuação não pode ser construída para justificar a opção preferida), a incluir sempre a linha de base "manter o estado actual", a marcar como estimativa tudo o que não tenha fonte, e a terminar com o risco aceite e o que inverteria a decisão. `forge-spike` obriga a escrever a pergunta e o critério de decisão antes da experiência — para o resultado não ser racionalizado à posteriori — e fecha com veredicto `adopt`/`trial`/`assess`/`drop`; se o tempo acabar sem resposta, o veredicto é `assess`, nunca uma extensão silenciosa nem uma conclusão retirada apenas da documentação. Ambas são partilhadas: `solution-briefing`, `automation-opportunity` e `tech-exploration` reutilizam `forge-tradeoff` em vez de cada uma ter a sua comparação.
+| Identificador | Finalidade |
+| --- | --- |
+| `forge-requirements` | Recolher, priorizar e validar requisitos e critérios de aceitação |
+| `forge-implementation` | Implementar alterações aprovadas com testes e revisão |
+| `forge-audit` | Inspeccionar um projeto e propor correcções fundamentadas |
+| `forge-verify` | Verificar critérios de aceitação com evidência independente |
+| `forge-ground` | Confirmar APIs, tipos e convenções existentes antes de escrever código |
+| `forge-performance` | Identificar problemas de desempenho com impacto fundamentado |
+| `forge-tradeoff` | Comparar opções com critérios definidos previamente e registar decisões |
+| `forge-spike` | Responder a uma pergunta técnica através de uma experiência delimitada |
+| `forge-routing` | Classificar tarefas e recomendar modelos e agentes |
+| `forge-context` | Gerir contexto conciso e propor lições fundamentadas |
+| `forge-research` | Investigar código, documentos e fontes externas autorizadas |
+| `forge-fact-check` | Validar afirmações e referências com fontes verificáveis |
 
-Não usar uma skill se a ferramenta necessária não estiver acessível ou o pedido não a justificar. Factos e bibliografia requerem fonte verificável; erros de rede/dados indisponíveis são reportados, não contornados por preenchimento plausível. Um `SKILL.md` não instala browser, base de dados, API, email nem calendário.
+As competências transversais são partilhadas entre perfis. Por exemplo, investigação e verificação de factos servem os perfis académico, editorial e técnico; requisitos e validação servem gestão de projetos, engenharia de IA e análise de sistemas. Não se cria uma cópia por perfil.
+
+## Regras de validação e aprendizagem
+
+`forge-verify` exige um veredicto `PASS`, `FAIL` ou `PARTIAL` para cada verificação, acompanhado do comando executado e da saída real. A validação deve ser independente quando possível. Em caso de falha, são permitidos no máximo dois ciclos de correcção: cada repetição exige uma alteração efectiva e a execução dos testes dependentes. Se a mesma causa persistir, interromper o ciclo e pedir uma nova delimitação.
+
+`forge-context` começa pelo estado e pelo resumo activo, e só depois carrega as competências e evidências necessárias. O comando `agentforge context` permite um orçamento estimado — por omissão, 1200 tokens — e indica as lições omitidas. A estimativa é feita por caracteres divididos por quatro; não corresponde à contagem exacta de um modelo.
+
+As lições têm um de dois âmbitos:
+
+- `project`: aplica-se ao projeto actual e não requer âncora.
+- `reusable`: pode ser útil noutros projetos; exige uma âncora de tecnologia e versão, por exemplo `--anchor "Node 20"`.
+
+As lições têm de apresentar evidência, começam como pendentes e só são reutilizadas após aprovação humana. Podem ser retiradas quando ficam obsoletas.
+
+## Decisão e exploração técnica
+
+`forge-tradeoff` fixa os critérios e respectivos pesos antes de avaliar opções, inclui sempre a possibilidade de manter a situação actual, distingue factos de estimativas e identifica o risco aceite e a evidência que poderia alterar a decisão. Não inventa preços, medições ou capacidades de fornecedores.
+
+`forge-spike` define a pergunta, o critério de decisão, o âmbito e o tempo antes da experiência. O resultado regista versões, comandos e resultados reais, incluindo falhas. Se a experiência não produzir uma resposta, o veredicto é «avaliar»; não se prolonga o prazo sem aprovação.
+
+## Limites
+
+Não utilize uma competência se o fluxo não a exigir ou se a ferramenta necessária não estiver disponível. As referências externas têm de ser verificadas; fontes inacessíveis ou afirmações incertas devem ser identificadas como tal. Um ficheiro de competência não instala navegação na Web, bases de dados, APIs, correio electrónico ou calendários.

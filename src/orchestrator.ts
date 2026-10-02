@@ -18,6 +18,16 @@ export interface Proposal {
   validation: string[];
   output: string;
   template: string;
+  coordination: {
+    mode: 'sequential' | 'parallel-if-host-supports';
+    parallelGroups: {
+      after: number[];
+      workers: { step: number; role: string; agent: string; skills: string[] }[];
+    }[];
+    maxConcurrentAgents: number;
+    maxDelegationDepth: 1;
+    singleWriter: true;
+  };
   model: Pick<Route, 'tier' | 'complexity' | 'reasons' | 'model' | 'modelSelection'>;
   status: 'proposed';
 }
@@ -100,6 +110,21 @@ export async function plan(project: string, cli: Target, prompt: string,
     skills: workflow.skills, requiredTools: workflow.tools, toolStatus: 'unverified',
     steps: workflow.steps, validation: workflow.validation,
     output: workflow.output, template: `.agentforge/templates/${workflow.template}.md`,
+    coordination: {
+      mode: workflow.parallelGroups.length ? 'parallel-if-host-supports' : 'sequential',
+      parallelGroups: workflow.parallelGroups.map(group => ({
+        after: group.after,
+        workers: group.workers.map(worker => ({
+          ...worker,
+          agent: worker.role
+        }))
+      })),
+      maxConcurrentAgents: workflow.parallelGroups.length
+        ? Math.max(...workflow.parallelGroups.map(group => group.workers.length))
+        : 1,
+      maxDelegationDepth: 1,
+      singleWriter: true
+    },
     model: { tier, complexity, reasons, model, modelSelection }, status: 'proposed'
   };
 }

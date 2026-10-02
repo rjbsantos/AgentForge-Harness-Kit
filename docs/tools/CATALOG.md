@@ -1,3 +1,13 @@
-# Ferramentas
+# Catálogo de ferramentas
 
-Fonte: `src/capabilities.ts:tools`; o kit apenas declara dependências, não instala conectores. `file-system`, `git` e `terminal` podem existir no host; `web-research` e `model-api` exigem configuração/autorização. Todas as propostas indicam `toolStatus: "unverified"` até o agente verificar capacidade e permissões. Não existem adaptadores falsos de browser, RAG, calendário, email ou API. Operações de escrita, publicação e efeitos externos requerem aprovação apropriada; sem ferramenta, reportar bloqueio.
+Fonte de verdade: `tools` em `src/capabilities.ts`. O kit declara dependências dos fluxos de trabalho, mas não instala conectores.
+
+| Identificador | Requisito |
+| --- | --- |
+| `file-system` | Acesso a ficheiros autorizado pelo CLI e limitado às permissões concedidas |
+| `git` | Git instalado; operações de publicação ou envio exigem aprovação |
+| `terminal` | Terminal disponível e comandos adequados ao ambiente |
+| `web-research` | Navegação ou pesquisa na Web disponível e autorizada |
+| `model-api` | Fornecedor de modelos configurado, com autorização e credenciais válidas |
+
+As propostas apresentam `toolStatus: "unverified"` até o agente confirmar as capacidades e permissões do ambiente. O kit não fornece conectores de navegação, geração aumentada por recuperação, calendário, correio electrónico ou APIs. Sem uma ferramenta necessária, o agente deve indicar o bloqueio. Escrita, publicação e efeitos externos exigem as aprovações aplicáveis.

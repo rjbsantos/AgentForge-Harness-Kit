@@ -20,7 +20,7 @@ test('installs all CLI surfaces, keeps user instructions and supports idempotenc
   assert.match(await readFile(join(root, '.claude/agents/qa.md'), 'utf8'), /name: qa/);
   assert.match(await readFile(join(root, '.opencode/agents/qa.md'), 'utf8'), /mode: subagent/);
   assert.match(await readFile(join(root, '.agents/skills/forge-audit/SKILL.md'), 'utf8'), /name: forge-audit/);
-  assert.match(await readFile(join(root, '.agents/workflows/forge-build.md'), 'utf8'), /pipeline A/);
+  assert.match(await readFile(join(root, '.agents/workflows/forge-build.md'), 'utf8'), /processo AgentForge A/);
   assert.match(await readFile(join(root, '.agents/rules/agentforge.md'), 'utf8'), /trigger: always_on/);
   assert.match(await readFile(join(root, '.opencode/agents/agentforge.md'), 'utf8'), /mode: primary/);
   assert.match(await readFile(join(root, '.claude/agents/agentforge.md'), 'utf8'), /name: agentforge/);
