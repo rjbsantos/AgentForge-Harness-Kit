@@ -91,8 +91,14 @@ export async function install(project: string, selected: Target[], dryRun = fals
   const manifest = await load(root);
   const next: Manifest = { version: 1, files: structuredClone(manifest.files) };
   const desired: Record<string, { content: string; owners: Target[] }> = {};
+  const notices: string[] = [];
   for (const target of selected) {
     for (const [key, content] of Object.entries({ ...shared, ...generated(target) })) {
+      if (target === 'opencode' && key === 'opencode.json' &&
+          !manifest.files[key] && await text(root, key) !== undefined) {
+        notices.push('opencode.json existente preservado; para iniciar no AgentForge, defina "default_agent": "agentforge" na configuração existente.');
+        continue;
+      }
       const slot = desired[key] ??= { content, owners: [] };
       if (slot.content !== content) throw new Error(`Conteúdo incompatível: ${key}`);
       slot.owners.push(target);
@@ -100,7 +106,7 @@ export async function install(project: string, selected: Target[], dryRun = fals
   }
   const writes: [string, string][] = [];
   const stagedInstructions = new Map<string, string>();
-  const changes: string[] = [];
+  const changes: string[] = [...notices];
   for (const [key, { content, owners }] of Object.entries(desired)) {
     const actual = await text(root, key);
     const previous = next.files[key];

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.3
+
+- A instalação do OpenCode passa a definir `agentforge` como agente principal predefinido, para que as sessões novas usem as instruções do harness. Se já existir `opencode.json`, o instalador preserva a configuração e indica a chave que o utilizador pode acrescentar.
+- Clarificado que o nome do produto na interface continua a ser OpenCode; AgentForge é o agente principal seleccionado dentro do CLI.
+- Testado o contrato da configuração no OpenCode através do comando de diagnóstico de agentes.
+
 ## 0.8.2
 
 - A instalação directa a partir do Git deixa de compilar durante `prepare`, evitando depender da disponibilidade de `tsc` no ambiente npm do utilizador. A solução anterior da versão 0.8.1 não resolveu o problema em todos os ambientes npm. Os artefactos compilados de `dist/` passam a ser versionados e instalados directamente; a compilação continua a ser verificada no CI.

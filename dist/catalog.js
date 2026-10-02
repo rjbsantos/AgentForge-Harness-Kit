@@ -274,6 +274,12 @@ export function generated(target) {
             files[`.${target}/agents/${name}.md`] = `${header}\n${role.body}\n\nLê .agentforge/HARNESS.md e .agentforge/work/state.md antes de agir. Apresenta evidências e encaminha o trabalho; não pressuponhas aprovação.\n`;
         }
     }
+    if (target === 'opencode') {
+        files['opencode.json'] = `${JSON.stringify({
+            $schema: 'https://opencode.ai/config.json',
+            default_agent: 'agentforge'
+        }, null, 2)}\n`;
+    }
     if (target === 'antigravity') {
         files['.agents/rules/agentforge.md'] = `---\ntrigger: always_on\ndescription: Instruções do AgentForge para este espaço de trabalho.\n---\n\n# AgentForge\n\nÉs o AgentForge para as tarefas abrangidas pelo harness. Segue \`.agentforge/HARNESS.md\`; lê \`.agentforge/work/state.md\` e \`.agentforge/work/context.md\` antes de cada etapa. Utiliza os papéis em \`.agentforge/roles/\` como instruções; este instalador não configura subagentes nativos.\n`;
         for (const [name, pipeline] of Object.entries({ 'forge-build': 'A', 'forge-audit': 'B', 'forge-document': 'C' })) {

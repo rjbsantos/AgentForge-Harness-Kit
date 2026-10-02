@@ -23,12 +23,24 @@ test('installs all CLI surfaces, keeps user instructions and supports idempotenc
   assert.match(await readFile(join(root, '.agents/workflows/forge-build.md'), 'utf8'), /processo AgentForge A/);
   assert.match(await readFile(join(root, '.agents/rules/agentforge.md'), 'utf8'), /trigger: always_on/);
   assert.match(await readFile(join(root, '.opencode/agents/agentforge.md'), 'utf8'), /mode: primary/);
+  assert.equal(JSON.parse(await readFile(join(root, 'opencode.json'), 'utf8')).default_agent, 'agentforge');
   assert.match(await readFile(join(root, '.claude/agents/agentforge.md'), 'utf8'), /name: agentforge/);
   assert.match(await readFile(join(root, '.codex/agents/agentforge.toml'), 'utf8'), /name = "agentforge"/);
   assert.match(await readFile(join(root, '.agentforge/CONTEXT_LEARNING.md'), 'utf8'), /aprendizagem/);
   assert.match(await readFile(join(root, '.agents/skills/forge-context/SKILL.md'), 'utf8'), /name: forge-context/);
   assert.deepEqual(await install(root, ['codex', 'claude']), ['Instalação já atualizada.']);
   assert.match((await status(root))[0], /opencode/);
+}));
+
+test('configures AgentForge as OpenCode default and preserves an existing config', async () => project(async root => {
+  const config = join(root, 'opencode.json');
+  const original = '{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "provider/model"\n}\n';
+  await writeFile(config, original);
+  const changes = await install(root, ['opencode']);
+  assert.equal(await readFile(config, 'utf8'), original);
+  assert.ok(changes.some(change => change.includes('"default_agent": "agentforge"')));
+  await remove(root, ['opencode']);
+  assert.equal(await readFile(config, 'utf8'), original);
 }));
 
 test('removes one CLI without removing shared assets or user files', async () => project(async root => {
@@ -40,6 +52,7 @@ test('removes one CLI without removing shared assets or user files', async () =>
   assert.match(await readFile(join(root, '.agents/skills/forge-audit/SKILL.md'), 'utf8'), /forge-audit/);
   await remove(root, ['opencode']);
   assert.equal(await readFile(join(root, 'AGENTS.md'), 'utf8'), 'Keep me\n');
+  await assert.rejects(readFile(join(root, 'opencode.json')));
   await writeFile(join(root, '.agentforge/work/state.md'), 'custom state');
   await writeFile(join(root, '.agentforge/work/context.md'), 'my context');
   await writeFile(join(root, '.agentforge/work/lessons.json'), '{"version":1,"lessons":[]}');

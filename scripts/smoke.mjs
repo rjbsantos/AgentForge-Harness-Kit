@@ -82,7 +82,7 @@ try {
   check('install reporta artefactos', installed.includes('.agentforge/HARNESS.md'));
 
   for (const file of [
-    'AGENTS.md', 'CLAUDE.md',
+    'AGENTS.md', 'CLAUDE.md', 'opencode.json',
     '.agentforge/HARNESS.md', '.agentforge/OPERATOR.md', '.agentforge/manifest.json',
     '.agentforge/work/operator.json', '.agentforge/roles/solution-advisor.md',
     '.agentforge/templates/decision-record.md', '.agentforge/workflows/automation-opportunity.json',
@@ -92,6 +92,8 @@ try {
     '.codex/agents/code-critic.toml', '.codex/agents/secops.toml', '.codex/agents/reverse-engineer.toml',
     '.opencode/agents/solution-advisor.md',
   ]) check(`gera ${file}`, existsSync(join(withProfile, ...file.split('/'))));
+  check('define o agente AgentForge como predefinido no OpenCode',
+    JSON.parse(readFileSync(join(withProfile, 'opencode.json'), 'utf8')).default_agent === 'agentforge');
 
   cli(withProfile, ['operator', 'set', '--roles', 'it-project-manager,ai-engineer', '--risk', 'cautious']);
   const operator = JSON.parse(cli(withProfile, ['operator', 'show']));

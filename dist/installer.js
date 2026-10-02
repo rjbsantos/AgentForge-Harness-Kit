@@ -91,8 +91,14 @@ export async function install(project, selected, dryRun = false) {
     const manifest = await load(root);
     const next = { version: 1, files: structuredClone(manifest.files) };
     const desired = {};
+    const notices = [];
     for (const target of selected) {
         for (const [key, content] of Object.entries({ ...shared, ...generated(target) })) {
+            if (target === 'opencode' && key === 'opencode.json' &&
+                !manifest.files[key] && await text(root, key) !== undefined) {
+                notices.push('opencode.json existente preservado; para iniciar no AgentForge, defina "default_agent": "agentforge" na configuração existente.');
+                continue;
+            }
             const slot = desired[key] ??= { content, owners: [] };
             if (slot.content !== content)
                 throw new Error(`Conteúdo incompatível: ${key}`);
@@ -101,7 +107,7 @@ export async function install(project, selected, dryRun = false) {
     }
     const writes = [];
     const stagedInstructions = new Map();
-    const changes = [];
+    const changes = [...notices];
     for (const [key, { content, owners }] of Object.entries(desired)) {
         const actual = await text(root, key);
         const previous = next.files[key];

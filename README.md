@@ -37,8 +37,8 @@ Requer Node.js 20 ou posterior. O repositório é privado, pelo que a conta Git 
 ```powershell
 gh auth login
 npm uninstall -g agentforge-harness-kit
-gh release download v0.8.2 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.8.2.tgz
-npm install -g .\agentforge-harness-kit-0.8.2.tgz
+gh release download v0.8.3 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.8.3.tgz
+npm install -g .\agentforge-harness-kit-0.8.3.tgz
 Get-Command agentforge
 agentforge install --project D:\caminho\do\projeto --cli all
 agentforge status --project D:\caminho\do\projeto
@@ -48,18 +48,20 @@ agentforge status --project D:\caminho\do\projeto
 ```bash
 gh auth login
 npm uninstall -g agentforge-harness-kit
-gh release download v0.8.2 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.8.2.tgz
-npm install -g ./agentforge-harness-kit-0.8.2.tgz
+gh release download v0.8.3 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.8.3.tgz
+npm install -g ./agentforge-harness-kit-0.8.3.tgz
 command -v agentforge
 agentforge install --project ~/WorkSpace/Groot --cli opencode
 ```
 
 O tarball da versão contém os ficheiros compilados e não exige ferramentas de desenvolvimento no computador cliente. Como o repositório é privado, `gh auth login` permite descarregar o activo da versão. Para actualizar, descarregue o tarball da versão pretendida e repita `npm install -g .\ficheiro.tgz` (PowerShell) ou `npm install -g ./ficheiro.tgz` (Linux/macOS). A instalação directa com URL Git continua disponível para desenvolvimento; nesse caso, clone o repositório e execute `npm link` a partir da pasta persistente.
 
+Na instalação do OpenCode, o AgentForge é configurado como agente principal predefinido quando o projeto ainda não tem `opencode.json`. Se esse ficheiro já existir, o instalador preserva-o e indica a configuração a acrescentar: `"default_agent": "agentforge"`. O nome da aplicação continua a ser OpenCode — o AgentForge é o agente seleccionado dentro dela. Reinicie o OpenCode depois da instalação; a interface deve identificar o agente activo como `agentforge`.
+
 O tarball também pode ser instalado a partir de qualquer localização local:
 
 ```powershell
-npm install -g D:\transferencias\agentforge-harness-kit-0.8.2.tgz
+npm install -g D:\transferencias\agentforge-harness-kit-0.8.3.tgz
 ```
 
 O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases); como o repositório é privado, autentique-se no GitHub para o descarregar.
