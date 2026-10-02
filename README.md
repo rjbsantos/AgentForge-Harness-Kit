@@ -50,6 +50,7 @@ npm install -g D:\transferencias\agentforge-harness-kit-0.8.0.tgz
 ```
 
 O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases).
+Na instalação directa a partir do Git, o npm prepara o pacote antes de o instalar; por isso, as dependências de compilação necessárias estão incluídas no pacote e não é necessário instalar o TypeScript manualmente.
 
 O parâmetro `--cli` aceita `opencode`, `codex`, `claude`, `antigravity` ou `all`. A instalação pode ser repetida para actualizar ficheiros geridos ou acrescentar outro CLI:
 

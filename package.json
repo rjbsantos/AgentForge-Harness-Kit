@@ -1,6 +1,6 @@
 {
   "name": "agentforge-harness-kit",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Project-local, multi-role and multi-CLI AgentForge harness installer",
   "type": "module",
   "bin": {
@@ -26,10 +26,6 @@
     "LICENSE"
   ],
   "license": "MIT",
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.2.0"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rjbsantos/AgentForge-Harness-Kit.git"
@@ -37,5 +33,9 @@
   "bugs": {
     "url": "https://github.com/rjbsantos/AgentForge-Harness-Kit/issues"
   },
-  "homepage": "https://github.com/rjbsantos/AgentForge-Harness-Kit#readme"
+  "homepage": "https://github.com/rjbsantos/AgentForge-Harness-Kit#readme",
+  "dependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  }
 }

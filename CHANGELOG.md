@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+- Corrigida a instalação directa a partir do GitHub: as dependências de compilação usadas pelo ciclo `prepare` passam a estar em `dependencies`, para que `tsc` esteja disponível em ambientes npm que não expõem dependências de desenvolvimento durante a preparação de dependências Git.
+
 ## 0.8.0
 
 - Auditoria funcional ao ECC (`docs/architecture/AUDIT.md`): mantidos os mecanismos já existentes de contexto, memória, routing e verificação; adoptadas melhorias sem importar código nem hooks específicos de fornecedor.
