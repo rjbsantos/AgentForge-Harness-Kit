@@ -54,7 +54,9 @@ agentforge install --project <diretorio-do-projeto> --cli all
 agentforge status --project <diretorio-do-projeto>
 ```
 
-O repositório é **privado**: esta forma exige que a conta Git da máquina tenha acesso (por exemplo `gh auth login`, ou `git+ssh://git@github.com/...` com chave configurada). Em alternativa, descarregue o tarball anexado ao GitHub Release e instale-o sem credenciais Git: `npm install -g agentforge-harness-kit-<versao>.tgz`. O pacote **não está publicado em npm**.
+O repositório é **privado**, por isso o `npm` tem de conseguir autenticar-se no Git. O `gh auth login` não chega: o `npm` invoca o `git` directamente e não herda o token do `gh`. Corra **uma vez por máquina** `gh auth setup-git` (regista o `gh` como credential helper do Git), ou use `git+ssh://git@github.com/rjbsantos/AgentForge-Harness-Kit.git` com uma chave SSH configurada.
+
+Em alternativa, sem quaisquer credenciais Git: descarregue o tarball anexado ao GitHub Release e instale-o com `npm install -g agentforge-harness-kit-<versao>.tgz`. O pacote **não está publicado em npm**.
 
 A partir desta pasta, para desenvolvimento: `npm install && npm run build && node dist/cli/index.js install --project <diretorio> --cli claude`. `npm pack` gera o mesmo tarball localmente.
 

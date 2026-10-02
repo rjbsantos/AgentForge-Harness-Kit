@@ -9,7 +9,7 @@
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
-    "test": "npm run build && node --test dist/tests/*.test.js",
+    "test": "npm run build && node scripts/test.mjs",
     "prepare": "npm run build",
     "smoke": "npm run build && node scripts/smoke.mjs"
   },

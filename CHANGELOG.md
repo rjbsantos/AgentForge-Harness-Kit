@@ -5,6 +5,7 @@
 - `npm run smoke` (`scripts/smoke.mjs`): teste de empacotamento ponta-a-ponta que embala, instala o tarball num projeto limpo e exercita `install`, `operator`, `plan`, `status` e `uninstall` a partir do pacote publicável. `npm test` corre sobre o `dist/` local e, por isso, não deteta módulos ausentes do campo `files` nem artefactos obsoletos — exactamente os dois erros encontrados em 0.7.0.
 - CI alargado: matriz Linux/Windows/macOS em Node 20 e 22, com `npm run smoke` a substituir `npm pack --dry-run`, que não instalava nada e dava falsos positivos.
 - Workflow `Release`: corre testes e smoke numa tag `v*`, confirma que a tag corresponde à versão do `package.json` e anexa o tarball ao GitHub Release.
+- Corrigida a execução de testes em Node 20 e em Windows: `node --test dist/tests/*.test.js` dependia de a shell expandir o glob (o que a PowerShell e o `cmd` não fazem) e o Node 20 e o 22+ interpretam um caminho de directório de forma diferente. `scripts/test.mjs` passa agora a lista explícita de ficheiros, igual em todas as versões e sistemas.
 - Metadados `repository`, `bugs` e `homepage` no `package.json`; `*.tgz` e `dist-release/` ignorados pelo Git.
 - Removidas as pastas vazias `config/` e `templates/`, resíduos da arquitetura anterior.
 
