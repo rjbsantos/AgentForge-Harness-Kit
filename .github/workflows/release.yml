@@ -23,7 +23,7 @@ jobs:
           tag="${GITHUB_REF_NAME#v}"
           version="$(node -p "require('./package.json').version")"
           test "$tag" = "$version" || { echo "tag $tag != versão $version"; exit 1; }
-      - run: npm pack --pack-destination dist-release
+      - run: mkdir -p dist-release && npm pack --pack-destination dist-release
       - uses: softprops/action-gh-release@v2
         with:
           files: dist-release/*.tgz
