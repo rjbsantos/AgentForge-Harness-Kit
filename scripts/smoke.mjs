@@ -65,6 +65,17 @@ try {
     return missing.length === 0;
   })());
 
+  const globalPrefix = join(work, 'global');
+  mkdirSync(globalPrefix);
+  npm(['install', '--global', '--prefix', globalPrefix, '--no-audit', '--no-fund', tarball]);
+  const globalBin = process.platform === 'win32' ? globalPrefix : join(globalPrefix, 'bin');
+  const executable = join(globalBin, process.platform === 'win32' ? 'agentforge.cmd' : 'agentforge');
+  check('instala CLI global a partir do tarball', existsSync(executable));
+  const help = process.platform === 'win32'
+    ? run('cmd.exe', ['/d', '/c', executable, '--help'])
+    : run(executable, ['--help']);
+  check('executável global responde', help.includes('agentforge <install|status|uninstall'));
+
   // Um projeto com perfil de operador declarado.
   const withProfile = project('com-perfil');
   const installed = cli(withProfile, ['install', '--cli', 'all']);

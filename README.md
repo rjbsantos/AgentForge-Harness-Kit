@@ -31,15 +31,14 @@ O AgentForge separa conceitos para evitar duplicação: um **perfil** define a p
 
 ## Instalação
 
-Requer Node.js 20 ou posterior. O repositório é privado, pelo que a conta Git da máquina tem de ter acesso. Em npm 10.9.8, a instalação global directa por URL Git pode deixar o executável ligado a uma pasta temporária. Clone o repositório e use `npm link` para registar a CLI a partir de uma pasta persistente.
+Requer Node.js 20 ou posterior. O repositório é privado, pelo que a conta Git da máquina tem de ter acesso. Para instalar como utilizador final, descarregue o tarball de uma versão e instale-o com `npm install -g`. Evite `npm install -g git+https://...` com npm 10.9.8: o npm pode deixar o executável apontado para uma pasta temporária da cache.
 
 **Windows (PowerShell):**
 ```powershell
 gh auth login
-gh auth setup-git
-git clone https://github.com/rjbsantos/AgentForge-Harness-Kit.git "$HOME\WorkSpace\AgentForge-Harness-Kit"
-Set-Location "$HOME\WorkSpace\AgentForge-Harness-Kit"
-npm link
+npm uninstall -g agentforge-harness-kit
+gh release download v0.8.2 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.8.2.tgz
+npm install -g .\agentforge-harness-kit-0.8.2.tgz
 Get-Command agentforge
 agentforge install --project D:\caminho\do\projeto --cli all
 agentforge status --project D:\caminho\do\projeto
@@ -48,25 +47,23 @@ agentforge status --project D:\caminho\do\projeto
 **Linux e macOS:**
 ```bash
 gh auth login
-gh auth setup-git
 npm uninstall -g agentforge-harness-kit
-git clone https://github.com/rjbsantos/AgentForge-Harness-Kit.git ~/WorkSpace/AgentForge-Harness-Kit
-cd ~/WorkSpace/AgentForge-Harness-Kit
-npm link
+gh release download v0.8.2 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.8.2.tgz
+npm install -g ./agentforge-harness-kit-0.8.2.tgz
 command -v agentforge
 agentforge install --project ~/WorkSpace/Groot --cli opencode
 ```
 
-`gh auth setup-git` configura o Git para utilizar a autenticação do GitHub CLI. Em npm 10.9.8, `npm install -g git+https://...` pode deixar o executável global a apontar para uma pasta temporária da cache, que desaparece após a instalação. Para esse caso, remova o registo global incompleto, clone o repositório e execute `npm link`; este comando cria a ligação global para o clone persistente. Mantenha o clone no computador e execute `git pull` dentro dele para obter actualizações. Em alternativa, configure uma chave SSH para clonar através de `git@github.com:rjbsantos/AgentForge-Harness-Kit.git`.
+O tarball da versão contém os ficheiros compilados e não exige ferramentas de desenvolvimento no computador cliente. Como o repositório é privado, `gh auth login` permite descarregar o activo da versão. Para actualizar, descarregue o tarball da versão pretendida e repita `npm install -g .\ficheiro.tgz` (PowerShell) ou `npm install -g ./ficheiro.tgz` (Linux/macOS). A instalação directa com URL Git continua disponível para desenvolvimento; nesse caso, clone o repositório e execute `npm link` a partir da pasta persistente.
 
-Também é possível instalar o ficheiro `.tgz` disponível na secção Releases do GitHub, sem autenticação Git:
+O tarball também pode ser instalado a partir de qualquer localização local:
 
 ```powershell
 npm install -g D:\transferencias\agentforge-harness-kit-0.8.2.tgz
 ```
 
-O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases).
-O repositório inclui a versão compilada necessária ao `npm link`, pelo que não é preciso instalar o TypeScript no computador de destino.
+O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases); como o repositório é privado, autentique-se no GitHub para o descarregar.
+O repositório inclui a versão compilada necessária ao pacote distribuível, pelo que não é preciso instalar o TypeScript no computador de destino.
 
 O parâmetro `--cli` aceita `opencode`, `codex`, `claude`, `antigravity` ou `all`. A instalação pode ser repetida para actualizar ficheiros geridos ou acrescentar outro CLI:
 
