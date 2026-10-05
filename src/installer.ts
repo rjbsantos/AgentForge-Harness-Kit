@@ -2,24 +2,14 @@ import { createHash } from 'node:crypto';
 import { existsSync, lstatSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { generated, instruction, shared, targets, type Target } from './catalog.js';
+import { generated, shared, targets, type Target } from './catalog.js';
+import { beginning, block, ending, instructions, superseded } from './blocks.js';
 export { targets, type Target };
 
 interface Entry { owners: Target[]; hash: string }
 interface Manifest { version: 1; files: Record<string, Entry> }
 const manifestPath = '.agentforge/manifest.json';
 const digest = (text: string) => createHash('sha256').update(text).digest('hex');
-const beginning = (target: Target) => `<!-- agentforge:${target}:begin -->`;
-const ending = (target: Target) => `<!-- agentforge:${target}:end -->`;
-const block = (target: Target) => `\n${beginning(target)}\n${instruction(target)}\n${ending(target)}\n`;
-const legacyBlock = (target: Target) =>
-  `\n${beginning(target)}\nRead \`.agentforge/HARNESS.md\` and \`.agentforge/work/state.md\` before AgentForge pipeline work. Available roles: \`.agentforge/roles/\`. ${target === 'claude' ? 'Use .claude/agents/ for native subagents.' : target === 'opencode' ? 'Use .opencode/agents/ for native subagents.' : 'Use the role descriptions; only delegate if this host offers a supported subagent mechanism.'}\n${ending(target)}\n`;
-const previousBlock = (target: Target) =>
-  `\n${beginning(target)}\nRead \`.agentforge/HARNESS.md\`, \`.agentforge/MODEL_ROUTING.md\` and \`.agentforge/work/state.md\` before AgentForge pipeline work. Classify each task by complexity and use the configured thinking/economy model only if this host supports explicit selection. Available roles: \`.agentforge/roles/\`. ${target === 'claude' ? 'Use .claude/agents/ for native subagents.' : target === 'opencode' ? 'Use .opencode/agents/ for native subagents.' : 'Use the role descriptions; only delegate if this host offers a supported subagent mechanism.'}\n${ending(target)}\n`;
-const priorBlock = (target: Target) =>
-  `\n${beginning(target)}\nFor AgentForge harness work, act as AgentForge and read \`.agentforge/HARNESS.md\`, \`.agentforge/MODEL_ROUTING.md\`, \`.agentforge/work/state.md\` and \`.agentforge/work/context.md\`. Use \`.agentforge/CONTEXT_LEARNING.md\` to consolidate verified lessons. Classify each task by complexity and use configured models only if this host supports selection. Roles: \`.agentforge/roles/\`. ${target === 'claude' ? 'Optional main agent: claude --agent agentforge; native subagents: .claude/agents/.' : target === 'opencode' ? 'Choose primary agent agentforge; subagents: .opencode/agents/.' : 'Use role descriptions; delegate only if supported by the host.'}\n${ending(target)}\n`;
-const superseded = (target: Target) => [priorBlock(target), previousBlock(target), legacyBlock(target)];
-const instructions = (target: Target) => target === 'claude' ? 'CLAUDE.md' : 'AGENTS.md';
 const mutable = new Set(['.agentforge/work/state.md', '.agentforge/work/context.md',
   '.agentforge/work/lessons.json', '.agentforge/work/operator.json']);
 
@@ -244,4 +234,41 @@ export async function status(project: string): Promise<string[]> {
     }
   }
   return [`CLIs: ${active.join(', ') || 'nenhum'}`, `Ficheiros alterados/ausentes: ${modified.join(', ') || 'nenhum'}`];
+}
+
+export async function installedTargets(project: string): Promise<Target[]> {
+  const root = resolve(project);
+  checkProject(root);
+  const manifest = await load(root);
+  return targets.filter(target => Object.values(manifest.files).some(entry => entry.owners.includes(target)));
+}
+
+// Reaplica a versão instalada do kit aos CLIs já presentes no manifesto, sem exigir --cli.
+export async function upgrade(project: string, dryRun = false): Promise<string[]> {
+  const active = await installedTargets(project);
+  if (!active.length) throw new Error('Nenhum CLI instalado; execute `agentforge install` primeiro');
+  return install(project, active, dryRun);
+}
+
+export interface Diagnosis { problems: string[]; lines: string[] }
+
+export async function doctor(project: string, integrity: () => Promise<string>): Promise<Diagnosis> {
+  const root = resolve(project);
+  const problems: string[] = [];
+  if (Number(process.versions.node.split('.')[0]) < 20) problems.push(`Node ${process.versions.node} < 20`);
+  try {
+    checkProject(root);
+    const active = await installedTargets(root);
+    if (!active.length) problems.push('Nenhum CLI instalado');
+    const [, altered] = await status(root);
+    const names = altered.replace('Ficheiros alterados/ausentes: ', '');
+    if (names !== 'nenhum') problems.push(`Ficheiros alterados/ausentes: ${names}`);
+    if ((await upgrade(root, true))[0] !== 'Instalação já atualizada.' && names === 'nenhum') {
+      problems.push('Há actualizações pendentes: execute `agentforge upgrade`');
+    }
+    if (await integrity() === 'tampered') problems.push('lessons.json alterado fora do CLI (ver `agentforge learn reseal`)');
+  } catch (error) {
+    problems.push(error instanceof Error ? error.message : String(error));
+  }
+  return { problems, lines: problems.length ? problems.map(item => `✗ ${item}`) : ['✓ Instalação saudável'] };
 }

@@ -23,6 +23,7 @@
     "docs",
     "CHANGELOG.md",
     "README.md",
+    "README.en.md",
     "LICENSE"
   ],
   "license": "MIT",

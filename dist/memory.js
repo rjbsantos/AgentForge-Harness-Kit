@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -10,6 +10,38 @@ const maxContextBudget = 32000;
 const ledgerKey = '.agentforge/work/lessons.json';
 const contextKey = '.agentforge/work/context.md';
 const stateKey = '.agentforge/work/state.md';
+const sealKey = '.agentforge/work/lessons.seal';
+const digest = (value) => createHash('sha256').update(value).digest('hex');
+export async function lessonsIntegrity(project) {
+    const root = rootOf(project);
+    let seal;
+    try {
+        seal = (await read(root, sealKey)).trim();
+    }
+    catch (error) {
+        if (error.code === 'ENOENT')
+            return 'unsealed';
+        throw error;
+    }
+    return seal === digest(await read(root, ledgerKey)) ? 'sealed' : 'tampered';
+}
+async function writeLedger(root, store) {
+    const content = JSON.stringify(store, null, 2) + '\n';
+    await write(root, ledgerKey, content);
+    await write(root, sealKey, digest(content) + '\n');
+}
+// Aceita o estado actual de lessons.json depois de uma revisão humana.
+export async function resealLessons(project) {
+    const root = rootOf(project);
+    await ledger(root);
+    await write(root, sealKey, digest(await read(root, ledgerKey)) + '\n');
+}
+async function mutableLedger(root) {
+    if (await lessonsIntegrity(root) === 'tampered') {
+        throw new Error('lessons.json foi alterado fora do CLI; reveja o ficheiro e execute `agentforge learn reseal`');
+    }
+    return ledger(root);
+}
 function input(value, label, limit) {
     const result = value.trim();
     if (!result || result.length > limit || /[\x00-\x08\x0b-\x1f]/.test(result)) {
@@ -71,7 +103,7 @@ export async function addLesson(project, lesson, evidence, options = {}) {
     const note = input(lesson, 'Lição', scope === 'reusable' ? reusableLessonLimit : 500);
     const source = input(evidence, 'Evidência', 300);
     await evidenceFile(root, source);
-    const store = await ledger(root);
+    const store = await mutableLedger(root);
     if (scope === 'reusable' && !options.anchor?.trim()) {
         throw new Error('Lições reutilizáveis exigem âncora de tecnologia/versão (--anchor)');
     }
@@ -87,12 +119,12 @@ export async function addLesson(project, lesson, evidence, options = {}) {
     }
     const item = { id: randomUUID(), lesson: note, evidence: source, status: 'pending', scope, anchor };
     store.lessons.push(item);
-    await write(root, ledgerKey, JSON.stringify(store, null, 2) + '\n');
+    await writeLedger(root, store);
     return item;
 }
 export async function changeLesson(project, id, action) {
     const root = rootOf(project);
-    const store = await ledger(root);
+    const store = await mutableLedger(root);
     const item = store.lessons.find(entry => entry.id === id);
     if (!item)
         throw new Error(`Lição desconhecida: ${id}`);
@@ -107,7 +139,7 @@ export async function changeLesson(project, id, action) {
             throw new Error('Lição já retirada');
         item.status = 'retired';
     }
-    await write(root, ledgerKey, JSON.stringify(store, null, 2) + '\n');
+    await writeLedger(root, store);
     return item;
 }
 export async function listLessons(project) {
@@ -132,7 +164,15 @@ export async function getContext(project, topic, budgetTokens = defaultContextBu
         read(root, stateKey), read(root, contextKey), ledger(root)
     ]);
     const query = topic?.trim().toLowerCase();
-    const approved = store.lessons.filter(item => item.status === 'approved' &&
+    const integrity = await lessonsIntegrity(root);
+    const warnings = [];
+    const trusted = integrity !== 'tampered';
+    if (!trusted)
+        warnings.push('lessons.json foi alterado fora do CLI: lições omitidas até `agentforge learn reseal`');
+    else if (integrity === 'unsealed' && store.lessons.some(item => item.status === 'approved')) {
+        warnings.push('lessons.json sem selo de integridade: origem das lições aprovadas não verificada');
+    }
+    const approved = store.lessons.filter(item => trusted && item.status === 'approved' &&
         (!query || `${item.lesson} ${item.evidence} ${item.anchor ?? ''}`.toLowerCase().includes(query)));
     const fixedTokens = estimateTokens(`${state}\n${summary}`) + 16;
     if (fixedTokens > budgetTokens) {
@@ -154,7 +194,8 @@ export async function getContext(project, topic, budgetTokens = defaultContextBu
         state,
         summary,
         lessons,
-        budget: { limitTokens: budgetTokens, estimatedTokens, omittedLessons, estimate: 'chars-divided-by-4' }
+        budget: { limitTokens: budgetTokens, estimatedTokens, omittedLessons, estimate: 'chars-divided-by-4' },
+        warnings
     };
 }
 //# sourceMappingURL=memory.js.map

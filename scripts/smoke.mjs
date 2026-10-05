@@ -74,7 +74,7 @@ try {
   const help = process.platform === 'win32'
     ? run('cmd.exe', ['/d', '/c', executable, '--help'])
     : run(executable, ['--help']);
-  check('executável global responde', help.includes('agentforge <install|status|uninstall'));
+  check('executável global responde', help.includes('agentforge <install|upgrade|doctor|mcp'));
 
   // Um projeto com perfil de operador declarado.
   const withProfile = project('com-perfil');

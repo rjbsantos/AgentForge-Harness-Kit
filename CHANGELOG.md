@@ -2,6 +2,11 @@
 
 ## Por publicar
 
+- Novos comandos: `upgrade` (reaplica o kit aos CLIs instalados), `doctor` (diagnóstico com código de saída), `mcp` (servidor MCP só de leitura com `plan`, `route`, `context`, `lessons` e `insights`) e `hooks install|remove` (hook opcional do Claude Code que regista apenas hora e nome da ferramenta; `insights` passa a incluir `hookEvents`).
+- `lessons.json` passa a ter um selo de integridade: edições fora do CLI fazem omitir as lições e recusar novas até `agentforge learn reseal`. `context` devolve `warnings`.
+- `catalog.ts` dividido em `skills`, `roles`, `docs`, `generators` e `target`; os blocos de instruções de versões anteriores ficam isolados em `blocks.ts`.
+- Testes de contrato dos ficheiros nativos gerados (agentes, skills, TOML do Codex, OpenCode e Antigravity).
+- Resumo da documentação em inglês (`README.en.md`).
 - `install` e `uninstall` passam a ser transaccionais: se uma escrita falhar a meio, os ficheiros tocados e o manifesto são repostos, evitando um estado intermédio que bloqueava a nova tentativa.
 - O CLI usa `util.parseArgs` em vez de um analisador artesanal e passa a ter testes de ponta a ponta (`src/tests/cli.test.ts`). O comportamento e as mensagens de utilização mantêm-se.
 - O CI falha se `dist/` não estiver sincronizado com `src/`. Novo `npm run coverage` e corpus rotulado de pedidos para proteger o classificador de encaminhamento contra regressões.

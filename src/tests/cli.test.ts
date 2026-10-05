@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -57,4 +57,39 @@ test('record, insights and lessons round-trip through the CLI', async () => proj
   assert.equal(run('context', 'save', '--project', root, '--summary', 'Fase 1', '--next', 'Testar').status, 0);
   assert.match(JSON.parse(run('context', '--project', root, '--budget-tokens', '800').stdout).summary, /Fase 1/);
   assert.equal(JSON.parse(run('learn', 'list', '--project', root).stdout).length, 0);
+}));
+
+test('doctor reports a healthy install and detects problems; upgrade needs no --cli', async () => project(async root => {
+  assert.equal(run('doctor', '--project', root).status, 1);
+  assert.equal(run('upgrade', '--project', root).status, 1);
+  assert.equal(run('install', '--project', root, '--cli', 'claude').status, 0);
+  const healthy = run('doctor', '--project', root);
+  assert.equal(healthy.status, 0, healthy.stdout);
+  assert.match(healthy.stdout, /saudável/);
+  assert.equal(run('upgrade', '--project', root, '--dry-run').stdout.trim(), 'Instalação já atualizada.');
+  await writeFile(join(root, '.agentforge/HARNESS.md'), 'edited');
+  const broken = run('doctor', '--project', root);
+  assert.equal(broken.status, 1);
+  assert.match(broken.stdout, /HARNESS\.md/);
+}));
+
+test('hooks are opt-in, merge into existing settings and record only the tool name', async () => project(async root => {
+  const { mkdir } = await import('node:fs/promises');
+  const { spawnSync } = await import('node:child_process');
+  await mkdir(join(root, '.claude'), { recursive: true });
+  await writeFile(join(root, '.claude/settings.json'), JSON.stringify({ permissions: { allow: ['Bash(ls)'] } }));
+  assert.match(run('hooks', 'install', '--project', root).stdout, /acrescentado/);
+  const settings = JSON.parse(await readFile(join(root, '.claude/settings.json'), 'utf8'));
+  assert.deepEqual(settings.permissions, { allow: ['Bash(ls)'] });
+  assert.match(settings.hooks.PostToolUse[0].hooks[0].command, /agentforge hook-event/);
+  assert.match(run('hooks', 'install', '--project', root).stdout, /já instalado/);
+  const event = spawnSync(process.execPath, [fileURLToPath(new URL('../cli/index.js', import.meta.url)), 'hook-event', '--project', root],
+    { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'cat secrets' }, prompt: 'segredo' }), encoding: 'utf8' });
+  assert.equal(event.status, 0);
+  const events = await readFile(join(root, '.agentforge/work/events.jsonl'), 'utf8');
+  assert.match(events, /"tool":"Bash"/);
+  assert.doesNotMatch(events, /secrets|segredo/);
+  assert.equal(JSON.parse(run('insights', '--project', root).stdout).hookEvents.byTool.Bash, 1);
+  assert.match(run('hooks', 'remove', '--project', root).stdout, /removido/);
+  assert.deepEqual(JSON.parse(await readFile(join(root, '.claude/settings.json'), 'utf8')), { permissions: { allow: ['Bash(ls)'] } });
 }));

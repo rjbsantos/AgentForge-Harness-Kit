@@ -1,5 +1,7 @@
 # AgentForge Harness Kit
 
+[English summary](README.en.md)
+
 O **AgentForge Harness Kit** é um instalador de instruções e capacidades de IA para projetos de software e trabalho técnico. Prepara o contexto do projeto para que o CLI de IA escolhido trabalhe com papéis, competências, fluxos de trabalho, critérios de validação e regras de segurança consistentes.
 
 O kit suporta **OpenCode, Codex CLI, Claude Code e Google Antigravity**. Instala os ficheiros nativos de cada ferramenta e mantém uma configuração partilhada do AgentForge no projeto. Não é um modelo de IA, não substitui os CLIs e não executa autonomamente agentes, ferramentas, integrações ou operações externas.
@@ -153,6 +155,21 @@ agentforge insights --project D:\caminho\do\projeto
 ```
 
 As lições podem ser específicas do projeto (`project`) ou reutilizáveis (`reusable`). As reutilizáveis exigem uma âncora de tecnologia e versão, por exemplo `--scope reusable --anchor "Node 20"`. `insights` resume apenas execuções registadas explicitamente; não recolhe conversas nem promove automaticamente padrões a lições ou instruções.
+
+## Manutenção, integridade e integrações
+
+```powershell
+agentforge doctor --project D:\caminho\do\projeto     # diagnóstico; termina com código 1 se houver problemas
+agentforge upgrade --project D:\caminho\do\projeto --dry-run
+agentforge learn reseal --project D:\caminho\do\projeto   # aceita lessons.json depois de revisão humana
+agentforge hooks install --project D:\caminho\do\projeto  # opcional, Claude Code
+agentforge mcp --project D:\caminho\do\projeto            # servidor MCP só de leitura
+```
+
+- `upgrade` reaplica a versão instalada aos CLIs já presentes no manifesto. `doctor` verifica ficheiros alterados, actualizações pendentes e a integridade das lições.
+- `lessons.json` tem um selo (`lessons.seal`) escrito pelo CLI. Se o ficheiro for editado fora dele, as lições deixam de ser reutilizadas e novas lições são recusadas até `learn reseal`.
+- `hooks install` acrescenta um hook `PostToolUse` a `.claude/settings.json`, preservando o resto da configuração. Regista apenas a hora e o nome da ferramenta em `.agentforge/work/events.jsonl` (nunca argumentos, resultados ou conversas) e requer o comando `agentforge` no PATH. `agentforge hooks remove` desfaz a alteração. O `insights` inclui a contagem por ferramenta.
+- `agentforge mcp` expõe `agentforge_plan`, `agentforge_route`, `agentforge_context`, `agentforge_lessons` e `agentforge_insights`. Não aprova lições, não regista execuções e não altera ficheiros. Exemplo de configuração: `{ "mcpServers": { "agentforge": { "command": "agentforge", "args": ["mcp", "--project", "/caminho/do/projeto"] } } }`.
 
 ## Ficheiros instalados
 

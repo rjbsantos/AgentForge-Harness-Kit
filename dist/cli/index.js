@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { install, remove, status, targets } from '../installer.js';
+import { serve } from '../mcp.js';
+import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
+import { doctor, install, remove, status, targets, upgrade } from '../installer.js';
 import { route } from '../routing.js';
-import { addLesson, changeLesson, getContext, listLessons, saveContext } from '../memory.js';
+import { addLesson, changeLesson, getContext, lessonsIntegrity, listLessons, resealLessons, saveContext } from '../memory.js';
 import { plan } from '../orchestrator.js';
 import { loadOperator, setOperator } from '../operator.js';
 import { operationInsights, recordRun } from '../operations.js';
 import { profiles } from '../capabilities.js';
-const help = 'Uso: agentforge <install|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
+const help = 'Uso: agentforge <install|upgrade|doctor|mcp|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
     '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
-    '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID>\n' +
+    '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
+    '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
+    '  mcp  servidor MCP (stdio, só leitura) com plan, route, context, lessons e insights\n' +
     '  insights  resume execuções verificadas e padrões de erro recorrentes\n' +
     '  operator <show|set [--headline TEXTO] [--roles PERFIL,PERFIL] [--language TAG] [--risk cautious|balanced|exploratory] [--interests A,B]>\n' +
     '  plan --cli NOME --prompt TEXTO [--role PERFIL --workflow FLUXO] [--planned --approved] [--high-risk]\n' +
@@ -25,9 +29,9 @@ async function main(args) {
         console.log(help);
         return;
     }
-    if (!action || !['install', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action))
+    if (!action || !['install', 'upgrade', 'doctor', 'mcp', 'hooks', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action))
         usage();
-    const subcommand = (action === 'learn' || action === 'operator') && args[0] && !args[0].startsWith('--') ? args.shift()
+    const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks') && args[0] && !args[0].startsWith('--') ? args.shift()
         : action === 'context' && args[0] === 'save' ? args.shift() : undefined;
     let parsed;
     try {
@@ -157,6 +161,12 @@ async function main(args) {
                 usage();
             console.log(JSON.stringify(await listLessons(project), null, 2));
         }
+        else if (action === 'learn' && subcommand === 'reseal') {
+            if (lesson || evidence || id || summary || next || topic || scope || anchor)
+                usage();
+            await resealLessons(project);
+            console.log('Selo de lessons.json actualizado.');
+        }
         else if (action === 'learn' && (subcommand === 'approve' || subcommand === 'retire')) {
             if (!id || lesson || evidence || summary || next || topic || scope || anchor)
                 usage();
@@ -171,7 +181,7 @@ async function main(args) {
             result || validation || durationMs !== undefined || toolsUsed.length || budgetTokens !== undefined ||
             summary || next || topic || lesson || evidence || id || scope || anchor)
             usage();
-        console.log(JSON.stringify(await operationInsights(project), null, 2));
+        console.log(JSON.stringify({ ...await operationInsights(project), hookEvents: await eventSummary(project) }, null, 2));
         return;
     }
     if (summary || next || topic || lesson || evidence || id || scope || anchor)
@@ -198,6 +208,46 @@ async function main(args) {
     }
     if (prompt || planned || approved || highRisk || role || workflow || result || validation || durationMs !== undefined || toolsUsed.length || (action === 'status' && dryRun))
         usage();
+    if (action === 'hooks' || action === 'hook-event') {
+        if (cli !== 'all' || dryRun)
+            usage();
+        if (action === 'hook-event') {
+            let input = '';
+            for await (const chunk of process.stdin)
+                input += chunk;
+            await recordEvent(project, input);
+        }
+        else if (subcommand === 'install')
+            console.log(await installHook(project));
+        else if (subcommand === 'remove')
+            console.log(await removeHook(project));
+        else
+            usage();
+        return;
+    }
+    if (action === 'mcp') {
+        if (cli !== 'all' || dryRun)
+            usage();
+        await serve(project);
+        return;
+    }
+    if (action === 'upgrade' || action === 'doctor') {
+        if (cli !== 'all')
+            usage();
+        if (action === 'doctor' && dryRun)
+            usage();
+        if (action === 'upgrade') {
+            for (const line of await upgrade(project, dryRun))
+                console.log(line);
+            return;
+        }
+        const diagnosis = await doctor(project, () => lessonsIntegrity(project));
+        for (const line of diagnosis.lines)
+            console.log(line);
+        if (diagnosis.problems.length)
+            process.exitCode = 1;
+        return;
+    }
     const selected = cli === 'all' ? [...targets] : [cli];
     const lines = action === 'install'
         ? await install(project, selected, dryRun)

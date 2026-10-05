@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -21,6 +21,41 @@ const maxContextBudget = 32000;
 const ledgerKey = '.agentforge/work/lessons.json';
 const contextKey = '.agentforge/work/context.md';
 const stateKey = '.agentforge/work/state.md';
+const sealKey = '.agentforge/work/lessons.seal';
+const digest = (value: string) => createHash('sha256').update(value).digest('hex');
+
+// O ficheiro de lições é reinjectado em prompts. O selo regista o hash escrito pelo CLI, para
+// detectar edições fora dele (por exemplo uma lição "aprovada" à mão ou por um agente).
+export type Integrity = 'sealed' | 'tampered' | 'unsealed';
+export async function lessonsIntegrity(project: string): Promise<Integrity> {
+  const root = rootOf(project);
+  let seal: string;
+  try { seal = (await read(root, sealKey)).trim(); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 'unsealed';
+    throw error;
+  }
+  return seal === digest(await read(root, ledgerKey)) ? 'sealed' : 'tampered';
+}
+
+async function writeLedger(root: string, store: Ledger): Promise<void> {
+  const content = JSON.stringify(store, null, 2) + '\n';
+  await write(root, ledgerKey, content);
+  await write(root, sealKey, digest(content) + '\n');
+}
+
+// Aceita o estado actual de lessons.json depois de uma revisão humana.
+export async function resealLessons(project: string): Promise<void> {
+  const root = rootOf(project);
+  await ledger(root);
+  await write(root, sealKey, digest(await read(root, ledgerKey)) + '\n');
+}
+
+async function mutableLedger(root: string): Promise<Ledger> {
+  if (await lessonsIntegrity(root) === 'tampered') {
+    throw new Error('lessons.json foi alterado fora do CLI; reveja o ficheiro e execute `agentforge learn reseal`');
+  }
+  return ledger(root);
+}
 
 function input(value: string, label: string, limit: number): string {
   const result = value.trim();
@@ -84,7 +119,7 @@ export async function addLesson(project: string, lesson: string, evidence: strin
   const note = input(lesson, 'Lição', scope === 'reusable' ? reusableLessonLimit : 500);
   const source = input(evidence, 'Evidência', 300);
   await evidenceFile(root, source);
-  const store = await ledger(root);
+  const store = await mutableLedger(root);
   if (scope === 'reusable' && !options.anchor?.trim()) {
     throw new Error('Lições reutilizáveis exigem âncora de tecnologia/versão (--anchor)');
   }
@@ -100,13 +135,13 @@ export async function addLesson(project: string, lesson: string, evidence: strin
   }
   const item: Lesson = { id: randomUUID(), lesson: note, evidence: source, status: 'pending', scope, anchor };
   store.lessons.push(item);
-  await write(root, ledgerKey, JSON.stringify(store, null, 2) + '\n');
+  await writeLedger(root, store);
   return item;
 }
 
 export async function changeLesson(project: string, id: string, action: 'approve' | 'retire'): Promise<Lesson> {
   const root = rootOf(project);
-  const store = await ledger(root);
+  const store = await mutableLedger(root);
   const item = store.lessons.find(entry => entry.id === id);
   if (!item) throw new Error(`Lição desconhecida: ${id}`);
   if (action === 'approve') {
@@ -117,7 +152,7 @@ export async function changeLesson(project: string, id: string, action: 'approve
     if (item.status === 'retired') throw new Error('Lição já retirada');
     item.status = 'retired';
   }
-  await write(root, ledgerKey, JSON.stringify(store, null, 2) + '\n');
+  await writeLedger(root, store);
   return item;
 }
 
@@ -142,6 +177,7 @@ export async function getContext(project: string, topic?: string, budgetTokens =
   summary: string;
   lessons: Lesson[];
   budget: { limitTokens: number; estimatedTokens: number; omittedLessons: number; estimate: 'chars-divided-by-4' };
+  warnings: string[];
 }> {
   if (!Number.isInteger(budgetTokens) || budgetTokens < 1 || budgetTokens > maxContextBudget) {
     throw new Error(`Orçamento de contexto inválido (1-${maxContextBudget} tokens)`);
@@ -151,7 +187,14 @@ export async function getContext(project: string, topic?: string, budgetTokens =
     read(root, stateKey), read(root, contextKey), ledger(root)
   ]);
   const query = topic?.trim().toLowerCase();
-  const approved = store.lessons.filter(item => item.status === 'approved' &&
+  const integrity = await lessonsIntegrity(root);
+  const warnings: string[] = [];
+  const trusted = integrity !== 'tampered';
+  if (!trusted) warnings.push('lessons.json foi alterado fora do CLI: lições omitidas até `agentforge learn reseal`');
+  else if (integrity === 'unsealed' && store.lessons.some(item => item.status === 'approved')) {
+    warnings.push('lessons.json sem selo de integridade: origem das lições aprovadas não verificada');
+  }
+  const approved = store.lessons.filter(item => trusted && item.status === 'approved' &&
     (!query || `${item.lesson} ${item.evidence} ${item.anchor ?? ''}`.toLowerCase().includes(query)));
   const fixedTokens = estimateTokens(`${state}\n${summary}`) + 16;
   if (fixedTokens > budgetTokens) {
@@ -173,6 +216,7 @@ export async function getContext(project: string, topic?: string, budgetTokens =
     state,
     summary,
     lessons,
-    budget: { limitTokens: budgetTokens, estimatedTokens, omittedLessons, estimate: 'chars-divided-by-4' }
+    budget: { limitTokens: budgetTokens, estimatedTokens, omittedLessons, estimate: 'chars-divided-by-4' },
+    warnings
   };
 }
