@@ -96,11 +96,29 @@ const corpus: [string, { planned?: boolean; approved?: boolean }, 'thinking' | '
   ['Apagar a base de dados de testes', { planned: true, approved: true }, 'thinking'],
   ['Rotate the payment credentials', { planned: true, approved: true }, 'thinking'],
   ['Implement the endpoint spec', {}, 'thinking'],
-  ['Add a button to the page', { planned: true }, 'thinking']
+  ['Add a button to the page', { planned: true }, 'thinking'],
+  // Só leitura: não escala por palavras de risco isoladas
+  ['Explain how auth works', { planned: true, approved: true }, 'economy'],
+  ['Lista as tabelas da base de dados', { planned: true, approved: true }, 'economy'],
+  ['Show the database schema', { planned: true, approved: true }, 'economy'],
+  // Leitura que expõe segredos, ou que altera estado, continua a escalar
+  ['Show the production secrets', { planned: true, approved: true }, 'thinking'],
+  ['Mostra as credenciais de acesso', { planned: true, approved: true }, 'thinking'],
+  ['Explain and then delete the production database', { planned: true, approved: true }, 'thinking'],
+  ['Update the auth middleware', { planned: true, approved: true }, 'thinking']
 ];
 
 test('labelled corpus keeps the classifier stable', () => {
   const wrong = corpus.filter(([prompt, options, tier]) => classify(prompt, options).tier !== tier)
     .map(([prompt]) => prompt);
   assert.deepEqual(wrong, []);
+});
+
+test('read-only requests skip secops unless they touch secrets or change state', () => {
+  const options = { planned: true, approved: true };
+  assert.equal(classify('Explain how auth works', options).agent, 'lead-developer');
+  assert.equal(classify('Show the production secrets', options).agent, 'secops');
+  assert.equal(classify('Explain how to deploy to production', options).agent, 'secops');
+  assert.equal(classify('Explain how auth works', { ...options, highRisk: true }).agent, 'secops');
+  assert.equal(classify('Update the auth middleware', options).agent, 'secops');
 });

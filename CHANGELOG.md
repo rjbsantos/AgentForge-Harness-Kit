@@ -2,6 +2,8 @@
 
 ## Por publicar
 
+- Encaminhamento: pedidos só de leitura (explicar, listar, mostrar…) sem verbos que alterem estado deixam de escalar para `secops` por palavras como `auth` ou `database`. Segredos, credenciais e pagamentos escalam sempre, tal como qualquer pedido que altere estado ou use `--high-risk`.
+- Corrigido: `secrets`, `credentials` e `payments` (plural) não eram reconhecidos como área de risco; só o singular.
 - Arranque mais leve: o bloco de instruções e o `HARNESS.md` deixam de mandar ler `OPERATOR.md` em cada sessão (só `operator.json`; o formato é consultado a pedido). O bloco anterior é reconhecido e actualizado automaticamente. Um teste limita as instruções de arranque a 3000 tokens estimados.
 - `load()` do instalador deixa de reconstruir os ficheiros de cada CLI por cada entrada do manifesto; `tsconfig` passa a ter `noUnusedLocals` e `noUnusedParameters` e foram removidas as importações não usadas.
 - Integração opcional com o gateway OmniRoute: `agentforge gateway omniroute [--cli NOME] [--write]` propõe (ou grava, preservando modelos já definidos) o mapeamento `thinking`/`economy` em `model-profiles.json` e os comandos de ligação por CLI. Não instala nem executa o gateway; riscos de privacidade e de termos de serviço documentados em `docs/integrations/OMNIROUTE.md`.

@@ -8,7 +8,14 @@ export const routingTable = {
 };
 const thinking = /\b(architect(?:ure)?|design|brainstorm|research|investigat(?:e|ion)|compar(?:e|ison)|trade.?off|ambig(?:uous|uity)|root cause|audit|security|migration|why|explor(?:e|ation)|arquitetura|desenh[ao]|conceber|investigar|pesquis[ao]|comparar|alternativas?|decis[aã]o|ambiguidade|causa raiz|auditar|seguran[cç]a|migra[cç][aã]o|porqu[eê]|analis[ae])\b/i;
 const planning = /^(?:please\s+|por favor\s+)?(?:plan|planeia|planejar|planear)\b|\bplanning\b/i;
-const risky = /\b(auth(?:entication|orization)?|credential|secret|payment|prod(?:uction)?|deploy|database|schema|destructive|delete|permission|compliance|privac[yi]|autentica[cç][aã]o|credenciais?|segredos?|pagamentos?|produ[cç][aã]o|implant(?:ar|a[cç][aã]o)|base de dados|eliminar|apagar|permiss[õo]es?|conformidade|privacidade)\b/i;
+const risky = /\b(auth(?:entication|orization)?|credentials?|secrets?|payments?|prod(?:uction)?|deploy|database|schema|destructive|delete|permission|compliance|privac[yi]|autentica[cç][aã]o|credenciais?|segredos?|pagamentos?|produ[cç][aã]o|implant(?:ar|a[cç][aã]o)|base de dados|eliminar|apagar|permiss[õo]es?|conformidade|privacidade)\b/i;
+// Um pedido só de leitura (explicar, listar, mostrar…) que não contém verbos que alterem estado deixa de
+// escalar por palavras como `auth` ou `database`. Segredos, credenciais e pagamentos escalam sempre:
+// mostrá-los já é uma exposição. Na dúvida, a classificação mantém-se conservadora.
+const readOnly = /^\s*(?:please\s+|por favor\s+)?(?:explain|describe|summari[sz]e|list|show|read|what|how does|how do|where|which|explica|descreve|resume|lista|mostra|l[eê]|o que|como funciona|onde|qual)\b/i;
+const mutating = /\b(delete|remove|drop|deploy|update|change|modify|alter|write|implement|run|execute|rotate|migrate|create|fix|apagar|eliminar|remover|alterar|actualizar|atualizar|implementar|executar|rodar|migrar|escrever|criar|corrigir)\b/i;
+const sensitive = /\b(credentials?|secrets?|payments?|credenciais?|segredos?|pagamentos?)\b/i;
+const isRisky = (prompt) => risky.test(prompt) && (sensitive.test(prompt) || !readOnly.test(prompt) || mutating.test(prompt));
 const simple = /\b(fix typo|format|rename|update (?:a |the )?string|corrigir gralha|formatar|renomear|alterar texto)\b/i;
 export function classify(prompt, options = {}) {
     if (!prompt.trim())
@@ -16,7 +23,7 @@ export function classify(prompt, options = {}) {
     const reasons = [];
     if (thinking.test(prompt) || planning.test(prompt))
         reasons.push('requer análise, escolha ou descoberta');
-    if (options.highRisk || risky.test(prompt))
+    if (options.highRisk || isRisky(prompt))
         reasons.push('área de risco elevado');
     // A postura do operador só pode escalar o raciocínio, nunca baixá-lo: 'exploratory' não desactiva gates.
     if (options.cautious)
@@ -28,7 +35,7 @@ export function classify(prompt, options = {}) {
         reasons.push('plano sem aprovação');
     const complex = reasons.length > 0;
     const tier = complex ? 'thinking' : 'economy';
-    const agent = complex ? (options.highRisk || risky.test(prompt) ? 'secops' : 'architect') : 'lead-developer';
+    const agent = complex ? (options.highRisk || isRisky(prompt) ? 'secops' : 'architect') : 'lead-developer';
     return {
         tier,
         complexity: complex ? 'high' : 'bounded',
