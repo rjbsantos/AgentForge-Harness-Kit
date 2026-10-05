@@ -188,6 +188,10 @@ agentforge graph explain --node skill:forge-verify
 
 As arestas declaradas no catálogo são `EXTRACTED`; a co-utilização de competências em vários fluxos é `INFERRED`; `AMBIGUOUS` assinala nós sem referência. O relatório inclui os nós mais ligados, as competências transversais e os nós órfãos, e um teste falha se o catálogo ficar com um deles. A mesma consulta está disponível na ferramenta MCP `agentforge_graph`.
 
+## Integração opcional: gateway OmniRoute
+
+O [OmniRoute](https://github.com/diegosouzapw/OmniRoute) (MIT) é um gateway local de modelos com recurso automático entre fornecedores. O kit não o instala nem o executa; `agentforge gateway omniroute` propõe o mapeamento `thinking` → `auto/coding` e `economy` → `auto/cheap` para o `model-profiles.json` e os comandos para ligar cada CLI. Sem `--write` só pré-visualiza; com `--write` acrescenta as entradas em falta e preserva as que já definiu. Os pedidos seguem para o fornecedor escolhido pelo gateway, incluindo camadas gratuitas de terceiros, pelo que convém ler os riscos de privacidade em [docs/integrations/OMNIROUTE.md](docs/integrations/OMNIROUTE.md) antes de o usar.
+
 ## Componentes de terceiros
 
 A instalação para o **Claude Code** inclui a competência `claude-automation-recommender`, do plugin oficial [claude-code-setup](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/claude-code-setup) da Anthropic (Apache-2.0, distribuída sem alterações; ver [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). Analisa o projecto e recomenda as automações mais úteis (hooks, subagentes, competências, servidores MCP e plugins) para melhorar o desempenho do Claude. Peça, por exemplo, «recomenda automações para este projecto». É só de leitura: não altera ficheiros. Fica em `.claude/skills/claude-automation-recommender/` e é gerida pelo manifesto, pelo que `upgrade` e `uninstall` a tratam como os restantes ficheiros do kit.

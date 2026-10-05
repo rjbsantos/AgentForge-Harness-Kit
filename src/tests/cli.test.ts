@@ -116,3 +116,28 @@ test('doctor reports graphify as optional information, never as a problem', asyn
   assert.equal(withGraph.status, 0);
   assert.match(withGraph.stdout, /graph\.json presente/);
 }));
+
+test('gateway omniroute previews by default, writes only with --write and keeps existing models', async () => project(async root => {
+  const { mkdir } = await import('node:fs/promises');
+  const file = join(root, '.agentforge/work/model-profiles.json');
+  const preview = JSON.parse(run('gateway', 'omniroute', '--project', root, '--cli', 'claude').stdout);
+  assert.equal(preview.written, false);
+  assert.deepEqual(preview.profiles.claude, { thinking: 'auto/coding', economy: 'auto/cheap' });
+  assert.match(preview.commands.claude, /omniroute run claude/);
+  assert.ok(preview.warnings.some((line: string) => /fornecedor/.test(line)));
+  await assert.rejects(readFile(file, 'utf8'), /ENOENT/);
+  await mkdir(join(root, '.agentforge/work'), { recursive: true });
+  await writeFile(file, JSON.stringify({ claude: { thinking: 'opus' }, codex: { economy: 'x/y' } }));
+  const written = JSON.parse(run('gateway', 'omniroute', '--project', root, '--write').stdout);
+  assert.equal(written.written, true);
+  assert.deepEqual(written.skipped.sort(), ['claude.thinking: mantido \'opus\'', 'codex.economy: mantido \'x/y\'']);
+  const saved = JSON.parse(await readFile(file, 'utf8'));
+  assert.deepEqual(saved.claude, { thinking: 'opus', economy: 'auto/cheap' });
+  assert.deepEqual(saved.codex, { economy: 'x/y', thinking: 'auto/coding' });
+  assert.equal(saved.opencode.thinking, 'auto/coding');
+  const routed = JSON.parse(run('route', '--project', root, '--cli', 'opencode', '--prompt', 'Design the architecture').stdout);
+  assert.equal(routed.model, 'auto/coding');
+  assert.equal(run('gateway', 'nope', '--project', root).status, 1);
+  assert.equal(run('gateway', '--project', root).status, 2);
+  assert.equal(run('install', '--project', root, '--write').status, 2);
+}));

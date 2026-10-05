@@ -13,6 +13,7 @@ AgentForge Harness Kit installs instructions and capabilities for AI coding CLIs
 - Optional observability: explicit run records (`record`, `insights`) and an opt-in Claude Code hook that stores only a timestamp and a tool name.
 - Concepts from [graphify](https://github.com/Graphify-Labs/graphify): every audit/analysis conclusion carries a confidence label (`EXTRACTED`, `INFERRED`, `AMBIGUOUS`); a `forge-graph` skill makes agents query an existing `graphify-out/graph.json` before reading files; `agentforge graph` turns the capability catalog itself into a queryable, deterministic graph.
 - For Claude Code, the install also ships Anthropic's official `claude-automation-recommender` skill (from the `claude-code-setup` plugin, Apache-2.0, unmodified; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)), which recommends hooks, subagents, skills, MCP servers and plugins for the project. It is read-only.
+- Optional [OmniRoute](https://github.com/diegosouzapw/OmniRoute) gateway integration: `agentforge gateway omniroute [--write]` maps the `thinking`/`economy` tiers to `auto/coding` and `auto/cheap` in `model-profiles.json` and prints per-CLI connection commands. It does not install or run the gateway; read the privacy notes in `docs/integrations/OMNIROUTE.md` first (prompts reach whichever provider the gateway picks, including third-party free tiers).
 - A read-only MCP server (`agentforge mcp`) exposing `plan`, `route`, `context`, `lessons` and `insights`.
 
 ## Install
@@ -37,6 +38,7 @@ agentforge install --project /path/to/project --cli all   # opencode | codex | c
 | `context [save]` | Show or update the active context within a token budget |
 | `learn add\|list\|approve\|retire\|reseal` | Manage lessons (evidence and human approval required) |
 | `record` / `insights` | Record and aggregate explicit run results |
+| `gateway omniroute [--write]` | Preview or write the OmniRoute model mapping |
 | `hooks install\|remove` | Opt-in Claude Code hook that logs tool names only |
 | `mcp` | Start the read-only MCP server over stdio |
 

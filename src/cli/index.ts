@@ -2,6 +2,7 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { serve } from '../mcp.js';
+import { applyGateway } from '../gateway.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
 import { doctor, install, remove, status, targets, upgrade, type Target } from '../installer.js';
@@ -12,11 +13,12 @@ import { loadOperator, setOperator } from '../operator.js';
 import { operationInsights, recordRun, type RunRecord } from '../operations.js';
 import { profiles, type Profile } from '../capabilities.js';
 
-const help = 'Uso: agentforge <install|upgrade|doctor|mcp|graph|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
+const help = 'Uso: agentforge <install|upgrade|doctor|mcp|graph|gateway|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
   '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
   '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
   '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
   '  graph <query --prompt TEXTO [--budget-tokens N]|path --from NÓ --to NÓ|explain --node NÓ|report>  grafo do catálogo, com confiança EXTRACTED/INFERRED/AMBIGUOUS\n' +
+  '  gateway omniroute [--cli NOME] [--write]  propõe (ou grava com --write) o mapeamento thinking/economy para o gateway OmniRoute\n' +
   '  mcp  servidor MCP (stdio, só leitura) com plan, route, context, lessons e insights\n' +
   '  insights  resume execuções verificadas e padrões de erro recorrentes\n' +
   '  operator <show|set [--headline TEXTO] [--roles PERFIL,PERFIL] [--language TAG] [--risk cautious|balanced|exploratory] [--interests A,B]>\n' +
@@ -33,13 +35,13 @@ async function main(args: string[]): Promise<void> {
     console.log(help);
     return;
   }
-  if (!action || !['install', 'upgrade', 'doctor', 'mcp', 'graph', 'hooks', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action)) usage();
-  const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks' || action === 'graph') && args[0] && !args[0].startsWith('--') ? args.shift()
+  if (!action || !['install', 'upgrade', 'doctor', 'mcp', 'graph', 'gateway', 'hooks', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action)) usage();
+  const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks' || action === 'graph' || action === 'gateway') && args[0] && !args[0].startsWith('--') ? args.shift()
     : action === 'context' && args[0] === 'save' ? args.shift() : undefined;
   let parsed: ReturnType<typeof parseArgs>['values'];
   try {
     parsed = parseArgs({ args, allowPositionals: false, strict: true, options: {
-      project: { type: 'string' }, cli: { type: 'string' }, 'dry-run': { type: 'boolean' },
+      project: { type: 'string' }, cli: { type: 'string' }, 'dry-run': { type: 'boolean' }, write: { type: 'boolean' },
       prompt: { type: 'string' }, planned: { type: 'boolean' }, approved: { type: 'boolean' },
       'high-risk': { type: 'boolean' }, summary: { type: 'string' }, next: { type: 'string' },
       topic: { type: 'string' }, 'budget-tokens': { type: 'string' }, lesson: { type: 'string' },
@@ -77,6 +79,8 @@ async function main(args: string[]): Promise<void> {
   const project = text('project') ? resolve(text('project')!) : process.cwd();
   const cli = choice('cli', ['all', ...targets] as const) ?? 'all';
   const dryRun = parsed['dry-run'] === true;
+  const write = parsed.write === true;
+  if (write && action !== 'gateway') usage();
   const prompt = text('prompt');
   const planned = parsed.planned === true;
   const approved = parsed.approved === true;
@@ -116,6 +120,12 @@ async function main(args: string[]): Promise<void> {
   if (action !== 'operator' && (headline || roles || language || riskPosture || interests)) usage();
   if (action !== 'context' && action !== 'graph' && budgetTokens !== undefined) usage();
   if (action !== 'graph' && (from || to || nodeName)) usage();
+  if (action === 'gateway') {
+    if (!subcommand || dryRun || prompt || planned || approved || highRisk || role || workflow) usage();
+    const selected = cli === 'all' ? [...targets] : [cli];
+    console.log(JSON.stringify(await applyGateway(project, subcommand, selected, write), null, 2));
+    return;
+  }
   if (action === 'graph') {
     if (cli !== 'all' || dryRun || planned || approved || highRisk || role || workflow) usage();
     const g = buildGraph();
