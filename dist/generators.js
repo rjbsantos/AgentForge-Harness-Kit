@@ -70,6 +70,9 @@ const opencodeTheme = {
         syntaxPunctuation: 'foreground'
     }
 };
+// OpenCode: a ordem conta (a última regra que corresponde ganha), por isso «*» vem primeiro. Só comandos de leitura.
+const readOnlyPermission = `permission:\n  edit: deny\n  bash:\n    "*": deny\n${['git status*', 'git diff*', 'git log*', 'git show*', 'graphify query*', 'graphify path*', 'graphify explain*']
+    .map(command => `    "${command}": allow\n`).join('')}`;
 export function generated(target) {
     const files = {};
     if (target === 'codex' || target === 'opencode' || target === 'antigravity') {
@@ -96,7 +99,7 @@ export function generated(target) {
         for (const [name, role] of Object.entries(roles)) {
             // Papéis só de leitura: negar a escrita no formato nativo, em vez de depender só do texto da instrução.
             const lock = role.readOnly
-                ? (target === 'opencode' ? 'permission:\n  edit: deny\n' : 'tools: Read, Grep, Glob\n')
+                ? (target === 'opencode' ? readOnlyPermission : 'tools: Read, Grep, Glob\n')
                 : '';
             const header = target === 'opencode'
                 ? `---\ndescription: ${role.description}\nmode: subagent\n${lock}---\n`
