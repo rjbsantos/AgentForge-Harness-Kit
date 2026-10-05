@@ -12,6 +12,7 @@ AgentForge Harness Kit installs instructions and capabilities for AI coding CLIs
 - Reversible installation: a manifest with file hashes, conflict detection, transactional writes (rollback on failure), path-traversal and symlink protection. User-modified files and work data are preserved on update and uninstall.
 - Optional observability: explicit run records (`record`, `insights`) and an opt-in Claude Code hook that stores only a timestamp and a tool name.
 - Concepts from [graphify](https://github.com/Graphify-Labs/graphify): every audit/analysis conclusion carries a confidence label (`EXTRACTED`, `INFERRED`, `AMBIGUOUS`); a `forge-graph` skill makes agents query an existing `graphify-out/graph.json` before reading files; `agentforge graph` turns the capability catalog itself into a queryable, deterministic graph.
+- For Claude Code, the install also ships Anthropic's official `claude-automation-recommender` skill (from the `claude-code-setup` plugin, Apache-2.0, unmodified; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)), which recommends hooks, subagents, skills, MCP servers and plugins for the project. It is read-only.
 - A read-only MCP server (`agentforge mcp`) exposing `plan`, `route`, `context`, `lessons` and `insights`.
 
 ## Install

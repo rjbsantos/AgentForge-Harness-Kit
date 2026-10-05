@@ -100,3 +100,15 @@ test('Antigravity e fluxos partilhados: regra sempre activa e JSON válido', () 
     assert.ok(workflow.steps.length > 0);
   }
 }));
+
+test('competência de terceiros claude-automation-recommender: só no Claude, com licença e sem alterações', () => installed(async root => {
+  const base = '.claude/skills/claude-automation-recommender';
+  const skill = await readFile(join(root, base, 'SKILL.md'), 'utf8');
+  assert.match(skill, /^---\nname: claude-automation-recommender\n/);
+  assert.match(skill, /This skill is read-only/);
+  assert.match(await readFile(join(root, base, 'LICENSE'), 'utf8'), /Apache License/);
+  const references = await readdir(join(root, base, 'references'));
+  assert.equal(references.length, 5);
+  await assert.rejects(readdir(join(root, '.agents/skills/claude-automation-recommender')), /ENOENT/);
+  assert.match(await readFile(new URL('../../THIRD_PARTY_NOTICES.md', import.meta.url), 'utf8'), /claude-automation-recommender/);
+}));

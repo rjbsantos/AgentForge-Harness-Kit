@@ -2,6 +2,7 @@ import { workflows } from './capabilities.js';
 import { roles } from './roles.js';
 import { skills } from './skills.js';
 import { type Target } from './target.js';
+import { recommenderFiles, recommenderSkill } from './vendor.js';
 
 const opencodeTheme = {
   $schema: 'https://opencode.ai/theme.json',
@@ -82,6 +83,12 @@ export function generated(target: Target): Record<string, string> {
   if (target === 'claude') {
     for (const [name, content] of Object.entries(skills)) {
       files[`.claude/skills/${name}/SKILL.md`] = content;
+    }
+  }
+  if (target === 'claude') {
+    // Competência de terceiros (Apache-2.0) que recomenda automações do Claude Code; só lê, nunca altera ficheiros.
+    for (const [name, content] of Object.entries(recommenderFiles)) {
+      files[`.claude/skills/${recommenderSkill}/${name}`] = content;
     }
   }
   if (target === 'opencode' || target === 'claude') {
