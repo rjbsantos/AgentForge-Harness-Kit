@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm, writeFile, mkdir, symlink } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { install, remove, safe, status } from '../installer.js';
+import { superseded } from '../blocks.js';
 
 async function project(fn: (root: string) => Promise<void>): Promise<void> {
   const root = await mkdtemp(join(tmpdir(), 'agentforge-kit-'));
@@ -111,7 +112,8 @@ test('updates an existing legacy instruction block without duplicating it', asyn
   assert.ok(changes.some(item => item.includes('CLAUDE.md')));
   const updated = await readFile(key, 'utf8');
   assert.equal(updated.match(/agentforge:claude:begin/g)?.length, 1);
-  assert.match(updated, /MODEL_ROUTING.md/);
+  assert.match(updated, /HARNESS\.md/);
+  assert.match(await readFile(join(root, '.agentforge/HARNESS.md'), 'utf8'), /MODEL_ROUTING\.md/);
 }));
 
 test('upgrades 0.3 instruction blocks while retaining an existing active state', async () => project(async root => {
@@ -149,4 +151,16 @@ test('failed install rolls back every file and allows a clean retry', async () =
   await rm(join(root, '.agentforge/manifest.json.tmp'));
   await install(root, ['codex']);
   assert.match(await readFile(join(root, 'AGENTS.md'), 'utf8'), /agentforge:codex:begin/);
+}));
+
+test('upgrades the 0.8.x instruction block that read OPERATOR.md at startup', async () => project(async root => {
+  const [release] = superseded('claude');
+  assert.match(release, /OPERATOR\.md/);
+  await writeFile(join(root, 'CLAUDE.md'), `# Mine\n${release}`);
+  await install(root, ['claude']);
+  const text = await readFile(join(root, 'CLAUDE.md'), 'utf8');
+  assert.match(text, /^# Mine/);
+  assert.doesNotMatch(text, /OPERATOR\.md/);
+  assert.equal(text.match(/agentforge:claude:begin/g)?.length, 1);
+  assert.deepEqual(await install(root, ['claude']), ['Instalação já atualizada.']);
 }));

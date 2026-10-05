@@ -112,3 +112,14 @@ test('competência de terceiros claude-automation-recommender: só no Claude, co
   await assert.rejects(readdir(join(root, '.agents/skills/claude-automation-recommender')), /ENOENT/);
   assert.match(await readFile(new URL('../../THIRD_PARTY_NOTICES.md', import.meta.url), 'utf8'), /claude-automation-recommender/);
 }));
+
+test('orçamento de arranque: instruções lidas em cada sessão cabem em 3000 tokens estimados', () => installed(async root => {
+  // Ficheiros que o bloco de instruções e o HARNESS mandam ler sempre; o resto é lido a pedido.
+  const startup = ['CLAUDE.md', '.agentforge/HARNESS.md', '.agentforge/MODEL_ROUTING.md', '.agentforge/work/state.md',
+    '.agentforge/work/context.md', '.agentforge/work/operator.json'];
+  let chars = 0;
+  for (const file of startup) chars += (await readFile(join(root, file), 'utf8')).length;
+  assert.ok(Math.ceil(chars / 4) <= 3000, `arranque com ~${Math.ceil(chars / 4)} tokens`);
+  const block = await readFile(join(root, 'CLAUDE.md'), 'utf8');
+  assert.doesNotMatch(block, /OPERATOR\.md/);
+}));

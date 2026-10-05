@@ -5,12 +5,12 @@ import { serve } from '../mcp.js';
 import { applyGateway } from '../gateway.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
-import { doctor, install, remove, status, targets, upgrade, type Target } from '../installer.js';
+import { doctor, install, remove, status, targets, upgrade } from '../installer.js';
 import { route } from '../routing.js';
 import { addLesson, changeLesson, getContext, lessonsIntegrity, listLessons, resealLessons, saveContext } from '../memory.js';
 import { plan } from '../orchestrator.js';
 import { loadOperator, setOperator } from '../operator.js';
-import { operationInsights, recordRun, type RunRecord } from '../operations.js';
+import { operationInsights, recordRun } from '../operations.js';
 import { profiles, type Profile } from '../capabilities.js';
 
 const help = 'Uso: agentforge <install|upgrade|doctor|mcp|graph|gateway|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +

@@ -46,12 +46,15 @@ async function load(root: string): Promise<Manifest> {
     throw new Error('Manifesto AgentForge inválido');
   }
   const manifest = value as Manifest;
+  // `generated()` reconstrói todos os ficheiros de um CLI; calcula-se uma vez por CLI e não por entrada.
+  const known = new Map<Target, Record<string, string>>();
+  const owned = (owner: Target) => known.get(owner) ?? known.set(owner, generated(owner)).get(owner)!;
   for (const [key, entry] of Object.entries(manifest.files)) {
     safe(root, key);
     if (!entry || !Array.isArray(entry.owners) || !entry.owners.length ||
         entry.owners.some(owner => !targets.includes(owner)) ||
         typeof entry.hash !== 'string' || !/^[a-f0-9]{64}$/.test(entry.hash) ||
-        !entry.owners.every(owner => key in generated(owner) || key in shared)) {
+        !entry.owners.every(owner => key in owned(owner) || key in shared)) {
       throw new Error(`Entrada inválida no manifesto: ${key}`);
     }
   }
