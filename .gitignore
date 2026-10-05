@@ -45,3 +45,6 @@ logs/
 tmp/
 temp/
 *.tmp
+
+# Base de conhecimento local (graphify); regenerada pelo hook post-commit
+graphify-out/
