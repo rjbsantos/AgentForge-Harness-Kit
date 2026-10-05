@@ -9,10 +9,11 @@ export const skills = {
     'forge-implementation': skill('forge-implementation', 'Planear e implementar alterações aprovadas com testes e passagem de trabalho entre agentes.', `
 1. Ler \`.agentforge/work/state.md\` e os requisitos aprovados. Parar se faltarem dados necessários ou houver um bloqueio.
 2. Confirmar a raiz do projecto: usar a pasta explicitamente indicada ou a raiz Git. Criar e alterar ficheiros do projecto apenas sob essa raiz; resolver e validar cada caminho antes de escrever, copiar ou eliminar. Se um destino sair da raiz ou atravessar uma ligação simbólica para fora, parar e pedir orientação. Não mover ficheiros externos nem criar cópias do projecto noutras pastas.
-3. Preparar um plano breve com caminhos dos ficheiros, testes e dependências. Marcar como paralelas apenas tarefas de leitura realmente independentes; atribuir um único responsável de escrita por ficheiro. Pedir aprovação para decisões com impacto.
-4. Escrever um teste que falhe para cada critério de aceitação, aplicar a correcção mínima e refactorizar mantendo os testes aprovados.
-5. Passar o trabalho para revisão e controlo de qualidade; limitar os ciclos de correcção e nova verificação e registar evidência, não afirmações, no ficheiro de estado.
-6. Nunca efectuar automaticamente uma submissão, integração ou distribuição paralela de alterações aos mesmos ficheiros.
+3. Antes de escrever código novo, subir esta escada e parar no primeiro degrau que resolve: não fazer (a necessidade é real?), reutilizar código existente do projecto, usar a biblioteca-padrão ou a funcionalidade nativa da plataforma, usar uma dependência já instalada; só depois escrever código novo, o mais curto que cumpre os critérios. Não acrescentar abstracções, opções ou dependências que nenhum requisito aprovado peça.
+4. Preparar um plano breve com caminhos dos ficheiros, testes e dependências. Marcar como paralelas apenas tarefas de leitura realmente independentes; atribuir um único responsável de escrita por ficheiro. Pedir aprovação para decisões com impacto.
+5. Escrever um teste que falhe para cada critério de aceitação, aplicar a correcção mínima e refactorizar mantendo os testes aprovados.
+6. Passar o trabalho para revisão e controlo de qualidade; limitar os ciclos de correcção e nova verificação e registar evidência, não afirmações, no ficheiro de estado.
+7. Nunca efectuar automaticamente uma submissão, integração ou distribuição paralela de alterações aos mesmos ficheiros.
 `),
     'forge-audit': skill('forge-audit', 'Auditar código existente com evidência e correcções aprovadas pelo utilizador.', `
 1. Mapear os pontos de entrada e o comportamento a partir do código real; identificar as áreas não inspeccionadas.
@@ -107,6 +108,24 @@ Ferramentas: ficheiros ou pesquisa na Web, quando disponibilizada pelo host; nã
 Passos: identificar afirmações; confirmar cada uma através do endereço, DOI ou caminho e linha da fonte; assinalar fontes desactualizadas ou contraditórias; identificar afirmações ainda não confirmadas.
 Validação: cada afirmação verificada tem evidência consultável. Nunca inventar referências bibliográficas, citações ou resultados de testes.
 Se uma afirmação não puder ser verificada, identificá-la como não confirmada, pedir uma fonte ou removê-la. Um DOI desconhecido não deve ser substituído por uma referência apenas plausível.
+`),
+    'forge-debug': skill('forge-debug', 'Investigar um defeito pela causa-raiz, com uma hipótese de cada vez, antes de propor qualquer correcção.', `
+Finalidade: impedir correcções por tentativa e erro. Entradas: sintoma, erro ou comportamento inesperado. Resultado: causa-raiz demonstrada e teste de regressão.
+1. Reproduzir a falha de forma fiável e registar o comando e a saída reais. Sem reprodução, dizê-lo e pedir os dados em falta em vez de adivinhar.
+2. Ler a mensagem de erro e o rasto de chamadas completos; verificar o que mudou recentemente (\`git log\`, \`git diff\`, dependências, configuração).
+3. Em sistemas com várias camadas, observar os dados em cada fronteira para localizar a camada onde o valor deixa de estar correcto.
+4. Formular uma hipótese única e escrita («a causa é X porque Y»), alterar uma só variável para a testar e comparar com o resultado esperado. Rejeitar a hipótese se a evidência não a confirmar; não acumular alterações.
+5. Corrigir a causa, não o sintoma: escrever primeiro o teste que falha, aplicar a correcção mínima e repetir a reprodução original.
+6. Após três hipóteses refutadas, parar e questionar a arquitectura ou o pressuposto com o utilizador, em vez de tentar uma quarta correcção.
+Validação: a causa está classificada (\`EXTRACTED\`, \`INFERRED\` ou \`AMBIGUOUS\`), existe um teste de regressão que falhava antes e passa agora, e a reprodução original deixou de falhar com saída real.
+`),
+    'forge-prose': skill('forge-prose', 'Rever textos em português europeu para remover marcas de escrita genérica sem alterar factos, números nem citações.', `
+Finalidade: texto claro e com voz própria, sem os vícios típicos de texto gerado. Entradas: texto e público. Resultado: versão revista e lista das alterações.
+1. Procurar: abertura e fecho que só repetem o pedido; elogios e fórmulas de cortesia; vocabulário inflacionado («crucial», «paisagem», «fascinante»); listas de três por reflexo; paralelismos «não só… mas também»; negrito e travessões em excesso; conclusões que resumem o que acabou de ser dito; hesitações em série.
+2. Preferir frases concretas, verbos directos, a voz da pessoa autora e o registo do público. Escrever em português europeu (pt-PT), não em português do Brasil.
+3. Nunca alterar factos, números, nomes, citações ou referências. Se uma frase só soar bem por ser vaga, assinalar a falta de conteúdo em vez de a disfarçar.
+4. Entregar o texto revisado e, à parte, as alterações de substância, para a pessoa autora decidir. Em trabalhos académicos, o texto continua a ser da pessoa autora: sugerir, não reescrever por inteiro.
+Validação: factos, números e citações iguais aos do original; cada alteração de substância está indicada; nenhuma afirmação nova foi introduzida.
 `)
 };
 //# sourceMappingURL=skills.js.map

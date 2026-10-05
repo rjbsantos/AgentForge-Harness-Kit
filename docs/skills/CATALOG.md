@@ -20,6 +20,8 @@ Fonte de verdade: `skills` em `src/skills.ts`. As competências são capacidades
 | `forge-context` | Gerir contexto conciso e propor lições fundamentadas |
 | `forge-research` | Investigar código, documentos e fontes externas autorizadas |
 | `forge-fact-check` | Validar afirmações e referências com fontes verificáveis |
+| `forge-debug` | Investigar defeitos pela causa-raiz, uma hipótese de cada vez, com teste de regressão |
+| `forge-prose` | Rever textos em pt-PT sem marcas de escrita genérica, sem alterar factos nem citações |
 
 As competências transversais são partilhadas entre perfis. Por exemplo, investigação e verificação de factos servem os perfis académico, editorial e técnico; requisitos e validação servem gestão de projetos, engenharia de IA e análise de sistemas. Não se cria uma cópia por perfil.
 

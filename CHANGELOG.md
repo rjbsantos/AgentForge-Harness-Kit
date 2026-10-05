@@ -2,6 +2,9 @@
 
 ## Por publicar
 
+- Novas competências inspiradas na análise de repositórios populares (superpowers, humanizer): `forge-debug` (causa-raiz com uma hipótese de cada vez, paragem após três refutadas; ligada a `bug-investigation`) e `forge-prose` (revisão de prosa em pt-PT sem alterar factos nem citações; ligada a `magazine-article`). Sem código de terceiros.
+- `forge-implementation` passa a ter uma escada «reutilizar antes de escrever» (não fazer, código existente, biblioteca-padrão, dependência já instalada) inspirada no ponytail; as reduções de código e custo anunciadas pelo projecto não foram medidas aqui.
+
 ## 0.9.2
 
 - Corrigido: `upgrade` e `install` recusavam projectos instalados pelas versões 0.8.2 e 0.8.3 com «Bloco de instruções alterado», porque o bloco dessas versões (sem a frase sobre o limite da raiz do projecto) não era reconhecido. O bloco passa a ser migrado, e um teste usa os blocos reais gerados pela 0.8.3. Verificada a migração a partir das versões 0.8.2, 0.8.3 e 0.9.0 até `doctor` saudável.
