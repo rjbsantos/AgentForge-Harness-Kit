@@ -170,3 +170,31 @@ test('operator verbosity is validated, persisted and exposed in the plan', async
   assert.equal(proposal.operator.verbosity, 'concise');
   assert.equal(run('route', '--project', root, '--cli', 'codex', '--prompt', 'x', '--verbosity', 'concise').status, 2);
 }));
+
+test('kit version: --version, manifest record, status and doctor detect an outdated install', async () => project(async root => {
+  const pkg = JSON.parse(await readFile(new URL('../../package.json', import.meta.url), 'utf8'));
+  assert.equal(run('--version').stdout.trim(), pkg.version);
+  assert.equal(run('-v').stdout.trim(), pkg.version);
+  assert.equal(run('install', '--project', root, '--cli', 'codex').status, 0);
+  const manifestPath = join(root, '.agentforge/manifest.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  assert.equal(manifest.kit, pkg.version);
+  assert.match(run('status', '--project', root).stdout, new RegExp(`Kit: ${pkg.version} instalado; CLI actual ${pkg.version}`));
+  assert.equal(run('doctor', '--project', root).status, 0);
+  // Instalação feita por uma versão anterior (ou anterior ao registo da versão)
+  delete manifest.kit;
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+  assert.match(run('status', '--project', root).stdout, /anterior à 0\.9\.1/);
+  const outdated = run('doctor', '--project', root);
+  assert.equal(outdated.status, 1);
+  assert.match(outdated.stdout, /agentforge upgrade/);
+  assert.match(run('upgrade', '--project', root, '--dry-run').stdout, /registar versão do kit/);
+  assert.equal(JSON.parse(await readFile(manifestPath, 'utf8')).kit, undefined);
+  assert.match(run('upgrade', '--project', root).stdout, /registar versão do kit/);
+  assert.equal(JSON.parse(await readFile(manifestPath, 'utf8')).kit, pkg.version);
+  assert.equal(run('doctor', '--project', root).status, 0);
+  assert.equal(run('upgrade', '--project', root).stdout.trim(), 'Instalação já atualizada.');
+  manifest.kit = 'not-a-version';
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+  assert.equal(run('status', '--project', root).status, 1);
+}));

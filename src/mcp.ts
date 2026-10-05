@@ -6,6 +6,7 @@ import { getContext, listLessons } from './memory.js';
 import { operationInsights } from './operations.js';
 import { targets, type Target } from './installer.js';
 import { profiles, type Profile } from './capabilities.js';
+import { kitVersion } from './version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from './graph.js';
 
 // Servidor MCP mínimo (stdio, JSON-RPC 2.0, uma mensagem por linha). Expõe apenas leitura e
@@ -94,7 +95,7 @@ export async function handle(project: string, message: any): Promise<object | un
   if (id === undefined) return undefined; // notificações (ex.: notifications/initialized) não têm resposta
   if (method === 'initialize') {
     return reply({ protocolVersion: params?.protocolVersion ?? '2025-06-18', capabilities: { tools: {} },
-      serverInfo: { name: 'agentforge', version: '1' } });
+      serverInfo: { name: 'agentforge', version: kitVersion } });
   }
   if (method === 'ping') return reply({});
   if (method === 'tools/list') {

@@ -3,6 +3,7 @@ import { existsSync, lstatSync, statSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { generated, shared, targets } from './catalog.js';
+import { kitVersion } from './version.js';
 import { beginning, block, ending, instructions, superseded } from './blocks.js';
 export { targets };
 const manifestPath = '.agentforge/manifest.json';
@@ -48,6 +49,9 @@ async function load(root) {
         throw new Error('Manifesto AgentForge inválido');
     }
     const manifest = value;
+    if (manifest.kit !== undefined && (typeof manifest.kit !== 'string' || !/^\d+\.\d+\.\d+/.test(manifest.kit))) {
+        throw new Error('Manifesto AgentForge inválido: versão do kit');
+    }
     // `generated()` reconstrói todos os ficheiros de um CLI; calcula-se uma vez por CLI e não por entrada.
     const known = new Map();
     const owned = (owner) => known.get(owner) ?? known.set(owner, generated(owner)).get(owner);
@@ -108,7 +112,7 @@ export async function install(project, selected, dryRun = false) {
     const root = resolve(project);
     checkProject(root);
     const manifest = await load(root);
-    const next = { version: 1, files: structuredClone(manifest.files) };
+    const next = { version: 1, kit: kitVersion, files: structuredClone(manifest.files) };
     const desired = {};
     const notices = [];
     for (const target of selected) {
@@ -168,6 +172,9 @@ export async function install(project, selected, dryRun = false) {
         }
     }
     writes.push(...stagedInstructions);
+    if (manifest.kit !== kitVersion && Object.keys(manifest.files).length) {
+        changes.push(`registar versão do kit ${kitVersion}${manifest.kit ? ` (era ${manifest.kit})` : ''}`);
+    }
     if (!dryRun) {
         await transaction(root, writes.map(([key]) => key), async () => {
             for (const [key, content] of writes) {
@@ -184,7 +191,7 @@ export async function remove(project, selected, dryRun = false) {
     const root = resolve(project);
     checkProject(root);
     const manifest = await load(root);
-    const next = { version: 1, files: structuredClone(manifest.files) };
+    const next = { version: 1, kit: manifest.kit, files: structuredClone(manifest.files) };
     const deletes = [];
     const writes = [];
     const stagedInstructions = new Map();
@@ -262,7 +269,8 @@ export async function status(project) {
             modified.push(`${key} (${target})`);
         }
     }
-    return [`CLIs: ${active.join(', ') || 'nenhum'}`, `Ficheiros alterados/ausentes: ${modified.join(', ') || 'nenhum'}`];
+    return [`CLIs: ${active.join(', ') || 'nenhum'}`, `Ficheiros alterados/ausentes: ${modified.join(', ') || 'nenhum'}`,
+        `Kit: ${manifest.kit ?? 'anterior à 0.9.1'} instalado; CLI actual ${kitVersion}`];
 }
 export async function installedTargets(project) {
     const root = resolve(project);
@@ -287,7 +295,9 @@ export async function doctor(project, integrity) {
         const active = await installedTargets(root);
         if (!active.length)
             problems.push('Nenhum CLI instalado');
-        const [, altered] = await status(root);
+        const [, altered, kitLine] = await status(root);
+        if (!kitLine.startsWith(`Kit: ${kitVersion} `))
+            problems.push(`${kitLine}; execute \`agentforge upgrade\``);
         const names = altered.replace('Ficheiros alterados/ausentes: ', '');
         if (names !== 'nenhum')
             problems.push(`Ficheiros alterados/ausentes: ${names}`);

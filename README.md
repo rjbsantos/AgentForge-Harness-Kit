@@ -41,8 +41,8 @@ Requer Node.js 20 ou posterior. O repositório é privado, pelo que a conta Git 
 ```powershell
 gh auth login
 npm uninstall -g agentforge-harness-kit
-gh release download v0.9.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.9.0.tgz
-npm install -g .\agentforge-harness-kit-0.9.0.tgz
+gh release download v0.9.1 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.9.1.tgz
+npm install -g .\agentforge-harness-kit-0.9.1.tgz
 Get-Command agentforge
 agentforge install --project D:\caminho\do\projeto --cli all
 agentforge status --project D:\caminho\do\projeto
@@ -52,8 +52,8 @@ agentforge status --project D:\caminho\do\projeto
 ```bash
 gh auth login
 npm uninstall -g agentforge-harness-kit
-gh release download v0.9.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.9.0.tgz
-npm install -g ./agentforge-harness-kit-0.9.0.tgz
+gh release download v0.9.1 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.9.1.tgz
+npm install -g ./agentforge-harness-kit-0.9.1.tgz
 command -v agentforge
 agentforge install --project ~/WorkSpace/Groot --cli opencode
 ```
@@ -67,7 +67,7 @@ O OpenCode recebe também o comando `/agentforge`, que apresenta na conversa uma
 O tarball também pode ser instalado a partir de qualquer localização local:
 
 ```powershell
-npm install -g D:\transferencias\agentforge-harness-kit-0.9.0.tgz
+npm install -g D:\transferencias\agentforge-harness-kit-0.9.1.tgz
 ```
 
 O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases); como o repositório é privado, autentique-se no GitHub para o descarregar.
@@ -159,6 +159,8 @@ As lições podem ser específicas do projeto (`project`) ou reutilizáveis (`re
 ## Manutenção, integridade e integrações
 
 ```powershell
+agentforge --version                                       # versão do CLI instalado
+agentforge status --project D:\caminho\do\projeto            # inclui a versão do kit registada no projecto
 agentforge doctor --project D:\caminho\do\projeto     # diagnóstico; termina com código 1 se houver problemas
 agentforge upgrade --project D:\caminho\do\projeto --dry-run
 agentforge learn reseal --project D:\caminho\do\projeto   # aceita lessons.json depois de revisão humana

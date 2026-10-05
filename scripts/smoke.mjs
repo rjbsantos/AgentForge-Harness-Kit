@@ -74,6 +74,10 @@ try {
   const help = process.platform === 'win32'
     ? run('cmd.exe', ['/d', '/c', executable, '--help'])
     : run(executable, ['--help']);
+  const reported = process.platform === 'win32'
+    ? run('cmd.exe', ['/d', '/c', executable, '--version'])
+    : run(executable, ['--version']);
+  check('--version devolve a versão do pacote', reported.trim() === JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version);
   check('executável global responde', /^Uso: agentforge <install\|upgrade\|doctor\|/.test(help));
 
   // Um projeto com perfil de operador declarado.

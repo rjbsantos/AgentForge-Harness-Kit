@@ -6,6 +6,7 @@ import { getContext, listLessons } from './memory.js';
 import { operationInsights } from './operations.js';
 import { targets } from './installer.js';
 import { profiles } from './capabilities.js';
+import { kitVersion } from './version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from './graph.js';
 const cliProperty = { type: 'string', enum: [...targets] };
 const text = (args, key) => {
@@ -87,7 +88,7 @@ export async function handle(project, message) {
         return undefined; // notificações (ex.: notifications/initialized) não têm resposta
     if (method === 'initialize') {
         return reply({ protocolVersion: params?.protocolVersion ?? '2025-06-18', capabilities: { tools: {} },
-            serverInfo: { name: 'agentforge', version: '1' } });
+            serverInfo: { name: 'agentforge', version: kitVersion } });
     }
     if (method === 'ping')
         return reply({});

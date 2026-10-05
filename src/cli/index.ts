@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 import { serve } from '../mcp.js';
 import { applyGateway } from '../gateway.js';
 import { tokenReport } from '../tokens.js';
+import { kitVersion } from '../version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
 import { doctor, install, remove, status, targets, upgrade } from '../installer.js';
@@ -14,7 +15,7 @@ import { loadOperator, setOperator } from '../operator.js';
 import { operationInsights, recordRun } from '../operations.js';
 import { profiles, type Profile } from '../capabilities.js';
 
-const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
+const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO] | --version\n' +
   '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
   '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
   '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
@@ -33,6 +34,10 @@ function usage(): never {
 
 async function main(args: string[]): Promise<void> {
   const action = args.shift();
+  if (action === '--version' || action === '-v') {
+    console.log(kitVersion);
+    return;
+  }
   if (action === '--help' || action === '-h') {
     console.log(help);
     return;

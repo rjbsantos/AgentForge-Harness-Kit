@@ -23,7 +23,7 @@ Requires Node.js 20+. The repository is private; download a release tarball with
 
 ```bash
 gh auth login
-gh release download v0.9.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
+gh release download v0.9.1 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
 npm install -g ./agentforge-harness-kit-*.tgz
 agentforge install --project /path/to/project --cli all   # opencode | codex | claude | antigravity | all
 ```

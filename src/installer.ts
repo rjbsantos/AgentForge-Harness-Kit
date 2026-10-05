@@ -3,11 +3,13 @@ import { existsSync, lstatSync, statSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { generated, shared, targets, type Target } from './catalog.js';
+import { kitVersion } from './version.js';
 import { beginning, block, ending, instructions, superseded } from './blocks.js';
 export { targets, type Target };
 
 interface Entry { owners: Target[]; hash: string }
-interface Manifest { version: 1; files: Record<string, Entry> }
+// `kit` regista a versão do kit que escreveu os ficheiros; falta em manifestos anteriores à 0.9.1.
+interface Manifest { version: 1; kit?: string; files: Record<string, Entry> }
 const manifestPath = '.agentforge/manifest.json';
 const digest = (text: string) => createHash('sha256').update(text).digest('hex');
 const mutable = new Set(['.agentforge/work/state.md', '.agentforge/work/context.md',
@@ -46,6 +48,9 @@ async function load(root: string): Promise<Manifest> {
     throw new Error('Manifesto AgentForge inválido');
   }
   const manifest = value as Manifest;
+  if (manifest.kit !== undefined && (typeof manifest.kit !== 'string' || !/^\d+\.\d+\.\d+/.test(manifest.kit))) {
+    throw new Error('Manifesto AgentForge inválido: versão do kit');
+  }
   // `generated()` reconstrói todos os ficheiros de um CLI; calcula-se uma vez por CLI e não por entrada.
   const known = new Map<Target, Record<string, string>>();
   const owned = (owner: Target) => known.get(owner) ?? known.set(owner, generated(owner)).get(owner)!;
@@ -101,7 +106,7 @@ export async function install(project: string, selected: Target[], dryRun = fals
   const root = resolve(project);
   checkProject(root);
   const manifest = await load(root);
-  const next: Manifest = { version: 1, files: structuredClone(manifest.files) };
+  const next: Manifest = { version: 1, kit: kitVersion, files: structuredClone(manifest.files) };
   const desired: Record<string, { content: string; owners: Target[] }> = {};
   const notices: string[] = [];
   for (const target of selected) {
@@ -155,6 +160,9 @@ export async function install(project: string, selected: Target[], dryRun = fals
     }
   }
   writes.push(...stagedInstructions);
+  if (manifest.kit !== kitVersion && Object.keys(manifest.files).length) {
+    changes.push(`registar versão do kit ${kitVersion}${manifest.kit ? ` (era ${manifest.kit})` : ''}`);
+  }
   if (!dryRun) {
     await transaction(root, writes.map(([key]) => key), async () => {
       for (const [key, content] of writes) {
@@ -172,7 +180,7 @@ export async function remove(project: string, selected: Target[], dryRun = false
   const root = resolve(project);
   checkProject(root);
   const manifest = await load(root);
-  const next: Manifest = { version: 1, files: structuredClone(manifest.files) };
+  const next: Manifest = { version: 1, kit: manifest.kit, files: structuredClone(manifest.files) };
   const deletes: string[] = [];
   const writes: [string, string][] = [];
   const stagedInstructions = new Map<string, string>();
@@ -236,7 +244,8 @@ export async function status(project: string): Promise<string[]> {
       modified.push(`${key} (${target})`);
     }
   }
-  return [`CLIs: ${active.join(', ') || 'nenhum'}`, `Ficheiros alterados/ausentes: ${modified.join(', ') || 'nenhum'}`];
+  return [`CLIs: ${active.join(', ') || 'nenhum'}`, `Ficheiros alterados/ausentes: ${modified.join(', ') || 'nenhum'}`,
+    `Kit: ${manifest.kit ?? 'anterior à 0.9.1'} instalado; CLI actual ${kitVersion}`];
 }
 
 export async function installedTargets(project: string): Promise<Target[]> {
@@ -263,7 +272,8 @@ export async function doctor(project: string, integrity: () => Promise<string>):
     checkProject(root);
     const active = await installedTargets(root);
     if (!active.length) problems.push('Nenhum CLI instalado');
-    const [, altered] = await status(root);
+    const [, altered, kitLine] = await status(root);
+    if (!kitLine.startsWith(`Kit: ${kitVersion} `)) problems.push(`${kitLine}; execute \`agentforge upgrade\``);
     const names = altered.replace('Ficheiros alterados/ausentes: ', '');
     if (names !== 'nenhum') problems.push(`Ficheiros alterados/ausentes: ${names}`);
     if ((await upgrade(root, true))[0] !== 'Instalação já atualizada.' && names === 'nenhum') {

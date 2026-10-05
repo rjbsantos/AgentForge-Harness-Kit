@@ -2,6 +2,10 @@
 
 ## Por publicar
 
+## 0.9.1
+
+- Versão do kit verificável: `agentforge --version` (ou `-v`); `install` e `upgrade` registam a versão em `.agentforge/manifest.json` (`kit`); `status` mostra a versão instalada e a do CLI; `doctor` falha e indica `agentforge upgrade` se forem diferentes ou se o manifesto for anterior ao registo (0.9.1). O servidor MCP passa a anunciar a versão do kit.
+
 ## 0.9.0
 
 - Poupança de tokens: novo `agentforge tokens` (mede arranque, texto do utilizador em `CLAUDE.md`/`AGENTS.md` e crescimento do estado; código 1 se houver excessos); `operator set --verbosity normal|concise` (exposto no `plan`); secção «Estilo de resposta e higiene de contexto» no `HARNESS.md` (respostas directas sem comprimir avisos de risco nem aprovações; filtrar a saída das ferramentas e guardar registos longos em `.agentforge/work/logs/`); `docs/integrations/TOKEN-TOOLS.md` com o mapeamento de dez ferramentas externas, licenças e riscos. Sem código de terceiros embebido.
