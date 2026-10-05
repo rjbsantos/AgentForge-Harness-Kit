@@ -20,9 +20,10 @@ function frontmatter(text: string, file: string): Record<string, string> {
   assert.ok(match, `${file}: frontmatter em falta`);
   const fields: Record<string, string> = {};
   for (const line of match[1].split('\n')) {
-    const pair = /^([a-z_]+): (.+)$/.exec(line);
+    if (/^ +\S/.test(line)) continue; // linha aninhada (por exemplo `permission:` do OpenCode)
+    const pair = /^([A-Za-z_]+):(?: (.+))?$/.exec(line);
     assert.ok(pair, `${file}: linha de frontmatter inválida: ${line}`);
-    fields[pair[1]] = pair[2];
+    fields[pair[1]] = pair[2] ?? '';
   }
   return fields;
 }
@@ -69,7 +70,7 @@ test('agentes Codex: TOML com chaves obrigatórias e name igual ao ficheiro', ()
     const keys = Object.fromEntries([...text.matchAll(/^([a-z_]+) = (".*")$/gm)].map(match => [match[1], JSON.parse(match[2])]));
     assert.equal(keys.name, name.replace(/\.toml$/, ''), file);
     assert.ok(keys.description && keys.developer_instructions, file);
-    assert.equal(text.trim().split('\n').length, 3, `${file}: cada chave numa só linha`);
+    assert.equal(text.trim().split('\n').length, 'sandbox_mode' in keys ? 4 : 3, `${file}: cada chave numa só linha`);
   }
 }));
 
@@ -130,3 +131,32 @@ test('o HARNESS instala as regras de estilo concisos sem comprimir avisos de ris
   assert.match(harness, /Avisos de risco, pedidos de aprovação, decisões e limitações nunca se comprimem/);
   assert.match(harness, /\.agentforge\/work\/logs\//);
 }));
+
+test('papéis e competências seguem a estrutura comum e só referem competências existentes', async () => {
+  const { roles } = await import('../roles.js');
+  const { skills } = await import('../skills.js');
+  for (const [name, role] of Object.entries(roles)) {
+    for (const section of ['Competências:', 'Faz:', 'Limites:', 'Entrega:']) assert.ok(role.body.includes(section), `${name}: falta «${section}»`);
+    assert.match(role.description, /^Usar /, `${name}: a descrição deve dizer quando usar o agente`);
+    for (const ref of role.body.match(/forge-[a-z-]+/g) ?? []) assert.ok(ref in skills, `${name}: refere ${ref}, que não existe`);
+  }
+  for (const [name, content] of Object.entries(skills)) {
+    const meta = frontmatter(content, name);
+    assert.match(meta.description, /^Usar /, `${name}: a descrição deve dizer quando usar a competência`);
+    assert.match(content, /Validação:/, `${name}: falta uma linha «Validação:»`);
+  }
+});
+
+test('papéis só de leitura negam a escrita no formato nativo de cada CLI', async () => {
+  const { roles } = await import('../roles.js');
+  const readOnly = Object.entries(roles).filter(([, role]) => role.readOnly).map(([name]) => name);
+  assert.deepEqual(readOnly.sort(), ['code-critic', 'reverse-engineer', 'secops']);
+  await installed(async root => {
+    for (const name of readOnly) {
+      assert.match(await readFile(join(root, `.claude/agents/${name}.md`), 'utf8'), /^disallowedTools: Write, Edit, NotebookEdit$/m, name);
+      assert.match(await readFile(join(root, `.opencode/agents/${name}.md`), 'utf8'), /^permission:\n {2}edit: deny$/m, name);
+      assert.match(await readFile(join(root, `.codex/agents/${name}.toml`), 'utf8'), /^sandbox_mode = "read-only"$/m, name);
+    }
+    assert.doesNotMatch(await readFile(join(root, '.claude/agents/lead-developer.md'), 'utf8'), /disallowedTools/);
+  });
+});

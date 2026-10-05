@@ -2,6 +2,10 @@
 
 Fonte de verdade: `skills` em `src/skills.ts`. As competências são capacidades reutilizáveis, carregadas apenas quando são relevantes para o pedido e para o fluxo de trabalho. A lista de dependências de cada fluxo encontra-se em `src/capabilities.ts`.
 
+## Convenções
+
+A descrição de cada competência começa por «Usar…» e diz quando deve ser carregada. O corpo termina com uma linha `Validação:` que diz como se sabe que a competência foi bem aplicada (evidência, não afirmação). Ambos os pontos são verificados por `src/tests/contracts.test.ts`.
+
 ## Competências disponíveis
 
 | Identificador | Finalidade |

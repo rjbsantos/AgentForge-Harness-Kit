@@ -94,9 +94,13 @@ export function generated(target) {
             : '---\nname: agentforge\ndescription: Orquestrador AgentForge para fluxos de trabalho, encaminhamento de modelos e aprendizagem.\n---\n';
         files[`.${target}/agents/agentforge.md`] = `${primary}\nÉs o AgentForge. Lê .agentforge/HARNESS.md, .agentforge/work/state.md e .agentforge/work/context.md. Consulta .agentforge/CONTEXT_LEARNING.md ao consolidar uma fase. Mantém todas as alterações e artefactos do projecto sob a respectiva raiz; valida caminhos antes de escrever e pára perante destinos externos ou ligações simbólicas que escapem à raiz. Delega apenas quando a tarefa o justificar e preserva as aprovações humanas.\n`;
         for (const [name, role] of Object.entries(roles)) {
+            // Papéis só de leitura: negar a escrita no formato nativo, em vez de depender só do texto da instrução.
+            const lock = role.readOnly
+                ? (target === 'opencode' ? 'permission:\n  edit: deny\n' : 'disallowedTools: Write, Edit, NotebookEdit\n')
+                : '';
             const header = target === 'opencode'
-                ? `---\ndescription: ${role.description}\nmode: subagent\n---\n`
-                : `---\nname: ${name}\ndescription: ${role.description}\n---\n`;
+                ? `---\ndescription: ${role.description}\nmode: subagent\n${lock}---\n`
+                : `---\nname: ${name}\ndescription: ${role.description}\n${lock}---\n`;
             files[`.${target}/agents/${name}.md`] = `${header}\n${role.body}\n\nLê .agentforge/HARNESS.md e .agentforge/work/state.md antes de agir. Apresenta evidências e encaminha o trabalho; não pressuponhas aprovação.\n`;
         }
     }
@@ -154,7 +158,7 @@ Pedido inicial: $ARGUMENTS
         files['.codex/agents/agentforge.toml'] = `name = "agentforge"\ndescription = "Orquestrador AgentForge para fluxos de trabalho, contexto e aprendizagem."\ndeveloper_instructions = "És o AgentForge para as tarefas abrangidas pelo harness. Lê .agentforge/HARNESS.md, .agentforge/work/state.md e .agentforge/work/context.md. Mantém alterações e artefactos do projecto dentro da raiz; valida cada caminho antes de escrever e pára perante destinos externos ou ligações simbólicas que escapem à raiz. Respeita as aprovações humanas e consulta .agentforge/CONTEXT_LEARNING.md para as lições. Delega tarefas delimitadas quando adequado."\n`;
         for (const name of Object.keys(roles)) {
             const role = roles[name];
-            files[`.codex/agents/${name}.toml`] = `name = ${JSON.stringify(name)}\ndescription = ${JSON.stringify(role.description)}\ndeveloper_instructions = ${JSON.stringify(`És o especialista AgentForge ${name}. ${role.body} Segue .agentforge/HARNESS.md; entrega evidência e encaminha o trabalho.`)}\n`;
+            files[`.codex/agents/${name}.toml`] = `name = ${JSON.stringify(name)}\ndescription = ${JSON.stringify(role.description)}\n${role.readOnly ? 'sandbox_mode = "read-only"\n' : ''}developer_instructions = ${JSON.stringify(`És o especialista AgentForge ${name}. ${role.body} Segue .agentforge/HARNESS.md; entrega evidência e encaminha o trabalho.`)}\n`;
         }
     }
     return files;

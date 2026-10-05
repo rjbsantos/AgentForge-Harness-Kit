@@ -17,6 +17,14 @@
 | `academic-tutor` | Apoia o estudo e a investigação universitária com referências verificáveis. |
 | `systems-analyst` | Analisa processos actuais e futuros, limites de integração e impacto das alterações. |
 
+## Estrutura de um agente
+
+O corpo de cada agente tem quatro linhas: **Competências** (o que carrega e quando), **Faz** (o trabalho), **Limites** (o que nunca faz) e **Entrega** (o formato e o destino do resultado). A descrição começa por «Usar…» para que o CLI saiba quando o invocar. Um teste de contratos falha se faltar uma secção, se a descrição não disser quando usar o agente ou se o corpo referir uma competência inexistente.
+
+## Agentes só de leitura
+
+`code-critic`, `reverse-engineer` e `secops` só leem e relatam. Além de o dizerem no texto, o instalador nega-lhes a escrita no formato nativo: `disallowedTools: Write, Edit, NotebookEdit` no Claude Code, `permission: edit: deny` no OpenCode e `sandbox_mode = "read-only"` no Codex. No OpenCode a regra foi confirmada com `opencode agent list`; no Claude Code e no Codex só o formato do ficheiro é validado por teste. Os agentes que correm comandos (`qa`) não são marcados, porque precisam de executar testes.
+
 Um teste (`src/tests/docs.test.ts`) falha se um agente de `src/roles.ts` não constar desta tabela.
 
 ## Formatos por CLI
