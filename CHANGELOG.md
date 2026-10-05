@@ -2,6 +2,10 @@
 
 ## Por publicar
 
+## 0.9.2
+
+- Corrigido: `upgrade` e `install` recusavam projectos instalados pelas versões 0.8.2 e 0.8.3 com «Bloco de instruções alterado», porque o bloco dessas versões (sem a frase sobre o limite da raiz do projecto) não era reconhecido. O bloco passa a ser migrado, e um teste usa os blocos reais gerados pela 0.8.3. Verificada a migração a partir das versões 0.8.2, 0.8.3 e 0.9.0 até `doctor` saudável.
+
 ## 0.9.1
 
 - Versão do kit verificável: `agentforge --version` (ou `-v`); `install` e `upgrade` registam a versão em `.agentforge/manifest.json` (`kit`); `status` mostra a versão instalada e a do CLI; `doctor` falha e indica `agentforge upgrade` se forem diferentes ou se o manifesto for anterior ao registo (0.9.1). O servidor MCP passa a anunciar a versão do kit.
