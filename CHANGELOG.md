@@ -2,6 +2,9 @@
 
 ## Por publicar
 
+- Documentação: referências a `src/` corrigidas após a divisão do `catalog.ts`; novo índice `docs/README.md`; README com arranque rápido e índice, com a referência de contexto, manutenção, grafo e tokens movida para `docs/operations/COMMANDS.md`; exemplos com `<projeto>` e `bash` em vez de caminhos Windows; `README.en.md` alargado (arranque rápido, funcionamento, competências, ficheiros instalados, limites); catálogos de agentes e ferramentas completados; ADR-0002 (`dist/` versionado) e ADR-0003 (critério para novas competências); protocolo de avaliação em `docs/testing/EVALUATION.md` (rubricas, não executadas pela suite).
+- A lista de competências no `HARNESS.md` é gerada a partir de `src/skills.ts`. Novo `src/tests/docs.test.ts`: falha se faltar uma competência ou um agente nos catálogos, se a versão do README, do README em inglês ou do CHANGELOG divergir de `package.json`, ou se existirem ligações ou caminhos de `src/` quebrados na documentação.
+
 - Novas competências inspiradas na análise de repositórios populares (superpowers, humanizer): `forge-debug` (causa-raiz com uma hipótese de cada vez, paragem após três refutadas; ligada a `bug-investigation`) e `forge-prose` (revisão de prosa em pt-PT sem alterar factos nem citações; ligada a `magazine-article`). Sem código de terceiros.
 - `forge-implementation` passa a ter uma escada «reutilizar antes de escrever» (não fazer, código existente, biblioteca-padrão, dependência já instalada) inspirada no ponytail; as reduções de código e custo anunciadas pelo projecto não foram medidas aqui.
 

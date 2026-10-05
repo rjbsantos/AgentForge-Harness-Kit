@@ -1,13 +1,13 @@
 # Auditoria funcional e técnica
 
-Este documento descreve a cobertura actual do AgentForge Harness Kit, os mecanismos reutilizados e os limites conhecidos. O catálogo executável encontra-se em `src/capabilities.ts` e `src/catalog.ts`; os ficheiros instalados são gerados a partir dessas fontes.
+Este documento descreve a cobertura actual do AgentForge Harness Kit, os mecanismos reutilizados e os limites conhecidos. O catálogo executável encontra-se em `src/capabilities.ts`, `src/skills.ts`, `src/roles.ts` e `src/catalog.ts`; os ficheiros instalados são gerados a partir dessas fontes.
 
 ## Inventário funcional
 
 | Componente | Localização | Função | Estado |
 | --- | --- | --- | --- |
 | Perfis e fluxos | `src/capabilities.ts` | Define os sete perfis, os fluxos, os requisitos de ferramentas, os passos, as validações e os modelos de saída | Activo |
-| Competências, agentes e instruções | `src/catalog.ts` | Gera capacidades transversais e formatos nativos dos CLIs suportados | Activo |
+| Competências, agentes e instruções | `src/skills.ts`, `src/roles.ts`, `src/docs.ts`, `src/generators.ts` (reunidos em `src/catalog.ts`) | Gera capacidades transversais e formatos nativos dos CLIs suportados | Activo |
 | Encaminhamento | `src/routing.ts` | Classifica complexidade e risco e recomenda um perfil de modelo | Activo; não executa nem escolhe modelos sem configuração |
 | Selecção de perfil e plano | `src/orchestrator.ts` | Associa pedidos a perfis e fluxos e gera uma proposta estruturada | Activo; não executa a proposta |
 | Instalação e remoção | `src/installer.ts` | Controla propriedade, integridade, conflitos e desinstalação segura | Activo |

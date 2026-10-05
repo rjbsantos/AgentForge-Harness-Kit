@@ -1,6 +1,27 @@
 # Catálogo de agentes
 
-Fonte de verdade: `roles` em `src/catalog.ts`; os formatos específicos de cada CLI são produzidos por `generated()`. O orquestrador apresenta-se como AgentForge quando a ferramenta anfitriã permite personalização.
+## Agentes do catálogo
+
+| Agente | Responsabilidade |
+| --- | --- |
+| `product-manager` | Clarifica requisitos e critérios de aceitação; não implementa código. |
+| `architect` | Desenha componentes e interfaces com base nos requisitos aprovados. |
+| `solution-advisor` | Traduz necessidades de negócio em opções comparáveis, com custos, riscos e decisão registada; não implementa. |
+| `lead-developer` | Implementa trabalho aprovado, começando pelos testes, e encaminha-o para revisão. |
+| `code-critic` | Revê alterações quanto à correcção, manutenção e regressões, sem editar ficheiros. |
+| `qa` | Verifica de forma independente a cobertura de testes e os critérios de aceitação. |
+| `reverse-engineer` | Descreve um sistema existente com base em evidências, para auditoria e documentação. |
+| `secops` | Avalia alterações de risco elevado e decisões de segurança antes da implementação. |
+| `ai-engineer` | Desenha e avalia sistemas de inteligência artificial, incluindo dados, modelos, recuperação aumentada e segurança. |
+| `editor` | Produz artigos para revistas com investigação baseada em fontes e revisão editorial. |
+| `academic-tutor` | Apoia o estudo e a investigação universitária com referências verificáveis. |
+| `systems-analyst` | Analisa processos actuais e futuros, limites de integração e impacto das alterações. |
+
+Um teste (`src/tests/docs.test.ts`) falha se um agente de `src/roles.ts` não constar desta tabela.
+
+## Formatos por CLI
+
+Fonte de verdade: `roles` em `src/roles.ts`; os formatos específicos de cada CLI são produzidos por `generated()` em `src/generators.ts`. O orquestrador apresenta-se como AgentForge quando a ferramenta anfitriã permite personalização.
 
 Os papéis especializados partilham competências, em vez de manterem cópias próprias. Os fluxos de trabalho podem encaminhar tarefas para o mesmo agente — por exemplo, o gestor de produto ou o programador principal — quando as responsabilidades coincidem.
 

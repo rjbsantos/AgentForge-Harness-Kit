@@ -10,8 +10,8 @@ Se o pedido for ambíguo, indique `--role` e, quando necessário, `--workflow`. 
 
 Após executar o trabalho e validar o resultado, registe manualmente a execução:
 
-```powershell
-agentforge record --project D:\projeto --role university-student --workflow academic-research --result passed --validation passed --duration-ms 1200 --tools file-system,web-research --skills forge-research,forge-fact-check --tokens 300 --cost 0.01
+```bash
+agentforge record --project <projeto> --role university-student --workflow academic-research --result passed --validation passed --duration-ms 1200 --tools file-system,web-research --skills forge-research,forge-fact-check --tokens 300 --cost 0.01
 ```
 
 O ficheiro local `.agentforge/work/operations.jsonl` regista a data e hora, o perfil, o agente, o fluxo, as competências previstas e executadas, as ferramentas declaradas, a duração, o resultado, a validação, as repetições e, se fornecidos, tokens, custo e código de erro. Não guarda o pedido, fontes, nomes pessoais ou segredos. Um resultado `passed` exige `validation: passed`, mas a exactidão do registo continua a depender de quem o introduz. Não existe recolha automática de dados do CLI.
@@ -20,9 +20,9 @@ Se faltar uma ferramenta ou aprovação, registe a execução como `blocked` e a
 
 ## Consultar indicadores e contexto
 
-```powershell
-agentforge insights --project D:\projeto
-agentforge context --project D:\projeto --topic "timeout" --budget-tokens 1000
+```bash
+agentforge insights --project <projeto>
+agentforge context --project <projeto> --topic "timeout" --budget-tokens 1000
 ```
 
 `insights` resume o número de execuções por resultado e fluxo, as validações, a duração média, os tokens e custos declarados, as repetições e os códigos de erro registados mais de uma vez. Cada erro recorrente inclui as linhas de origem em `operations.jsonl`. Se o ficheiro estiver malformado, o comando indica a linha inválida e interrompe a análise. Se o ficheiro não existir, o relatório apresenta zero execuções registadas; isso não prova que não tenham ocorrido outras.

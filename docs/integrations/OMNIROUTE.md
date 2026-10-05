@@ -11,9 +11,9 @@
 | `thinking` | `auto/coding` | Pesos orientados para qualidade em geração de código |
 | `economy` | `auto/cheap` | Fornecedor mais barato por token primeiro |
 
-```powershell
-agentforge gateway omniroute --project D:\projeto                  # pré-visualiza, não grava nada
-agentforge gateway omniroute --project D:\projeto --cli claude --write
+```bash
+agentforge gateway omniroute --project <projeto>                  # pré-visualiza, não grava nada
+agentforge gateway omniroute --project <projeto> --cli claude --write
 ```
 
 - Sem `--write` apenas mostra o mapeamento, os comandos de ligação e os avisos.
