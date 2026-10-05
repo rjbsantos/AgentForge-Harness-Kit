@@ -136,3 +136,17 @@ test('blocks generated paths through symlinks', async () => project(async root =
     await assert.rejects(install(root, ['codex']), /Symlink/);
   } finally { await rm(external, { recursive: true, force: true }); }
 }));
+
+test('failed install rolls back every file and allows a clean retry', async () => project(async root => {
+  await mkdir(join(root, '.agentforge'), { recursive: true });
+  await writeFile(join(root, 'AGENTS.md'), '# Mine\n');
+  // Força a falha na gravação do manifesto, depois de os restantes ficheiros terem sido escritos.
+  await writeFile(join(root, '.agentforge/manifest.json.tmp'), 'stale');
+  await assert.rejects(install(root, ['codex']), /temporário/);
+  assert.equal(await readFile(join(root, 'AGENTS.md'), 'utf8'), '# Mine\n');
+  await assert.rejects(readFile(join(root, '.agentforge/HARNESS.md'), 'utf8'), /ENOENT/);
+  await assert.rejects(readFile(join(root, '.agentforge/manifest.json'), 'utf8'), /ENOENT/);
+  await rm(join(root, '.agentforge/manifest.json.tmp'));
+  await install(root, ['codex']);
+  assert.match(await readFile(join(root, 'AGENTS.md'), 'utf8'), /agentforge:codex:begin/);
+}));

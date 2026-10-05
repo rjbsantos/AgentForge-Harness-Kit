@@ -81,6 +81,29 @@ async function save(root, manifest) {
             await rm(tmp);
     }
 }
+// Aplica as alterações como unidade: se uma escrita falhar a meio, repõe o conteúdo anterior
+// de todos os ficheiros tocados, para que uma nova tentativa não encontre um estado intermédio.
+async function transaction(root, keys, apply) {
+    const before = new Map();
+    for (const key of new Set([...keys, manifestPath]))
+        before.set(key, await text(root, key));
+    try {
+        await apply();
+    }
+    catch (error) {
+        for (const [key, content] of before) {
+            const path = safe(root, key);
+            try {
+                if (content === undefined)
+                    await rm(path, { force: true });
+                else
+                    await writeFile(path, content, 'utf8');
+            }
+            catch { /* melhor esforço: preservar o erro original */ }
+        }
+        throw error;
+    }
+}
 function checkProject(root) {
     if (!existsSync(root) || !lstatSync(root).isDirectory())
         throw new Error(`Projeto inexistente: ${root}`);
@@ -150,12 +173,14 @@ export async function install(project, selected, dryRun = false) {
     }
     writes.push(...stagedInstructions);
     if (!dryRun) {
-        for (const [key, content] of writes) {
-            const path = safe(root, key);
-            await mkdir(dirname(path), { recursive: true });
-            await writeFile(path, content, 'utf8');
-        }
-        await save(root, next);
+        await transaction(root, writes.map(([key]) => key), async () => {
+            for (const [key, content] of writes) {
+                const path = safe(root, key);
+                await mkdir(dirname(path), { recursive: true });
+                await writeFile(path, content, 'utf8');
+            }
+            await save(root, next);
+        });
     }
     return changes.length ? changes : ['Instalação já atualizada.'];
 }
@@ -201,18 +226,20 @@ export async function remove(project, selected, dryRun = false) {
     }
     writes.push(...stagedInstructions);
     if (!dryRun) {
-        for (const key of deletes)
-            await rm(safe(root, key));
-        for (const [key, content] of writes) {
-            if (content)
-                await writeFile(safe(root, key), content);
-            else
+        await transaction(root, [...deletes, ...writes.map(([key]) => key)], async () => {
+            for (const key of deletes)
                 await rm(safe(root, key));
-        }
-        if (Object.keys(next.files).length)
-            await save(root, next);
-        else if (existsSync(safe(root, manifestPath)))
-            await rm(safe(root, manifestPath));
+            for (const [key, content] of writes) {
+                if (content)
+                    await writeFile(safe(root, key), content);
+                else
+                    await rm(safe(root, key));
+            }
+            if (Object.keys(next.files).length)
+                await save(root, next);
+            else if (existsSync(safe(root, manifestPath)))
+                await rm(safe(root, manifestPath));
+        });
     }
     return [...deletes.map(key => `remover ${key}`), ...writes.map(([key]) => `desligar ${key}`),
         'Estado, contexto e lições preservados em .agentforge/work/.'];

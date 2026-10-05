@@ -80,3 +80,27 @@ test('CLI route emits a machine-readable decision with the selected model', asyn
       ['economy', 'haiku', 'lead-developer', 'configured']);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+// Corpus rotulado: regista o comportamento esperado do classificador e protege contra regressões
+// ao alterar as expressões regulares. Cada linha: pedido, opções, nível esperado.
+const corpus: [string, { planned?: boolean; approved?: boolean }, 'thinking' | 'economy'][] = [
+  ['Implement the approved endpoint spec', { planned: true, approved: true }, 'economy'],
+  ['Implementa a especificação aprovada', { planned: true, approved: true }, 'economy'],
+  ['Corrigir gralha no título', {}, 'economy'],
+  ['Format the changelog', {}, 'economy'],
+  ['Rename the helper function', {}, 'economy'],
+  ['Design the architecture for billing', { planned: true, approved: true }, 'thinking'],
+  ['Compare two caching strategies', { planned: true, approved: true }, 'thinking'],
+  ['Pesquisa alternativas para o motor de pesquisa', { planned: true, approved: true }, 'thinking'],
+  ['Deploy the service to production', { planned: true, approved: true }, 'thinking'],
+  ['Apagar a base de dados de testes', { planned: true, approved: true }, 'thinking'],
+  ['Rotate the payment credentials', { planned: true, approved: true }, 'thinking'],
+  ['Implement the endpoint spec', {}, 'thinking'],
+  ['Add a button to the page', { planned: true }, 'thinking']
+];
+
+test('labelled corpus keeps the classifier stable', () => {
+  const wrong = corpus.filter(([prompt, options, tier]) => classify(prompt, options).tier !== tier)
+    .map(([prompt]) => prompt);
+  assert.deepEqual(wrong, []);
+});

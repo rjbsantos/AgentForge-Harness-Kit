@@ -10,7 +10,8 @@
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc",
     "test": "npm run build && node scripts/test.mjs",
-    "smoke": "npm run build && node scripts/smoke.mjs"
+    "smoke": "npm run build && node scripts/smoke.mjs",
+    "coverage": "npm run build && node scripts/test.mjs --experimental-test-coverage"
   },
   "engines": {
     "node": ">=20"

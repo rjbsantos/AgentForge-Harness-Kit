@@ -18,6 +18,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # `dist/` é versionado para a instalação directa a partir do Git: tem de reflectir `src/`.
+      - name: Confirmar que dist/ está sincronizado com src/
+        run: git diff --exit-code -- dist
       # Instala o tarball a sério: `npm pack --dry-run` não deteta módulos
       # ausentes do campo `files` nem artefactos obsoletos em dist/.
       - run: npm run smoke

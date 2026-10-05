@@ -10,4 +10,4 @@ if (!files.length) {
   console.error(`Nenhum teste encontrado em ${dir}/ — compilou com "npm run build"?`);
   process.exit(1);
 }
-process.exit(spawnSync(process.execPath, ['--test', ...files], { stdio: 'inherit' }).status ?? 1);
+process.exit(spawnSync(process.execPath, ['--test', ...process.argv.slice(2), ...files], { stdio: 'inherit' }).status ?? 1);

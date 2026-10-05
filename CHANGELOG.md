@@ -2,6 +2,9 @@
 
 ## Por publicar
 
+- `install` e `uninstall` passam a ser transaccionais: se uma escrita falhar a meio, os ficheiros tocados e o manifesto são repostos, evitando um estado intermédio que bloqueava a nova tentativa.
+- O CLI usa `util.parseArgs` em vez de um analisador artesanal e passa a ter testes de ponta a ponta (`src/tests/cli.test.ts`). O comportamento e as mensagens de utilização mantêm-se.
+- O CI falha se `dist/` não estiver sincronizado com `src/`. Novo `npm run coverage` e corpus rotulado de pedidos para proteger o classificador de encaminhamento contra regressões.
 - O OpenCode recebe um comando `/agentforge` com escolha guiada do tipo de trabalho, um tema AgentForge e configuração da TUI para o aplicar por omissão. A personalização altera cores, não o layout da barra lateral; as configurações `opencode.json` e `tui.json` existentes continuam a ser preservadas.
 - As instruções globais passam a exigir que alterações e artefactos do projecto permaneçam na raiz indicada, com validação de caminhos e bloqueio de traversal ou ligações simbólicas externas. Nova competência `forge-hygiene`, integrada na auditoria do repositório, identifica código, ficheiros e dependências potencialmente mortos ou obsoletos sem remoção automática.
 
