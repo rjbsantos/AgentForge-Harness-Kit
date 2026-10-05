@@ -14,6 +14,7 @@ AgentForge Harness Kit installs instructions and capabilities for AI coding CLIs
 - Concepts from [graphify](https://github.com/Graphify-Labs/graphify): every audit/analysis conclusion carries a confidence label (`EXTRACTED`, `INFERRED`, `AMBIGUOUS`); a `forge-graph` skill makes agents query an existing `graphify-out/graph.json` before reading files; `agentforge graph` turns the capability catalog itself into a queryable, deterministic graph.
 - For Claude Code, the install also ships Anthropic's official `claude-automation-recommender` skill (from the `claude-code-setup` plugin, Apache-2.0, unmodified; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)), which recommends hooks, subagents, skills, MCP servers and plugins for the project. It is read-only.
 - Optional [OmniRoute](https://github.com/diegosouzapw/OmniRoute) gateway integration: `agentforge gateway omniroute [--write]` maps the `thinking`/`economy` tiers to `auto/coding` and `auto/cheap` in `model-profiles.json` and prints per-CLI connection commands. It does not install or run the gateway; read the privacy notes in `docs/integrations/OMNIROUTE.md` first (prompts reach whichever provider the gateway picks, including third-party free tiers).
+- Token savings: `agentforge tokens` measures what the harness puts in context (startup budget of 3000 estimated tokens, user instruction size, state growth); `operator set --verbosity concise` installs terse-answer rules that never compress risk warnings or approvals; `docs/integrations/TOKEN-TOOLS.md` maps ten popular token tools (RTK, Context Mode, Caveman, Token Optimizer, Claude Context, …) to what the kit does natively and what stays an optional external install. Their savings figures are the authors' own and were not measured here.
 - A read-only MCP server (`agentforge mcp`) exposing `plan`, `route`, `context`, `lessons` and `insights`.
 
 ## Install
@@ -38,6 +39,7 @@ agentforge install --project /path/to/project --cli all   # opencode | codex | c
 | `context [save]` | Show or update the active context within a token budget |
 | `learn add\|list\|approve\|retire\|reseal` | Manage lessons (evidence and human approval required) |
 | `record` / `insights` | Record and aggregate explicit run results |
+| `tokens` | Measure the harness's context footprint (exit 1 on excess) |
 | `gateway omniroute [--write]` | Preview or write the OmniRoute model mapping |
 | `hooks install\|remove` | Opt-in Claude Code hook that logs tool names only |
 | `mcp` | Start the read-only MCP server over stdio |

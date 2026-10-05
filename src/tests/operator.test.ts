@@ -16,7 +16,7 @@ test('operator profile is validated, persisted and defaults to an empty, neutral
   const root = await mkdtemp(join(tmpdir(), 'agentforge-operator-'));
   try {
     await install(root, ['codex']);
-    assert.deepEqual(await loadOperator(root), { version: 1, roles: [], riskPosture: 'balanced', interests: [],
+    assert.deepEqual(await loadOperator(root), { version: 1, roles: [], riskPosture: 'balanced', verbosity: 'normal', interests: [],
       headline: undefined, language: undefined });
     const saved = await setOperator(root, {
       headline: 'Gestor de Projectos de SI com perfil técnico',

@@ -2,6 +2,7 @@
 
 ## Por publicar
 
+- Poupança de tokens: novo `agentforge tokens` (mede arranque, texto do utilizador em `CLAUDE.md`/`AGENTS.md` e crescimento do estado; código 1 se houver excessos); `operator set --verbosity normal|concise` (exposto no `plan`); secção «Estilo de resposta e higiene de contexto» no `HARNESS.md` (respostas directas sem comprimir avisos de risco nem aprovações; filtrar a saída das ferramentas e guardar registos longos em `.agentforge/work/logs/`); `docs/integrations/TOKEN-TOOLS.md` com o mapeamento de dez ferramentas externas, licenças e riscos. Sem código de terceiros embebido.
 - Encaminhamento: pedidos só de leitura (explicar, listar, mostrar…) sem verbos que alterem estado deixam de escalar para `secops` por palavras como `auth` ou `database`. Segredos, credenciais e pagamentos escalam sempre, tal como qualquer pedido que altere estado ou use `--high-risk`.
 - Corrigido: `secrets`, `credentials` e `payments` (plural) não eram reconhecidos como área de risco; só o singular.
 - Arranque mais leve: o bloco de instruções e o `HARNESS.md` deixam de mandar ler `OPERATOR.md` em cada sessão (só `operator.json`; o formato é consultado a pedido). O bloco anterior é reconhecido e actualizado automaticamente. Um teste limita as instruções de arranque a 3000 tokens estimados.

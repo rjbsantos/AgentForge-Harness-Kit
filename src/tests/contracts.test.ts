@@ -123,3 +123,10 @@ test('orçamento de arranque: instruções lidas em cada sessão cabem em 3000 t
   const block = await readFile(join(root, 'CLAUDE.md'), 'utf8');
   assert.doesNotMatch(block, /OPERATOR\.md/);
 }));
+
+test('o HARNESS instala as regras de estilo concisos sem comprimir avisos de risco', () => installed(async root => {
+  const harness = await readFile(join(root, '.agentforge/HARNESS.md'), 'utf8');
+  assert.match(harness, /## Estilo de resposta e higiene de contexto/);
+  assert.match(harness, /Avisos de risco, pedidos de aprovação, decisões e limitações nunca se comprimem/);
+  assert.match(harness, /\.agentforge\/work\/logs\//);
+}));

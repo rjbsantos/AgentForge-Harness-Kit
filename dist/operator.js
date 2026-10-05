@@ -6,8 +6,9 @@ import { profiles } from './capabilities.js';
 import { safe } from './installer.js';
 const operatorKey = '.agentforge/work/operator.json';
 const postures = ['cautious', 'balanced', 'exploratory'];
+const verbosities = ['normal', 'concise'];
 const maxInterests = 12;
-export const emptyOperator = () => ({ version: 1, roles: [], riskPosture: 'balanced', interests: [] });
+export const emptyOperator = () => ({ version: 1, roles: [], riskPosture: 'balanced', verbosity: 'normal', interests: [] });
 function phrase(value, label, limit) {
     if (typeof value !== 'string')
         throw new Error(`${label} inválido`);
@@ -48,12 +49,17 @@ function normalise(value) {
     if (typeof posture !== 'string' || !postures.includes(posture)) {
         throw new Error(`Postura de risco inválida; use: ${postures.join(', ')}`);
     }
+    const verbosity = raw.verbosity ?? 'normal';
+    if (typeof verbosity !== 'string' || !verbosities.includes(verbosity)) {
+        throw new Error(`Verbosidade inválida; use: ${verbosities.join(', ')}`);
+    }
     return {
         version: 1,
         headline: raw.headline === undefined || raw.headline === '' ? undefined : phrase(raw.headline, 'Descrição', 200),
         roles: raw.roles === undefined ? [] : orderedRoles(raw.roles),
         language: raw.language === undefined || raw.language === '' ? undefined : language(raw.language),
         riskPosture: posture,
+        verbosity: verbosity,
         interests: raw.interests === undefined ? [] : interestList(raw.interests)
     };
 }

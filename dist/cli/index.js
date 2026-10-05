@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { serve } from '../mcp.js';
 import { applyGateway } from '../gateway.js';
+import { tokenReport } from '../tokens.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
 import { doctor, install, remove, status, targets, upgrade } from '../installer.js';
@@ -12,15 +13,16 @@ import { plan } from '../orchestrator.js';
 import { loadOperator, setOperator } from '../operator.js';
 import { operationInsights, recordRun } from '../operations.js';
 import { profiles } from '../capabilities.js';
-const help = 'Uso: agentforge <install|upgrade|doctor|mcp|graph|gateway|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
+const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
     '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
     '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
     '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
     '  graph <query --prompt TEXTO [--budget-tokens N]|path --from NÓ --to NÓ|explain --node NÓ|report>  grafo do catálogo, com confiança EXTRACTED/INFERRED/AMBIGUOUS\n' +
+    '  tokens  mede o que o harness põe em contexto (arranque, instruções do utilizador, estado); termina com 1 se houver excessos\n' +
     '  gateway omniroute [--cli NOME] [--write]  propõe (ou grava com --write) o mapeamento thinking/economy para o gateway OmniRoute\n' +
     '  mcp  servidor MCP (stdio, só leitura) com plan, route, context, lessons e insights\n' +
     '  insights  resume execuções verificadas e padrões de erro recorrentes\n' +
-    '  operator <show|set [--headline TEXTO] [--roles PERFIL,PERFIL] [--language TAG] [--risk cautious|balanced|exploratory] [--interests A,B]>\n' +
+    '  operator <show|set [--headline TEXTO] [--roles PERFIL,PERFIL] [--language TAG] [--risk cautious|balanced|exploratory] [--verbosity normal|concise] [--interests A,B]>\n' +
     '  plan --cli NOME --prompt TEXTO [--role PERFIL --workflow FLUXO] [--planned --approved] [--high-risk]\n' +
     '  record --role PERFIL --workflow FLUXO --result passed|failed|blocked --validation passed|failed|not-run --duration-ms N [--tools LISTA --skills LISTA] [--retries N --tokens N --cost N --error-code CODIGO]';
 function usage() {
@@ -33,7 +35,7 @@ async function main(args) {
         console.log(help);
         return;
     }
-    if (!action || !['install', 'upgrade', 'doctor', 'mcp', 'graph', 'gateway', 'hooks', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action))
+    if (!action || !['install', 'upgrade', 'doctor', 'tokens', 'mcp', 'graph', 'gateway', 'hooks', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action))
         usage();
     const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks' || action === 'graph' || action === 'gateway') && args[0] && !args[0].startsWith('--') ? args.shift()
         : action === 'context' && args[0] === 'save' ? args.shift() : undefined;
@@ -46,7 +48,7 @@ async function main(args) {
                 topic: { type: 'string' }, 'budget-tokens': { type: 'string' }, lesson: { type: 'string' },
                 evidence: { type: 'string' }, id: { type: 'string' }, scope: { type: 'string' },
                 anchor: { type: 'string' }, headline: { type: 'string' }, roles: { type: 'string' },
-                language: { type: 'string' }, risk: { type: 'string' }, interests: { type: 'string' },
+                language: { type: 'string' }, risk: { type: 'string' }, verbosity: { type: 'string' }, interests: { type: 'string' },
                 role: { type: 'string' }, workflow: { type: 'string' }, result: { type: 'string' },
                 validation: { type: 'string' }, 'duration-ms': { type: 'string' }, tools: { type: 'string' },
                 skills: { type: 'string' }, retries: { type: 'string' }, tokens: { type: 'string' },
@@ -103,6 +105,7 @@ async function main(args) {
     const roles = list('roles', true);
     const language = text('language');
     const riskPosture = text('risk');
+    const verbosity = text('verbosity');
     const interests = list('interests', true);
     const roleName = text('role');
     if (roleName !== undefined && !(roleName in profiles))
@@ -126,12 +129,21 @@ async function main(args) {
         usage();
     if (action !== 'record' && (retries !== undefined || tokens !== undefined || cost !== undefined || errorCode || skillsUsed))
         usage();
-    if (action !== 'operator' && (headline || roles || language || riskPosture || interests))
+    if (action !== 'operator' && (headline || roles || language || riskPosture || verbosity || interests))
         usage();
     if (action !== 'context' && action !== 'graph' && budgetTokens !== undefined)
         usage();
     if (action !== 'graph' && (from || to || nodeName))
         usage();
+    if (action === 'tokens') {
+        if (cli !== 'all' || dryRun)
+            usage();
+        const report = await tokenReport(project);
+        console.log(JSON.stringify(report, null, 2));
+        if (report.findings.length)
+            process.exitCode = 1;
+        return;
+    }
     if (action === 'gateway') {
         if (!subcommand || dryRun || prompt || planned || approved || highRisk || role || workflow)
             usage();
@@ -165,12 +177,12 @@ async function main(args) {
             summary || next || topic || lesson || evidence || id || scope || anchor)
             usage();
         if (subcommand === 'show') {
-            if (headline || roles || language || riskPosture || interests)
+            if (headline || roles || language || riskPosture || verbosity || interests)
                 usage();
             console.log(JSON.stringify(await loadOperator(project), null, 2));
         }
         else if (subcommand === 'set') {
-            console.log(JSON.stringify(await setOperator(project, { headline, roles, language, riskPosture, interests }), null, 2));
+            console.log(JSON.stringify(await setOperator(project, { headline, roles, language, riskPosture, verbosity, interests }), null, 2));
         }
         else
             usage();

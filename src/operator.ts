@@ -6,6 +6,7 @@ import { profiles, type Profile } from './capabilities.js';
 import { safe } from './installer.js';
 
 export type RiskPosture = 'cautious' | 'balanced' | 'exploratory';
+export type Verbosity = 'normal' | 'concise';
 
 export interface Operator {
   version: 1;
@@ -13,6 +14,7 @@ export interface Operator {
   roles: Profile[];
   language?: string;
   riskPosture: RiskPosture;
+  verbosity: Verbosity;
   interests: string[];
 }
 
@@ -21,14 +23,16 @@ export interface OperatorPatch {
   roles?: string[];
   language?: string;
   riskPosture?: string;
+  verbosity?: string;
   interests?: string[];
 }
 
 const operatorKey = '.agentforge/work/operator.json';
 const postures: RiskPosture[] = ['cautious', 'balanced', 'exploratory'];
+const verbosities: Verbosity[] = ['normal', 'concise'];
 const maxInterests = 12;
 
-export const emptyOperator = (): Operator => ({ version: 1, roles: [], riskPosture: 'balanced', interests: [] });
+export const emptyOperator = (): Operator => ({ version: 1, roles: [], riskPosture: 'balanced', verbosity: 'normal', interests: [] });
 
 function phrase(value: unknown, label: string, limit: number): string {
   if (typeof value !== 'string') throw new Error(`${label} inválido`);
@@ -65,12 +69,17 @@ function normalise(value: unknown): Operator {
   if (typeof posture !== 'string' || !postures.includes(posture as RiskPosture)) {
     throw new Error(`Postura de risco inválida; use: ${postures.join(', ')}`);
   }
+  const verbosity = raw.verbosity ?? 'normal';
+  if (typeof verbosity !== 'string' || !verbosities.includes(verbosity as Verbosity)) {
+    throw new Error(`Verbosidade inválida; use: ${verbosities.join(', ')}`);
+  }
   return {
     version: 1,
     headline: raw.headline === undefined || raw.headline === '' ? undefined : phrase(raw.headline, 'Descrição', 200),
     roles: raw.roles === undefined ? [] : orderedRoles(raw.roles),
     language: raw.language === undefined || raw.language === '' ? undefined : language(raw.language),
     riskPosture: posture as RiskPosture,
+    verbosity: verbosity as Verbosity,
     interests: raw.interests === undefined ? [] : interestList(raw.interests)
   };
 }

@@ -43,7 +43,7 @@ O harness é partilhado; o perfil do operador é constituído por **dados locais
 agentforge operator show
 agentforge operator set --headline "Gestor de projetos de SI com perfil técnico" \\
   --roles it-project-manager,systems-analyst,ai-engineer,senior-developer \\
-  --language pt-PT --risk balanced \\
+  --language pt-PT --risk balanced --verbosity concise \\
   --interests "arquitetura de sistemas,engenharia de IA,automação"
 \`\`\`
 
@@ -51,6 +51,7 @@ agentforge operator set --headline "Gestor de projetos de SI com perfil técnico
 
 - **\`roles\` (ordem de preferência)** — desempata pedidos que correspondam a vários perfis. Um pedido para avaliar se devemos comprar ou desenvolver um motor de regras e analisar o impacto na arquitetura combina gestão e análise técnica. Sem um perfil declarado, \`agentforge plan\` identifica a ambiguidade e pede \`--role\`. Com uma ordem definida, escolhe de forma determinística o primeiro perfil correspondente e indica \`selectedBy: "operator"\`. Um perfil que não conste da lista nunca é escolhido por omissão.
 - **\`riskPosture\`** — \`cautious\` recomenda raciocínio reforçado (\`thinking\`) mesmo para tarefas delimitadas e regista o motivo. \`balanced\` é a opção predefinida. **A postura só pode aumentar o rigor:** \`exploratory\` não desactiva controlos, aprovações nem verificações. Para usar um modelo mais económico numa tarefa, utiliza \`--planned --approved\` depois de aprovares o plano.
+- **\`verbosity\`** — \`normal\` (predefinição) ou \`concise\`: respostas directas, sem preâmbulos nem resumos repetidos, mantendo exactos código, comandos e números e completos os avisos de risco e as aprovações. Reduz tokens de saída; não altera controlos nem validações.
 - **\`language\`** — idioma preferido para os artefactos produzidos (ex.: \`pt-PT\`). Não altera o idioma do kit instalado.
 - **\`headline\` e \`interests\`** — contexto breve para escolher exemplos e analogias relevantes e reconhecer áreas de interesse recorrentes. Não são instruções e não prevalecem sobre políticas, aprovações ou requisitos.
 
@@ -96,6 +97,9 @@ Confirma a raiz do projecto antes de inspeccionar ou alterar ficheiros: usa a pa
 
 ## Grafo de conhecimento e confiança
 Se existir \`graphify-out/graph.json\` (gerado pelo graphify), consulta \`graphify-out/GRAPH_REPORT.md\` e usa \`graphify query\`, \`path\` e \`explain\` antes de ler ou pesquisar ficheiros; não geres o grafo sem pedido. Todas as conclusões de auditoria e análise indicam a confiança: \`EXTRACTED\` (visto directamente, com ficheiro:linha), \`INFERRED\` (deduzido; confirmar no código) ou \`AMBIGUOUS\` (decisão humana). Nunca apresentes uma inferência como facto nem baseies uma recomendação apenas em ligações inferidas. \`agentforge graph\` aplica o mesmo princípio ao catálogo de perfis, fluxos e competências.
+
+## Estilo de resposta e higiene de contexto
+Lê \`verbosity\` em \`operator.json\`. Com \`concise\`: começa pelo resultado; sem introduções, sem repetir a pergunta e sem resumo final do que acabaste de mostrar; frases curtas. Mantém exactos código, comandos, caminhos, números, versões e mensagens de erro. Avisos de risco, pedidos de aprovação, decisões e limitações nunca se comprimem: concisão não dispensa evidência. Filtra a saída de ferramentas na origem (\`--quiet\`, \`--stat\`, \`tail\`, \`grep\`, intervalos de linhas) em vez de colar registos inteiros; se uma saída longa for útil, grava-a em \`.agentforge/work/logs/\` (sem segredos), cita o caminho e resume só o que sustenta a conclusão. \`agentforge tokens\` mede o que o harness põe em contexto.
 
 ## Estado e pontos de controlo
 \`.agentforge/work/state.md\` é a fonte de verdade deste projeto. Regista o fluxo, a fase, as entradas aprovadas, os artefactos e os próximos passos; nunca guardes segredos. Se o estado entrar em conflito com a conversa, pára e confirma. Altera a fase apenas depois de cumprir os critérios de conclusão e as validações aplicáveis. Não deduzas o estado com base numa sessão anterior.

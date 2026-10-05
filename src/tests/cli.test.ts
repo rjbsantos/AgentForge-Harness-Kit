@@ -141,3 +141,32 @@ test('gateway omniroute previews by default, writes only with --write and keeps 
   assert.equal(run('gateway', '--project', root).status, 2);
   assert.equal(run('install', '--project', root, '--write').status, 2);
 }));
+
+test('tokens measures the startup footprint and flags oversized user instructions and state', async () => project(async root => {
+  assert.equal(run('install', '--project', root, '--cli', 'claude').status, 0);
+  const clean = run('tokens', '--project', root);
+  assert.equal(clean.status, 0, clean.stdout);
+  const report = JSON.parse(clean.stdout);
+  assert.ok(report.startup.total > 0 && report.startup.total <= report.startup.budget);
+  assert.ok(report.startup.files.some((item: { file: string }) => item.file.includes('HARNESS.md')));
+  assert.deepEqual(report.findings, []);
+  const claude = join(root, 'CLAUDE.md');
+  await writeFile(claude, 'x'.repeat(10_000) + '\n' + await readFile(claude, 'utf8'));
+  await writeFile(join(root, '.agentforge/work/state.md'), 'y'.repeat(4_000));
+  const bloated = run('tokens', '--project', root);
+  assert.equal(bloated.status, 1);
+  const findings: string[] = JSON.parse(bloated.stdout).findings;
+  assert.ok(findings.some(line => line.startsWith('CLAUDE.md')));
+  assert.ok(findings.some(line => line.startsWith('state.md')));
+  assert.equal(run('tokens', '--project', root, '--dry-run').status, 2);
+}));
+
+test('operator verbosity is validated, persisted and exposed in the plan', async () => project(async root => {
+  assert.equal(run('install', '--project', root, '--cli', 'codex').status, 0);
+  assert.equal(JSON.parse(run('operator', 'show', '--project', root).stdout).verbosity, 'normal');
+  assert.equal(run('operator', 'set', '--project', root, '--verbosity', 'loud').status, 1);
+  assert.equal(JSON.parse(run('operator', 'set', '--project', root, '--verbosity', 'concise').stdout).verbosity, 'concise');
+  const proposal = JSON.parse(run('plan', '--project', root, '--cli', 'codex', '--prompt', 'Faz uma auditoria ao repositório').stdout);
+  assert.equal(proposal.operator.verbosity, 'concise');
+  assert.equal(run('route', '--project', root, '--cli', 'codex', '--prompt', 'x', '--verbosity', 'concise').status, 2);
+}));

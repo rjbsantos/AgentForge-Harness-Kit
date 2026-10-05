@@ -10,7 +10,7 @@ export interface Proposal {
   agent: string;
   workflow: string;
   selectedBy: SelectionSource;
-  operator: { roles: Profile[]; riskPosture: Operator['riskPosture'] };
+  operator: { roles: Profile[]; riskPosture: Operator['riskPosture']; verbosity: Operator['verbosity'] };
   skills: string[];
   requiredTools: string[];
   toolStatus: 'unverified';
@@ -106,7 +106,7 @@ export async function plan(project: string, cli: Target, prompt: string,
   return {
     role: selection.role, agent: profiles[selection.role].agent, workflow: selection.workflow,
     selectedBy: selection.selectedBy,
-    operator: { roles: operator.roles, riskPosture: operator.riskPosture },
+    operator: { roles: operator.roles, riskPosture: operator.riskPosture, verbosity: operator.verbosity },
     skills: workflow.skills, requiredTools: workflow.tools, toolStatus: 'unverified',
     steps: workflow.steps, validation: workflow.validation,
     output: workflow.output, template: `.agentforge/templates/${workflow.template}.md`,

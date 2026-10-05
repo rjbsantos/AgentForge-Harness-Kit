@@ -188,6 +188,20 @@ agentforge graph explain --node skill:forge-verify
 
 As arestas declaradas no catálogo são `EXTRACTED`; a co-utilização de competências em vários fluxos é `INFERRED`; `AMBIGUOUS` assinala nós sem referência. O relatório inclui os nós mais ligados, as competências transversais e os nós órfãos, e um teste falha se o catálogo ficar com um deles. A mesma consulta está disponível na ferramenta MCP `agentforge_graph`.
 
+## Poupança de tokens
+
+O kit mede e reduz o que põe em contexto, sem depender de código de terceiros:
+
+```powershell
+agentforge tokens --project D:\caminho\do\projeto           # arranque, instruções do utilizador e estado; código 1 se houver excessos
+agentforge operator set --project D:\caminho\do\projeto --verbosity concise
+```
+
+- `tokens` mede o arranque (orçamento de 3000 tokens estimados, validado por teste), o texto do próprio utilizador em `CLAUDE.md`/`AGENTS.md` e o crescimento de `state.md` e `context.md`. A estimativa é caracteres ÷ 4.
+- `--verbosity concise` instala no `HARNESS.md` regras de respostas directas: sem preâmbulos nem resumos repetidos, mantendo exactos o código, os comandos e os números, e completos os avisos de risco e as aprovações.
+- O `HARNESS.md` inclui regras de higiene de contexto: filtrar a saída das ferramentas na origem e guardar registos longos em `.agentforge/work/logs/` em vez de os colar na conversa.
+- [docs/integrations/TOKEN-TOOLS.md](docs/integrations/TOKEN-TOOLS.md) mapeia dez ferramentas populares (RTK, Context Mode, Caveman, Token Optimizer, Claude Context e outras) para o que o kit já faz e para o que fica como opção externa, com licenças e riscos. As percentagens de poupança são dos autores e não foram medidas aqui.
+
 ## Integração opcional: gateway OmniRoute
 
 O [OmniRoute](https://github.com/diegosouzapw/OmniRoute) (MIT) é um gateway local de modelos com recurso automático entre fornecedores. O kit não o instala nem o executa; `agentforge gateway omniroute` propõe o mapeamento `thinking` → `auto/coding` e `economy` → `auto/cheap` para o `model-profiles.json` e os comandos para ligar cada CLI. Sem `--write` só pré-visualiza; com `--write` acrescenta as entradas em falta e preserva as que já definiu. Os pedidos seguem para o fornecedor escolhido pelo gateway, incluindo camadas gratuitas de terceiros, pelo que convém ler os riscos de privacidade em [docs/integrations/OMNIROUTE.md](docs/integrations/OMNIROUTE.md) antes de o usar.
