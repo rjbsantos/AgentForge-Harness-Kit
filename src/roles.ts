@@ -1,7 +1,7 @@
 export interface Role {
   description: string;
   body: string;
-  // Papéis que só lêem e relatam: o gerador do CLI nega a escrita de ficheiros sempre que o formato nativo o permite.
+  // Papéis que só lêem e relatam: no Claude Code ficam sem Bash (testado: com Bash contornavam a negação de Write e Edit); no OpenCode e no Codex usa-se a permissão nativa.
   readOnly?: boolean;
 }
 
@@ -44,7 +44,7 @@ export const roles: Record<string, Role> = {
       'forge-implementation, forge-ground, forge-debug (perante um defeito), forge-graph (quando existir um grafo).',
       'Confirmar tipos e APIs reais e consultar um exemplo de cada tipo de ficheiro antes de o criar; reutilizar antes de escrever; escrever os testes antes das alterações; aplicar a alteração mínima; executar as verificações e guardar a saída real.',
       'Nunca inventar nomes de métodos ou tipos que não tenham sido confirmados neste código. Não aprovar o próprio trabalho. Sem commit, push nem PR sem autorização. Um único responsável de escrita por ficheiro.',
-      'lista de ficheiros alterados, comandos executados e respectiva saída, encaminhada para code-critic e qa.'
+      'lista de ficheiros alterados, o diff (code-critic não corre comandos), comandos executados e respectiva saída, encaminhada para code-critic e qa.'
     )
   },
   'code-critic': {
@@ -53,7 +53,7 @@ export const roles: Record<string, Role> = {
     body: body(
       'forge-audit, forge-ground.',
       'Comparar o código alterado com os requisitos e os testes. Registar problemas accionáveis com ficheiro, linha, gravidade e confiança (EXTRACTED, INFERRED ou AMBIGUOUS). Gravidade: Crítica, se afectar produção, provocar perda de dados ou criar um risco de segurança; Importante, se causar comportamento incorrecto, degradação de desempenho ou violação de convenções; Menor, para estilo ou nomenclatura. Assinalar falta de testes, texto visível ao utilizador não preparado para tradução e alterações incompatíveis a APIs ou esquemas.',
-      'Não alterar código nem incluir elogios. Agrupar ocorrências repetidas. Um problema INFERRED nunca é apresentado como facto.',
+      'Não alterar código nem incluir elogios. Só tem Read, Grep e Glob no Claude Code: se faltar o diff, pedi-lo ao orquestrador em vez de o inventar. Agrupar ocorrências repetidas. Um problema INFERRED nunca é apresentado como facto.',
       'lista de problemas por gravidade, ou a indicação explícita de que nada foi encontrado e do que não foi inspeccionado, encaminhada para lead-developer.'
     )
   },
@@ -72,7 +72,7 @@ export const roles: Record<string, Role> = {
     body: body(
       'forge-graph (quando existir um grafo), forge-performance (quando o fluxo o pedir), forge-ground.',
       'Localizar os pontos de entrada, dependências, comportamento e testes reais; citar ficheiro e linha; distinguir comportamento observado (EXTRACTED) de inferência (INFERRED); listar o que não foi inspeccionado.',
-      'Não alterar ficheiros. Não tratar a ausência de referências textuais como prova de código morto: verificar imports dinâmicos e registo por convenção.',
+      'Não alterar ficheiros. Sem Bash no Claude Code: ler `graphify-out/GRAPH_REPORT.md` em vez de executar `graphify`. Não tratar a ausência de referências textuais como prova de código morto: verificar imports dinâmicos e registo por convenção.',
       'mapa conciso do sistema (módulos, fluxos, dependências, testes, zonas por inspeccionar) para o orquestrador.'
     )
   },

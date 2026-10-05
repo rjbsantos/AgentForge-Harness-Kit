@@ -96,7 +96,7 @@ export function generated(target) {
         for (const [name, role] of Object.entries(roles)) {
             // Papéis só de leitura: negar a escrita no formato nativo, em vez de depender só do texto da instrução.
             const lock = role.readOnly
-                ? (target === 'opencode' ? 'permission:\n  edit: deny\n' : 'disallowedTools: Write, Edit, NotebookEdit\n')
+                ? (target === 'opencode' ? 'permission:\n  edit: deny\n' : 'tools: Read, Grep, Glob\n')
                 : '';
             const header = target === 'opencode'
                 ? `---\ndescription: ${role.description}\nmode: subagent\n${lock}---\n`

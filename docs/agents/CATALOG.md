@@ -23,7 +23,7 @@ O corpo de cada agente tem quatro linhas: **Competências** (o que carrega e qua
 
 ## Agentes só de leitura
 
-`code-critic`, `reverse-engineer` e `secops` só leem e relatam. Além de o dizerem no texto, o instalador nega-lhes a escrita no formato nativo: `disallowedTools: Write, Edit, NotebookEdit` no Claude Code, `permission: edit: deny` no OpenCode e `sandbox_mode = "read-only"` no Codex. No OpenCode a regra foi confirmada com `opencode agent list`; no Claude Code e no Codex só o formato do ficheiro é validado por teste. Os agentes que correm comandos (`qa`) não são marcados, porque precisam de executar testes.
+`code-critic`, `reverse-engineer` e `secops` só leem e relatam. Além de o dizerem no texto, o instalador restringe-os no formato nativo: `tools: Read, Grep, Glob` no Claude Code (sem Bash), `permission: edit: deny` no OpenCode e `sandbox_mode = "read-only"` no Codex. No Claude Code, `disallowedTools: Write, Edit` não chegou: o agente contornou-o com `printf` no Bash, e `permissionMode: plan` também não o impediu; só a lista `tools` sem Bash o bloqueou (testado numa sessão real). Consequência: `code-critic` não corre `git diff`, por isso o `lead-developer` entrega o diff. No OpenCode a regra foi confirmada com `opencode agent list`. No Codex a chave `sandbox_mode` não foi confirmada: a tentativa de teste falhou com `401 Unauthorized` (credencial da conta inválida) antes de lançar qualquer agente. Os agentes que correm comandos (`qa`) não são marcados, porque precisam de executar testes.
 
 Um teste (`src/tests/docs.test.ts`) falha se um agente de `src/roles.ts` não constar desta tabela.
 

@@ -153,10 +153,10 @@ test('papéis só de leitura negam a escrita no formato nativo de cada CLI', asy
   assert.deepEqual(readOnly.sort(), ['code-critic', 'reverse-engineer', 'secops']);
   await installed(async root => {
     for (const name of readOnly) {
-      assert.match(await readFile(join(root, `.claude/agents/${name}.md`), 'utf8'), /^disallowedTools: Write, Edit, NotebookEdit$/m, name);
+      assert.match(await readFile(join(root, `.claude/agents/${name}.md`), 'utf8'), /^tools: Read, Grep, Glob$/m, name);
       assert.match(await readFile(join(root, `.opencode/agents/${name}.md`), 'utf8'), /^permission:\n {2}edit: deny$/m, name);
       assert.match(await readFile(join(root, `.codex/agents/${name}.toml`), 'utf8'), /^sandbox_mode = "read-only"$/m, name);
     }
-    assert.doesNotMatch(await readFile(join(root, '.claude/agents/lead-developer.md'), 'utf8'), /disallowedTools/);
+    assert.doesNotMatch(await readFile(join(root, '.claude/agents/lead-developer.md'), 'utf8'), /^tools:/m);
   });
 });
