@@ -18,7 +18,7 @@ export const skills: Record<string, string> = {
 `),
   'forge-audit': skill('forge-audit', 'Auditar código existente com evidência e correcções aprovadas pelo utilizador.', `
 1. Mapear os pontos de entrada e o comportamento a partir do código real; identificar as áreas não inspeccionadas.
-2. Apresentar problemas potenciais com ficheiro e linha, impacto, confiança, esforço e risco de regressão.
+2. Apresentar problemas potenciais com ficheiro e linha, impacto, esforço e risco de regressão, e etiquetar cada um com a confiança: \`EXTRACTED\` (visto directamente no código, com ficheiro:linha), \`INFERRED\` (deduzido; indicar de onde) ou \`AMBIGUOUS\` (precisa de decisão humana). Nunca tratar um \`INFERRED\` como facto.
 3. Perguntar quais os problemas a corrigir. Não alterar código apenas por ter sido auditado.
 4. Para as correcções aprovadas, preservar os testes existentes e comparar os resultados antes e depois; rejeitar regressões.
 `),
@@ -29,7 +29,7 @@ Utilizar em auditorias de repositório, revisões de dívida técnica e pedidos 
 2. Inventariar pontos de entrada, módulos, ficheiros-fonte, testes, configurações, scripts, geração de código, manifestos e ficheiros de lock. Respeitar as exclusões já configuradas (por exemplo, builds e dependências instaladas) e não varrer pastas de sistema ou outros projectos.
 3. Procurar código sem referências a partir dos pontos de entrada e ficheiros aparentemente órfãos, mas verificar imports dinâmicos, reflexão, registo por convenção, plugins, comandos, APIs públicas, migrações, configuração de deploy e geração de código. A ausência de correspondências textuais não prova que o código esteja morto.
 4. Avaliar dependências com o gestor de pacotes e as ferramentas próprias do ecossistema: distinguir dependências directas, transitivas, opcionais, peer, de desenvolvimento e ferramentas de build; confirmar uso em código, scripts e configuração. Separar pacotes não usados, desactualizados, vulneráveis e apenas desnecessários — são conclusões diferentes. Nunca propor actualizações incompatíveis sem analisar impacto e versão suportada.
-5. Para cada candidato, apresentar caminho/linha ou pacote e versão, evidência reproduzível, motivo, impacto, confiança, risco de falsos positivos e forma segura de confirmação. Classificar como confirmado, provável ou inconclusivo; não apresentar inferências como factos.
+5. Para cada candidato, apresentar caminho/linha ou pacote e versão, evidência reproduzível, motivo, impacto, confiança, risco de falsos positivos e forma segura de confirmação. Classificar como confirmado (\`EXTRACTED\`), provável (\`INFERRED\`) ou inconclusivo (\`AMBIGUOUS\`); não apresentar inferências como factos.
 6. Não remover ficheiros, código ou dependências durante a auditoria. Pedir aprovação para alterações; depois, remover um candidato de cada vez, actualizar o lockfile apenas com o gestor de pacotes correcto e executar testes, build e verificações de referências relevantes. Rejeitar a alteração se surgir regressão.
 Validação: cada candidato tem evidência positiva para a sua classificação e foi verificado contra os pontos de entrada e mecanismos dinâmicos relevantes; a raiz foi confirmada; todos os caminhos de saída e alteração estão dentro do projecto; as recomendações distinguem observação de inferência. Se a ferramenta de análise não estiver disponível, indicar a limitação em vez de declarar que a verificação passou.
 `),
@@ -48,6 +48,16 @@ Finalidade: impedir que nomes de métodos, tipos ou convenções inventados cheg
 Utilizar antes de escrever ou alterar código não trivial; omitir apenas em alterações inequívocas de uma linha.
 Passos: localizar e ler integralmente um ficheiro existente do mesmo tipo antes de criar outro; seguir uma ou duas etapas de importações para confirmar classes-base, interfaces e configuração de injecção de dependências; procurar um símbolo no repositório antes de o invocar se o nome e a assinatura ainda não tiverem sido confirmados; após duas tentativas sem resolução, parar e pedir esclarecimento em vez de adivinhar.
 Validação: cada símbolo não trivial foi lido durante a tarefa ou confirmado num exemplo existente. Se um método ou tipo aparentemente plausível não existir no código, considerá-lo inventado e continuar a investigação ou pedir esclarecimento; não criar um adaptador para fingir que existe.
+`),
+  'forge-graph': skill('forge-graph', 'Consultar um grafo de conhecimento existente antes de ler ou pesquisar ficheiros, distinguindo factos de inferências.', `
+Finalidade: encontrar estrutura e impacto pelo grafo em vez de ler o repositório inteiro, e manter o rasto de quão fiável é cada ligação. Inspirado no graphify: grafo determinístico, sem índice vectorial, com cada aresta explicada.
+1. Se \`graphify-out/graph.json\` existir, ler \`graphify-out/GRAPH_REPORT.md\` e usar \`graphify query "<pergunta>"\`, \`graphify path "A" "B"\` e \`graphify explain "X"\` antes de abrir ficheiros ou pesquisar texto. Se não existir, não o gerar sem pedido: pode usar o modelo para documentos e imagens e escreve em \`graphify-out/\`; sugerir \`/graphify .\` ao utilizador.
+2. Verificar se o grafo está desactualizado (data de \`graph.json\` face a \`git log\` e \`git status\`). Se estiver, avisar e tratar tudo o que dele vier como \`INFERRED\` até confirmar no código.
+3. Etiquetar o que se retira do grafo: \`EXTRACTED\` (explícito na fonte; ainda assim citar ficheiro:linha), \`INFERRED\` (hipótese a confirmar a ler o código) e \`AMBIGUOUS\` (decisão humana). Uma conclusão nunca assenta apenas numa aresta \`INFERRED\`.
+4. Usar a estrutura: os nós mais ligados mostram onde uma alteração tem mais impacto; \`path\` e \`explain\` delimitam o que uma alteração toca; nós isolados são apenas candidatos para \`forge-hygiene\`, nunca prova de código morto.
+5. Limitar o custo: pedir subgrafos pequenos (\`--budget\`) e ler só os ficheiros que o grafo indicar.
+6. Para o catálogo do próprio AgentForge (perfis, fluxos, competências, ferramentas), usar \`agentforge graph query|path|explain|report\` ou a ferramenta MCP \`agentforge_graph\`.
+Validação: cada afirmação retirada do grafo indica a etiqueta de confiança e, para código, o ficheiro:linha confirmado; nenhuma recomendação depende só de arestas \`INFERRED\`.
 `),
   'forge-performance': skill('forge-performance', 'Identificar estrangulamentos com impacto mensurável, sem optimizações prematuras.', `
 Finalidade: analisar o desempenho de forma dirigida, sem procurar micro-optimizações sem benefício demonstrado. Entradas: percursos de código identificados como críticos ou, quando solicitado, o repositório completo. Resultado: problemas ordenados por prioridade, com ficheiro, linha, impacto estimado e correcção concreta.

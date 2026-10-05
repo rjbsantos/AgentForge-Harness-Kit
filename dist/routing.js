@@ -1,5 +1,11 @@
 import { readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
+// Agentes que `classify` pode devolver, por nível. O grafo do catálogo usa esta tabela; um teste
+// garante que `classify` nunca devolve um agente fora dela.
+export const routingTable = {
+    thinking: ['architect', 'secops', 'reverse-engineer'],
+    economy: ['lead-developer', 'qa']
+};
 const thinking = /\b(architect(?:ure)?|design|brainstorm|research|investigat(?:e|ion)|compar(?:e|ison)|trade.?off|ambig(?:uous|uity)|root cause|audit|security|migration|why|explor(?:e|ation)|arquitetura|desenh[ao]|conceber|investigar|pesquis[ao]|comparar|alternativas?|decis[aã]o|ambiguidade|causa raiz|auditar|seguran[cç]a|migra[cç][aã]o|porqu[eê]|analis[ae])\b/i;
 const planning = /^(?:please\s+|por favor\s+)?(?:plan|planeia|planejar|planear)\b|\bplanning\b/i;
 const risky = /\b(auth(?:entication|orization)?|credential|secret|payment|prod(?:uction)?|deploy|database|schema|destructive|delete|permission|compliance|privac[yi]|autentica[cç][aã]o|credenciais?|segredos?|pagamentos?|produ[cç][aã]o|implant(?:ar|a[cç][aã]o)|base de dados|eliminar|apagar|permiss[õo]es?|conformidade|privacidade)\b/i;

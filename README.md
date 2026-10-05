@@ -171,6 +171,23 @@ agentforge mcp --project D:\caminho\do\projeto            # servidor MCP só de 
 - `hooks install` acrescenta um hook `PostToolUse` a `.claude/settings.json`, preservando o resto da configuração. Regista apenas a hora e o nome da ferramenta em `.agentforge/work/events.jsonl` (nunca argumentos, resultados ou conversas) e requer o comando `agentforge` no PATH. `agentforge hooks remove` desfaz a alteração. O `insights` inclui a contagem por ferramenta.
 - `agentforge mcp` expõe `agentforge_plan`, `agentforge_route`, `agentforge_context`, `agentforge_lessons` e `agentforge_insights`. Não aprova lições, não regista execuções e não altera ficheiros. Exemplo de configuração: `{ "mcpServers": { "agentforge": { "command": "agentforge", "args": ["mcp", "--project", "/caminho/do/projeto"] } } }`.
 
+## Grafo de conhecimento e confiança (conceitos do graphify)
+
+O kit adopta três ideias do [graphify](https://github.com/Graphify-Labs/graphify): consultar um grafo em vez de pesquisar ficheiros, explicar cada ligação com uma etiqueta de confiança, e manter tudo determinístico e local (sem índice vectorial).
+
+- **Confiança em todas as conclusões:** as competências de auditoria e verificação e o `HARNESS.md` exigem `EXTRACTED` (visto directamente, com ficheiro:linha), `INFERRED` (deduzido; confirmar no código) ou `AMBIGUOUS` (decisão humana). Uma recomendação nunca assenta apenas em ligações `INFERRED`.
+- **Competência `forge-graph`** (auditoria de repositório, investigação de defeitos e análise de sistemas): se existir `graphify-out/graph.json`, o agente consulta `GRAPH_REPORT.md` e `graphify query|path|explain` antes de ler ficheiros, verifica se o grafo está desactualizado e usa os nós isolados apenas como candidatos para a higiene do projecto. O kit não gera nem instala o graphify; para criar o grafo use `/graphify .` no seu assistente. O `agentforge doctor` indica, a título informativo, se o grafo existe.
+- **`agentforge graph`:** o próprio catálogo (perfis, agentes, fluxos, competências, ferramentas, modelos e encaminhamento) é um grafo consultável:
+
+```powershell
+agentforge graph report
+agentforge graph query --prompt "auditoria do repositório" --budget-tokens 400
+agentforge graph path --from forge-hygiene --to senior-developer
+agentforge graph explain --node skill:forge-verify
+```
+
+As arestas declaradas no catálogo são `EXTRACTED`; a co-utilização de competências em vários fluxos é `INFERRED`; `AMBIGUOUS` assinala nós sem referência. O relatório inclui os nós mais ligados, as competências transversais e os nós órfãos, e um teste falha se o catálogo ficar com um deles. A mesma consulta está disponível na ferramenta MCP `agentforge_graph`.
+
 ## Ficheiros instalados
 
 O instalador cria instruções para o CLI escolhido, ficheiros nativos de agentes e competências, e o catálogo partilhado:

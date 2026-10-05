@@ -11,6 +11,7 @@ AgentForge Harness Kit installs instructions and capabilities for AI coding CLIs
 - Local context and memory: project state, an active summary and lessons that need evidence and human approval. `lessons.json` is sealed with a hash; edits made outside the CLI are detected and the lessons are not reused until a person runs `learn reseal`.
 - Reversible installation: a manifest with file hashes, conflict detection, transactional writes (rollback on failure), path-traversal and symlink protection. User-modified files and work data are preserved on update and uninstall.
 - Optional observability: explicit run records (`record`, `insights`) and an opt-in Claude Code hook that stores only a timestamp and a tool name.
+- Concepts from [graphify](https://github.com/Graphify-Labs/graphify): every audit/analysis conclusion carries a confidence label (`EXTRACTED`, `INFERRED`, `AMBIGUOUS`); a `forge-graph` skill makes agents query an existing `graphify-out/graph.json` before reading files; `agentforge graph` turns the capability catalog itself into a queryable, deterministic graph.
 - A read-only MCP server (`agentforge mcp`) exposing `plan`, `route`, `context`, `lessons` and `insights`.
 
 ## Install

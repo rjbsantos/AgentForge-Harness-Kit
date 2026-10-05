@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, lstatSync } from 'node:fs';
+import { existsSync, lstatSync, statSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { generated, shared, targets, type Target } from './catalog.js';
@@ -270,5 +270,10 @@ export async function doctor(project: string, integrity: () => Promise<string>):
   } catch (error) {
     problems.push(error instanceof Error ? error.message : String(error));
   }
-  return { problems, lines: problems.length ? problems.map(item => `✗ ${item}`) : ['✓ Instalação saudável'] };
+  // Informativo: o grafo do graphify é opcional e nunca conta como problema.
+  const graph = join(root, 'graphify-out', 'graph.json');
+  const note = existsSync(graph)
+    ? `ℹ graphify: graph.json presente (modificado há ${Math.floor((Date.now() - statSync(graph).mtimeMs) / 86_400_000)} dia(s)); usar forge-graph, e \`/graphify . --update\` se o código mudou`
+    : 'ℹ graphify: sem graphify-out/graph.json (opcional; `/graphify .` cria o grafo que a competência forge-graph consulta)';
+  return { problems, lines: [...(problems.length ? problems.map(item => `✗ ${item}`) : ['✓ Instalação saudável']), note] };
 }

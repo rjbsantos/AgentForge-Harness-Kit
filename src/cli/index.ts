@@ -2,6 +2,7 @@
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { serve } from '../mcp.js';
+import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
 import { doctor, install, remove, status, targets, upgrade, type Target } from '../installer.js';
 import { route } from '../routing.js';
@@ -11,10 +12,11 @@ import { loadOperator, setOperator } from '../operator.js';
 import { operationInsights, recordRun, type RunRecord } from '../operations.js';
 import { profiles, type Profile } from '../capabilities.js';
 
-const help = 'Uso: agentforge <install|upgrade|doctor|mcp|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
+const help = 'Uso: agentforge <install|upgrade|doctor|mcp|graph|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO]\n' +
   '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
   '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
   '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
+  '  graph <query --prompt TEXTO [--budget-tokens N]|path --from NÓ --to NÓ|explain --node NÓ|report>  grafo do catálogo, com confiança EXTRACTED/INFERRED/AMBIGUOUS\n' +
   '  mcp  servidor MCP (stdio, só leitura) com plan, route, context, lessons e insights\n' +
   '  insights  resume execuções verificadas e padrões de erro recorrentes\n' +
   '  operator <show|set [--headline TEXTO] [--roles PERFIL,PERFIL] [--language TAG] [--risk cautious|balanced|exploratory] [--interests A,B]>\n' +
@@ -31,8 +33,8 @@ async function main(args: string[]): Promise<void> {
     console.log(help);
     return;
   }
-  if (!action || !['install', 'upgrade', 'doctor', 'mcp', 'hooks', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action)) usage();
-  const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks') && args[0] && !args[0].startsWith('--') ? args.shift()
+  if (!action || !['install', 'upgrade', 'doctor', 'mcp', 'graph', 'hooks', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action)) usage();
+  const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks' || action === 'graph') && args[0] && !args[0].startsWith('--') ? args.shift()
     : action === 'context' && args[0] === 'save' ? args.shift() : undefined;
   let parsed: ReturnType<typeof parseArgs>['values'];
   try {
@@ -47,7 +49,7 @@ async function main(args: string[]): Promise<void> {
       role: { type: 'string' }, workflow: { type: 'string' }, result: { type: 'string' },
       validation: { type: 'string' }, 'duration-ms': { type: 'string' }, tools: { type: 'string' },
       skills: { type: 'string' }, retries: { type: 'string' }, tokens: { type: 'string' },
-      cost: { type: 'string' }, 'error-code': { type: 'string' }
+      cost: { type: 'string' }, 'error-code': { type: 'string' }, from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }
     } }).values;
   } catch {
     usage();
@@ -105,11 +107,29 @@ async function main(args: string[]): Promise<void> {
   const tokens = number('tokens', /^\d+(?:\.\d+)?$/);
   const cost = number('cost', /^\d+(?:\.\d+)?$/);
   const errorCode = text('error-code');
+  const from = text('from');
+  const to = text('to');
+  const nodeName = text('node');
   const budgetTokens = number('budget-tokens', /^\d+$/);
   if (budgetTokens !== undefined && (!Number.isSafeInteger(budgetTokens) || budgetTokens < 1 || budgetTokens > 32000)) usage();
   if (action !== 'record' && (retries !== undefined || tokens !== undefined || cost !== undefined || errorCode || skillsUsed)) usage();
   if (action !== 'operator' && (headline || roles || language || riskPosture || interests)) usage();
-  if (action !== 'context' && budgetTokens !== undefined) usage();
+  if (action !== 'context' && action !== 'graph' && budgetTokens !== undefined) usage();
+  if (action !== 'graph' && (from || to || nodeName)) usage();
+  if (action === 'graph') {
+    if (cli !== 'all' || dryRun || planned || approved || highRisk || role || workflow) usage();
+    const g = buildGraph();
+    if (subcommand === 'report' && !prompt && !from && !to && !nodeName && budgetTokens === undefined) {
+      console.log(JSON.stringify(graphReport(g), null, 2));
+    } else if (subcommand === 'query' && prompt && !from && !to && !nodeName) {
+      console.log(JSON.stringify(graphQuery(g, prompt, budgetTokens), null, 2));
+    } else if (subcommand === 'path' && from && to && !prompt && !nodeName && budgetTokens === undefined) {
+      console.log(JSON.stringify(graphPath(g, from, to), null, 2));
+    } else if (subcommand === 'explain' && nodeName && !prompt && !from && !to && budgetTokens === undefined) {
+      console.log(JSON.stringify(explain(g, nodeName), null, 2));
+    } else usage();
+    return;
+  }
   if (action === 'operator') {
     if (cli !== 'all' || dryRun || prompt || planned || approved || highRisk || role || workflow ||
       result || validation || durationMs !== undefined || toolsUsed.length ||

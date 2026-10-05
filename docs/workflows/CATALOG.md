@@ -14,7 +14,7 @@ Os fluxos combinam competências existentes, sem as duplicar:
 - Decisão de solução: `forge-requirements`, `forge-research`, `forge-tradeoff` e `forge-verify`.
 - Exploração técnica: `forge-research`, `forge-spike`, `forge-tradeoff` e `forge-verify`.
 
-O fluxo `repository-audit` pode repartir a análise de qualidade, segurança e desempenho depois de mapear o repositório. Inclui também `forge-hygiene` para identificar código, ficheiros e dependências potencialmente mortos ou obsoletos; estas são recomendações com evidência, não remoções automáticas. A proposta associa cada ramo a um especialista:
+O fluxo `repository-audit` pode repartir a análise de qualidade, segurança e desempenho depois de mapear o repositório. Usa `forge-graph` para consultar um grafo graphify existente e etiqueta cada achado com `EXTRACTED`, `INFERRED` ou `AMBIGUOUS`. Inclui também `forge-hygiene` para identificar código, ficheiros e dependências potencialmente mortos ou obsoletos; estas são recomendações com evidência, não remoções automáticas. A proposta associa cada ramo a um especialista:
 
 | Passo | Especialista | Competência |
 | --- | --- | --- |

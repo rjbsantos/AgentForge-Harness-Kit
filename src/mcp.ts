@@ -6,6 +6,7 @@ import { getContext, listLessons } from './memory.js';
 import { operationInsights } from './operations.js';
 import { targets, type Target } from './installer.js';
 import { profiles, type Profile } from './capabilities.js';
+import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from './graph.js';
 
 // Servidor MCP mínimo (stdio, JSON-RPC 2.0, uma mensagem por linha). Expõe apenas leitura e
 // propostas: nada aqui aprova lições, regista execuções nem altera ficheiros do projecto.
@@ -64,6 +65,21 @@ export const tools: Record<string, Tool> = {
   agentforge_lessons: {
     description: 'Lista as lições (pendentes, aprovadas e retiradas). A aprovação só é possível pelo CLI, por uma pessoa.',
     properties: {}, required: [], run: project => listLessons(project)
+  },
+  agentforge_graph: {
+    description: 'Consulta o grafo do catálogo (perfis, fluxos, competências, ferramentas) com confiança EXTRACTED/INFERRED/AMBIGUOUS: query, path, explain ou report.',
+    properties: { mode: { type: 'string', enum: ['query', 'path', 'explain', 'report'] }, question: { type: 'string' },
+      from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }, budgetTokens: { type: 'integer', minimum: 1 } },
+    required: ['mode'],
+    run: async (_project, args) => {
+      const g = buildGraph();
+      const mode = text(args, 'mode');
+      if (mode === 'report') return graphReport(g);
+      if (mode === 'query') return graphQuery(g, text(args, 'question'), typeof args.budgetTokens === 'number' ? args.budgetTokens : undefined);
+      if (mode === 'path') return graphPath(g, text(args, 'from'), text(args, 'to'));
+      if (mode === 'explain') return explain(g, text(args, 'node'));
+      throw new Error(`Modo desconhecido: ${mode}`);
+    }
   },
   agentforge_insights: {
     description: 'Resume as execuções registadas explicitamente e os erros recorrentes.',

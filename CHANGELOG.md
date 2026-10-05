@@ -2,6 +2,8 @@
 
 ## Por publicar
 
+- Conceitos do graphify: nova competência `forge-graph` (auditoria de repositório, investigação de defeitos e análise de sistemas) que consulta `graphify-out/` quando existe; etiquetas de confiança `EXTRACTED`/`INFERRED`/`AMBIGUOUS` exigidas em `forge-audit`, `forge-hygiene`, no modelo de auditoria e no `HARNESS.md`; `agentforge graph query|path|explain|report` e a ferramenta MCP `agentforge_graph` sobre o catálogo do kit; `agentforge doctor` indica, sem o tratar como problema, se existe grafo do graphify.
+- `routing.ts` exporta `routingTable`, e um teste garante que `classify` só devolve agentes aí declarados.
 - Novos comandos: `upgrade` (reaplica o kit aos CLIs instalados), `doctor` (diagnóstico com código de saída), `mcp` (servidor MCP só de leitura com `plan`, `route`, `context`, `lessons` e `insights`) e `hooks install|remove` (hook opcional do Claude Code que regista apenas hora e nome da ferramenta; `insights` passa a incluir `hookEvents`).
 - `lessons.json` passa a ter um selo de integridade: edições fora do CLI fazem omitir as lições e recusar novas até `agentforge learn reseal`. `context` devolve `warnings`.
 - `catalog.ts` dividido em `skills`, `roles`, `docs`, `generators` e `target`; os blocos de instruções de versões anteriores ficam isolados em `blocks.ts`.

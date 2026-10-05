@@ -1,6 +1,6 @@
 # Catálogo de competências
 
-Fonte de verdade: `skills` em `src/catalog.ts`. As competências são capacidades reutilizáveis, carregadas apenas quando são relevantes para o pedido e para o fluxo de trabalho. A lista de dependências de cada fluxo encontra-se em `src/capabilities.ts`.
+Fonte de verdade: `skills` em `src/skills.ts`. As competências são capacidades reutilizáveis, carregadas apenas quando são relevantes para o pedido e para o fluxo de trabalho. A lista de dependências de cada fluxo encontra-se em `src/capabilities.ts`.
 
 ## Competências disponíveis
 
@@ -12,6 +12,7 @@ Fonte de verdade: `skills` em `src/catalog.ts`. As competências são capacidade
 | `forge-hygiene` | Identificar código, ficheiros e dependências mortos ou obsoletos com evidência e controlo de falsos positivos |
 | `forge-verify` | Verificar critérios de aceitação com evidência independente |
 | `forge-ground` | Confirmar APIs, tipos e convenções existentes antes de escrever código |
+| `forge-graph` | Consultar um grafo de conhecimento (graphify) antes de ler ficheiros, com etiquetas de confiança `EXTRACTED`, `INFERRED` e `AMBIGUOUS` |
 | `forge-performance` | Identificar problemas de desempenho com impacto fundamentado |
 | `forge-tradeoff` | Comparar opções com critérios definidos previamente e registar decisões |
 | `forge-spike` | Responder a uma pergunta técnica através de uma experiência delimitada |

@@ -93,3 +93,26 @@ test('hooks are opt-in, merge into existing settings and record only the tool na
   assert.match(run('hooks', 'remove', '--project', root).stdout, /removido/);
   assert.deepEqual(JSON.parse(await readFile(join(root, '.claude/settings.json'), 'utf8')), { permissions: { allow: ['Bash(ls)'] } });
 }));
+
+test('graph subcommands answer from the catalog and reject misuse', async () => project(async root => {
+  const ok = (...args: string[]) => JSON.parse(run('graph', ...args, '--project', root).stdout);
+  assert.equal(ok('report').orphans.length, 0);
+  assert.equal(ok('query', '--prompt', 'auditoria do repositório').seeds[0], 'workflow:repository-audit');
+  assert.ok(ok('path', '--from', 'forge-hygiene', '--to', 'senior-developer').hops >= 1);
+  assert.equal(ok('explain', '--node', 'secops').node.id, 'role:secops');
+  assert.equal(run('graph', 'report', '--prompt', 'x').status, 2);
+  assert.equal(run('graph', 'path', '--from', 'a').status, 2);
+  assert.equal(run('graph', 'explain', '--node', 'nope').status, 1);
+  assert.equal(run('route', '--cli', 'codex', '--prompt', 'x', '--node', 'a').status, 2);
+}));
+
+test('doctor reports graphify as optional information, never as a problem', async () => project(async root => {
+  assert.equal(run('install', '--project', root, '--cli', 'codex').status, 0);
+  assert.match(run('doctor', '--project', root).stdout, /sem graphify-out\/graph\.json/);
+  const { mkdir } = await import('node:fs/promises');
+  await mkdir(join(root, 'graphify-out'), { recursive: true });
+  await writeFile(join(root, 'graphify-out/graph.json'), '{}');
+  const withGraph = run('doctor', '--project', root);
+  assert.equal(withGraph.status, 0);
+  assert.match(withGraph.stdout, /graph\.json presente/);
+}));

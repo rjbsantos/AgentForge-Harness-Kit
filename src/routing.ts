@@ -20,6 +20,13 @@ export interface RoutingOptions {
   cautious?: boolean;
 }
 
+// Agentes que `classify` pode devolver, por nível. O grafo do catálogo usa esta tabela; um teste
+// garante que `classify` nunca devolve um agente fora dela.
+export const routingTable: Record<Tier, string[]> = {
+  thinking: ['architect', 'secops', 'reverse-engineer'],
+  economy: ['lead-developer', 'qa']
+};
+
 export type ModelProfiles = Record<Target, Partial<Record<Tier, string>>>;
 
 const thinking = /\b(architect(?:ure)?|design|brainstorm|research|investigat(?:e|ion)|compar(?:e|ison)|trade.?off|ambig(?:uous|uity)|root cause|audit|security|migration|why|explor(?:e|ation)|arquitetura|desenh[ao]|conceber|investigar|pesquis[ao]|comparar|alternativas?|decis[aã]o|ambiguidade|causa raiz|auditar|seguran[cç]a|migra[cç][aã]o|porqu[eê]|analis[ae])\b/i;

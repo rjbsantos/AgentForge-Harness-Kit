@@ -34,19 +34,21 @@ test('MCP server lists read-only tools and answers plan, route and context calls
       call(4, 'agentforge_plan', { cli: 'claude', prompt: 'Faz uma auditoria ao repositório' }),
       call(5, 'agentforge_context', {}),
       call(6, 'agentforge_route', { cli: 'nope', prompt: 'x' }),
+      call(9, 'agentforge_graph', { mode: 'explain', node: 'forge-graph' }),
       call(7, 'agentforge_unknown', {}),
       { jsonrpc: '2.0', id: 8, method: 'resources/list' }
     ]);
     const byId = new Map(replies.map(reply => [reply.id, reply]));
-    assert.equal(replies.length, 8); // a notificação não tem resposta
+    assert.equal(replies.length, 9); // a notificação não tem resposta
     assert.equal(byId.get(1).result.serverInfo.name, 'agentforge');
     const listed = byId.get(2).result.tools;
     assert.deepEqual(listed.map((tool: any) => tool.name).sort(),
-      ['agentforge_context', 'agentforge_insights', 'agentforge_lessons', 'agentforge_plan', 'agentforge_route']);
+      ['agentforge_context', 'agentforge_graph', 'agentforge_insights', 'agentforge_lessons', 'agentforge_plan', 'agentforge_route']);
     assert.ok(listed.every((tool: any) => tool.annotations.readOnlyHint));
     assert.equal(JSON.parse(byId.get(3).result.content[0].text).tier, 'thinking');
     assert.equal(JSON.parse(byId.get(4).result.content[0].text).workflow, 'repository-audit');
     assert.equal(JSON.parse(byId.get(5).result.content[0].text).lessons.length, 0);
+    assert.match(JSON.parse(byId.get(9).result.content[0].text).connections.join('\n'), /workflow:repository-audit --uses_skill--> skill:forge-graph/);
     assert.equal(byId.get(6).result.isError, true);
     assert.equal(byId.get(7).error.code, -32602);
     assert.equal(byId.get(8).error.code, -32601);
