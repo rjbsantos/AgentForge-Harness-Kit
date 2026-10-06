@@ -1,3 +1,5 @@
+import { domainSkills } from './skills-domain.js';
+
 const skill = (name: string, description: string, body: string): string =>
   `---\nname: ${name}\ndescription: ${description}\n---\n\n# ${name}\n\n${body.trim()}\n`;
 
@@ -13,11 +15,11 @@ Validação: cada REQ tem prioridade e um critério de aceitação que alguém c
 1. Ler \`.agentforge/work/state.md\` e os requisitos aprovados. Parar se faltarem dados necessários ou houver um bloqueio.
 2. Confirmar a raiz do projecto: usar a pasta explicitamente indicada ou a raiz Git. Criar e alterar ficheiros do projecto apenas sob essa raiz; resolver e validar cada caminho antes de escrever, copiar ou eliminar. Se um destino sair da raiz ou atravessar uma ligação simbólica para fora, parar e pedir orientação. Não mover ficheiros externos nem criar cópias do projecto noutras pastas.
 3. Antes de escrever código novo, subir esta escada e parar no primeiro degrau que resolve: não fazer (a necessidade é real?), reutilizar código existente do projecto, usar a biblioteca-padrão ou a funcionalidade nativa da plataforma, usar uma dependência já instalada; só depois escrever código novo, o mais curto que cumpre os critérios. Não acrescentar abstracções, opções ou dependências que nenhum requisito aprovado peça.
-4. Preparar um plano breve com caminhos dos ficheiros, testes e dependências. Marcar como paralelas apenas tarefas de leitura realmente independentes; atribuir um único responsável de escrita por ficheiro. Pedir aprovação para decisões com impacto.
+4. Antes de alterar código, criar um ramo de trabalho próprio com autorização (nunca implementar nem fazer commits directamente no ramo principal); se o repositório ainda não tem ramo principal, fazer primeiro o commit inicial e só depois criar o ramo. Preparar um plano breve com caminhos dos ficheiros, testes e dependências. Marcar como paralelas apenas tarefas de leitura realmente independentes; atribuir um único responsável de escrita por ficheiro. Pedir aprovação para decisões com impacto.
 5. Escrever um teste que falhe para cada critério de aceitação, aplicar a correcção mínima e refactorizar mantendo os testes aprovados.
 6. Passar o trabalho para revisão e controlo de qualidade; limitar os ciclos de correcção e nova verificação e registar evidência, não afirmações, no ficheiro de estado.
 7. Nunca efectuar automaticamente uma submissão, integração ou distribuição paralela de alterações aos mesmos ficheiros.
-Validação: cada critério de aceitação tem um teste que falhava antes e passa agora, com a saída real; só foram tocados ficheiros dentro da raiz; nada foi publicado sem autorização.
+Validação: o trabalho está num ramo próprio e não no principal; cada critério de aceitação tem um teste que falhava antes e passa agora, com a saída real; só foram tocados ficheiros dentro da raiz; nada foi publicado sem autorização.
 `),
   'forge-audit': skill('forge-audit', 'Usar para auditar código existente com evidência (ficheiro, linha e confiança) e propor correcções para aprovação.', `
 1. Mapear os pontos de entrada e o comportamento a partir do código real; identificar as áreas não inspeccionadas.
@@ -119,13 +121,13 @@ Se uma afirmação não puder ser verificada, identificá-la como não confirmad
 `),
   'forge-debug': skill('forge-debug', 'Usar perante um erro, falha de teste ou comportamento inesperado, para investigar a causa-raiz com uma hipótese de cada vez antes de corrigir.', `
 Finalidade: impedir correcções por tentativa e erro. Entradas: sintoma, erro ou comportamento inesperado. Resultado: causa-raiz demonstrada e teste de regressão.
-1. Reproduzir a falha de forma fiável e registar o comando e a saída reais. Sem reprodução, dizê-lo e pedir os dados em falta em vez de adivinhar.
+1. Reproduzir a falha de forma fiável **executando** um comando e registar o comando e a saída reais. Ler o código ou calcular à mão não é reproduzir: nesse caso escrever «não reproduzido», marcar a causa como \`INFERRED\` e executar a reprodução antes de propor a correcção. Sem forma de executar, dizê-lo e pedir os dados em falta em vez de adivinhar.
 2. Ler a mensagem de erro e o rasto de chamadas completos; verificar o que mudou recentemente (\`git log\`, \`git diff\`, dependências, configuração).
 3. Em sistemas com várias camadas, observar os dados em cada fronteira para localizar a camada onde o valor deixa de estar correcto.
 4. Formular uma hipótese única e escrita («a causa é X porque Y»), alterar uma só variável para a testar e comparar com o resultado esperado. Rejeitar a hipótese se a evidência não a confirmar; não acumular alterações.
 5. Corrigir a causa, não o sintoma: escrever primeiro o teste que falha, aplicar a correcção mínima e repetir a reprodução original.
 6. Após três hipóteses refutadas, parar e questionar a arquitectura ou o pressuposto com o utilizador, em vez de tentar uma quarta correcção.
-Validação: a causa está classificada (\`EXTRACTED\`, \`INFERRED\` ou \`AMBIGUOUS\`), existe um teste de regressão que falhava antes e passa agora, e a reprodução original deixou de falhar com saída real.
+Validação: a falha foi reproduzida por execução (não por cálculo), a causa está classificada (\`EXTRACTED\`, \`INFERRED\` ou \`AMBIGUOUS\`), existe um teste de regressão que falhava antes e passa agora, e a reprodução original deixou de falhar com saída real.
 `),
   'forge-prose': skill('forge-prose', 'Usar ao rever ou polir um texto em português europeu, para remover marcas de escrita genérica sem alterar factos, números nem citações.', `
 Finalidade: texto claro e com voz própria, sem os vícios típicos de texto gerado. Entradas: texto e público. Resultado: versão revista e lista das alterações.
@@ -134,5 +136,55 @@ Finalidade: texto claro e com voz própria, sem os vícios típicos de texto ger
 3. Nunca alterar factos, números, nomes, citações ou referências. Se uma frase só soar bem por ser vaga, assinalar a falta de conteúdo em vez de a disfarçar.
 4. Entregar o texto revisado e, à parte, as alterações de substância, para a pessoa autora decidir. Em trabalhos académicos, o texto continua a ser da pessoa autora: sugerir, não reescrever por inteiro.
 Validação: factos, números e citações iguais aos do original; cada alteração de substância está indicada; nenhuma afirmação nova foi introduzida.
-`)
+`),
+  'forge-checkpoint': skill('forge-checkpoint', 'Usar no fim de uma fase com artefactos que uma pessoa tem de aprovar (requisitos, arquitectura, plano), para registar o ponto de validação humana e bloquear a passagem até haver aprovação.', `
+Finalidade: nenhuma fase avança sem aprovação humana explícita. Entradas: fase concluída e artefactos produzidos. Resultado: registo do ponto de validação com o veredicto.
+1. Distinguir dois níveis: N1 (passagem entre fases, aprovada por quem decide o produto e quem decide a técnica) e N2 (acção destrutiva ou difícil de reverter, como voltar atrás, saltar uma fase ou eliminar ficheiros, com justificação escrita).
+2. Listar os artefactos a validar com o caminho exacto e os critérios de aprovação verificáveis (por exemplo: todos os requisitos obrigatórios têm critério de aceitação; cada requisito obrigatório tem componente).
+3. Apresentar os artefactos e os critérios e pedir uma resposta explícita: APROVADO, REJEITADO ou APROVADO COM CONDIÇÕES. Silêncio, ou um «parece bem» sobre outro assunto, não é aprovação.
+4. Guardar o registo em \`.agentforge/work/checkpoints/CP-NNN.md\` (fase, artefactos, critérios, aprovadores confirmados, veredicto, condições, data) e actualizar o estado. Em REJEITADO, devolver à fase com as razões; não avançar.
+Validação: existe um registo CP-NNN com aprovadores identificados e veredicto dado por uma pessoa; a fase seguinte só começou depois de APROVADO.
+`),
+  'forge-plan': skill('forge-plan', 'Usar depois de a arquitectura estar aprovada e antes de implementar, para decompor o trabalho em tarefas pequenas, verificáveis e ordenadas por dependência.', `
+Finalidade: um plano que outra pessoa ou agente consegue executar sem adivinhar. Entradas: requisitos e arquitectura aprovados. Resultado: \`.agentforge/work/plan.md\`.
+1. Decompor em tarefas de poucos minutos, cada uma com: requisitos que cobre (REQ), ficheiros exactos a criar ou alterar, o teste que a verifica e o comando que o executa, e as dependências de outras tarefas.
+2. Cada tarefa deve ser possível de verificar sozinha; dividir as que misturam várias responsabilidades. Aplicar a escada «reutilizar antes de escrever» de \`forge-implementation\` ao planear.
+3. Garantir que cada requisito obrigatório aparece em pelo menos uma tarefa e que cada tarefa aponta para um requisito; sinalizar tarefas sem requisito como possível excesso de âmbito.
+4. Apresentar o plano por blocos pequenos (cinco a sete tarefas) e passar por \`forge-checkpoint\` antes de implementar.
+Validação: a tabela requisito → tarefa não tem lacunas nem tarefas órfãs; cada tarefa tem ficheiros, teste e comando; o plano foi aprovado por uma pessoa.
+`),
+  'forge-security': skill('forge-security', 'Usar antes de dar uma alteração por concluída e em qualquer mudança que toque autenticação, dados sensíveis, entradas externas ou dependências, para aplicar um controlo de segurança que bloqueia a passagem em caso de risco grave.', `
+Finalidade: um controlo de segurança com critério de passagem claro. Entradas: alterações ou projecto e a lista de áreas de risco. Resultado: relatório por gravidade e decisão de passar ou bloquear.
+1. Procurar segredos no código e no histórico acessível (indicar só ficheiro e linha, nunca o valor), configurações por omissão inseguras e validação em falta nas fronteiras de entrada.
+2. Rever as áreas de risco aplicáveis: injecção (SQL, comandos), XSS, CSRF, autenticação e sessões, autorização, exposição de dados e registo de dados sensíveis.
+3. Dependências: pedir ao orquestrador a saída real da ferramenta de auditoria do ecossistema (por exemplo \`npm audit\`) quando o papel não tem acesso a comandos, e registar as vulnerabilidades conhecidas com a versão afectada.
+4. Classificar cada achado como Crítico, Elevado, Médio ou Baixo, com ficheiro:linha e confiança (\`EXTRACTED\`, \`INFERRED\`, \`AMBIGUOUS\`). Crítico e Elevado bloqueiam: o trabalho volta à implementação. Médio e Baixo ficam registados com dono e prazo.
+Validação: cada achado tem gravidade, ficheiro:linha, confiança e medida correctiva; nenhum segredo foi copiado para o relatório; a decisão de passar ou bloquear está escrita e os achados Crítico e Elevado estão fechados ou bloqueiam.
+`),
+  'forge-docs': skill('forge-docs', 'Usar ao produzir ou actualizar documentação funcional ou técnica de um sistema existente, para que cada afirmação resulte do código lido e não de suposições.', `
+Finalidade: documentação alinhada com o código real. Entradas: mapa do sistema (de \`forge-research\`, \`forge-graph\` ou do \`reverse-engineer\`) e o público. Resultado: documentos de negócio e técnicos com evidência.
+1. Separar os dois públicos: a documentação funcional descreve o que o sistema faz para o negócio (processos, regras, perfis, fluxos); a técnica descreve como está construído (módulos, interfaces, dados, configuração, execução e testes).
+2. Descrever só o que foi lido no código: citar o ficheiro (e a linha, quando útil) de cada regra ou comportamento. Distinguir comportamento observado (\`EXTRACTED\`) de intenção deduzida (\`INFERRED\`) e listar o que ficou por perceber (\`AMBIGUOUS\`) em vez de o preencher.
+3. Não documentar o que o código não faz nem copiar para a documentação segredos ou valores de configuração reais.
+4. Antes de dar por concluída, comparar uma amostra de afirmações com o código e pedir a validação de uma pessoa que conheça o domínio.
+Validação: cada regra ou comportamento tem referência ao código; o que foi inferido ou ficou por perceber está assinalado; uma amostra foi comparada com o código e a documentação foi validada por uma pessoa.
+`),
+  'forge-infra': skill('forge-infra', 'Usar quando a alteração mexe em ambiente de execução, integração contínua, contentores ou scripts de arranque, para garantir um ambiente reprodutível e sem segredos no repositório.', `
+Finalidade: construir e testar da mesma forma numa máquina limpa e na integração contínua. Entradas: projecto, comandos de teste e de construção. Resultado: configuração de CI e instruções de arranque verificadas.
+1. Confirmar como o projecto se instala, constrói e testa (ficheiros de manifesto reais), e usar esses mesmos comandos na CI; não inventar scripts.
+2. Fixar versões de ferramentas e dependências (ficheiro de bloqueio) e fazer a CI falhar se a suite falhar ou se a cobertura ficar abaixo do alvo acordado.
+3. Manter segredos fora do repositório (variáveis de ambiente ou gestor de segredos) e fornecer um ficheiro de exemplo sem valores reais.
+4. Alterar a infraestrutura só se a mudança a pedir; publicar, distribuir ou escrever em serviços externos exige aprovação.
+Validação: o arranque, a construção e os testes foram executados a partir de um estado limpo com a saída real; a CI usa os mesmos comandos; não há segredos no repositório.
+`),
+  'forge-finish': skill('forge-finish', 'Usar ao terminar uma alteração num ramo (implementação, change request ou correcção), para verificar, registar o trabalho com commits de âmbito restrito e propor a integração sem fazer merge automático.', `
+Finalidade: fechar o trabalho de forma rastreável e reversível. Entradas: ramo com a alteração e testes. Resultado: commits revistos, proposta de pull request e arquivo do pedido.
+1. Confirmar que o trabalho corre num ramo próprio e nunca directamente no ramo principal; criar o ramo (por exemplo \`cr-NNN-titulo\` ou \`bug-NNN-titulo\`) antes de alterar código, com autorização.
+2. Executar a suite completa e guardar a saída real; só avançar com tudo a passar.
+3. Fazer commits com os ficheiros alterados indicados um a um, nunca \`git add -A\`; mensagens que dizem o que mudou e porquê.
+4. Push e pull request apenas com autorização expressa. O merge é sempre da pessoa responsável; nunca fazer merge automático.
+5. Arquivar o pedido processado (change request ou bug) num histórico numerado, com estado, data, commits, ramo e ligação do PR, e deixar o modelo vazio para o pedido seguinte.
+Validação: a suite completa passou com saída real; os commits só contêm os ficheiros pretendidos; nada foi publicado nem integrado sem autorização; o pedido ficou arquivado com o número e o estado.
+`),
+  ...Object.fromEntries(Object.entries(domainSkills).map(([name, item]) => [name, skill(name, item.description, item.body)]))
 };

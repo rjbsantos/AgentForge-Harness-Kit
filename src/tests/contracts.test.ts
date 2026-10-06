@@ -114,15 +114,18 @@ test('competência de terceiros claude-automation-recommender: só no Claude, co
   assert.match(await readFile(new URL('../../THIRD_PARTY_NOTICES.md', import.meta.url), 'utf8'), /claude-automation-recommender/);
 }));
 
-test('orçamento de arranque: instruções lidas em cada sessão cabem em 3000 tokens estimados', () => installed(async root => {
-  // Ficheiros que o bloco de instruções e o HARNESS mandam ler sempre; o resto é lido a pedido.
-  const startup = ['CLAUDE.md', '.agentforge/HARNESS.md', '.agentforge/MODEL_ROUTING.md', '.agentforge/work/state.md',
-    '.agentforge/work/context.md', '.agentforge/work/operator.json'];
+test('orçamento de arranque: só o essencial é lido em cada sessão e cabe em 1500 tokens estimados', () => installed(async root => {
+  // Ficheiros que o bloco de instruções manda ler sempre; o menu, o guia, o encaminhamento, o contexto e o operador são lidos a pedido.
+  const startup = ['CLAUDE.md', '.agentforge/HARNESS.md', '.agentforge/work/state.md'];
   let chars = 0;
   for (const file of startup) chars += (await readFile(join(root, file), 'utf8')).length;
-  assert.ok(Math.ceil(chars / 4) <= 3000, `arranque com ~${Math.ceil(chars / 4)} tokens`);
+  assert.ok(Math.ceil(chars / 4) <= 1500, `arranque com ~${Math.ceil(chars / 4)} tokens`);
   const block = await readFile(join(root, 'CLAUDE.md'), 'utf8');
-  assert.doesNotMatch(block, /OPERATOR\.md/);
+  assert.doesNotMatch(block, /OPERATOR\.md|MODEL_ROUTING\.md|context\.md/);
+  // O menu vem depois do arranque: está instalado, é gerado do catálogo e o HARNESS manda apresentá-lo só depois do estado.
+  const menu = await readFile(join(root, '.agentforge/MENU.md'), 'utf8');
+  for (const name of ['forge-build', 'production-cleanup', 'frontend-build']) assert.ok(menu.includes(`\`${name}\``), name);
+  assert.match(await readFile(join(root, '.agentforge/HARNESS.md'), 'utf8'), /\*\*só depois\*\* apresenta os comandos/);
 }));
 
 test('o HARNESS instala as regras de estilo concisos sem comprimir avisos de risco', () => installed(async root => {
@@ -130,6 +133,24 @@ test('o HARNESS instala as regras de estilo concisos sem comprimir avisos de ris
   assert.match(harness, /## Estilo de resposta e higiene de contexto/);
   assert.match(harness, /Avisos de risco, pedidos de aprovação, decisões e limitações nunca se comprimem/);
   assert.match(harness, /\.agentforge\/work\/logs\//);
+}));
+
+test('comandos /af-… nativos no Claude Code e no OpenCode, listados no menu com a explicação', () => installed(async root => {
+  const { commands } = await import('../commands.js');
+  const menu = await readFile(join(root, '.agentforge/MENU.md'), 'utf8');
+  for (const name of ['af-menu', 'af-estado', 'af-retomar', 'af-plano', 'af-contexto', 'af-build', 'af-production-cleanup', 'af-frontend-build']) {
+    assert.ok(name in commands, name);
+  }
+  for (const [name, command] of Object.entries(commands)) {
+    assert.ok(menu.includes(`\`/${name}\` | ${command.description}`), `${name}: falta no MENU.md`);
+    for (const base of ['.claude/commands', '.opencode/commands']) {
+      const file = `${base}/${name}.md`;
+      const fields = frontmatter(await readFile(join(root, file), 'utf8'), file);
+      assert.equal(fields.description, command.description, file);
+      assert.match(await readFile(join(root, file), 'utf8'), /\$ARGUMENTS/, file);
+    }
+    assert.match(await readFile(join(root, `.opencode/commands/${name}.md`), 'utf8'), /^agent: agentforge$/m, name);
+  }
 }));
 
 test('papéis e competências seguem a estrutura comum e só referem competências existentes', async () => {
@@ -145,6 +166,24 @@ test('papéis e competências seguem a estrutura comum e só referem competênci
     assert.match(meta.description, /^Usar /, `${name}: a descrição deve dizer quando usar a competência`);
     assert.match(content, /Validação:/, `${name}: falta uma linha «Validação:»`);
   }
+});
+
+test('lições da primeira avaliação real: reprodução por execução, no máximo quatro perguntas e ramo próprio', async () => {
+  const { skills } = await import('../skills.js');
+  const { workflows } = await import('../capabilities.js');
+  assert.match(skills['forge-debug'], /executando/);
+  assert.match(skills['forge-debug'], /não reproduzido/);
+  assert.match(skills['forge-clarify'], /nunca mais de quatro perguntas por mensagem/);
+  assert.match(skills['forge-implementation'], /nunca implementar nem fazer commits directamente no ramo principal/);
+  assert.match(workflows['forge-build'].steps.join(' '), /nunca implementar em main/);
+  assert.match(workflows['forge-build'].steps[0], /no máximo quatro perguntas/);
+  for (const name of ['agent-build', 'frontend-build']) assert.match(workflows[name].steps.join(' '), /nunca implementar em main/, name);
+  assert.match(workflows['agent-build'].steps[0], /no máximo quatro perguntas/);
+  assert.match(workflows['agent-build'].preconditions.join(' '), /sem subperguntas/);
+  assert.match(skills['forge-tdd'], /comando exacto que corre a suite/);
+  assert.match(skills['forge-prompt-engineering'], /chavetas literais/);
+  const { guide } = await import('../docs.js');
+  assert.match(guide, /no máximo quatro por mensagem/);
 });
 
 test('papéis só de leitura negam a escrita no formato nativo de cada CLI', async () => {
