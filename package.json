@@ -11,6 +11,7 @@
     "build": "npm run clean && tsc",
     "test": "npm run build && node scripts/test.mjs",
     "smoke": "npm run build && node scripts/smoke.mjs",
+    "ci": "node scripts/ci.mjs",
     "coverage": "npm run build && node scripts/test.mjs --experimental-test-coverage"
   },
   "engines": {
