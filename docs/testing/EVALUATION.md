@@ -77,6 +77,10 @@ Nenhuma skill foi invocada e nenhum subagente foi delegado: o agente leu só `HA
 
 As listagens nativas do Claude Code (nome e descrição de 41 skills, 24 agentes e 32 comandos) custam cerca de 3400 tokens por sessão, mais de três vezes o «arranque mínimo» de ~1100 que o kit reportava. O `agentforge tokens` passou a medi-las (`nativeListings`) e o README a dizê-lo. Reduzir as descrições pouparia só cerca de 10%; a poupança real exigiria menos itens. Esconder skills com `disable-model-invocation` não foi verificado: o Claude Code continua a listá-las na inicialização e não consegui medir o efeito no contexto, por isso não foi aplicado.
 
+### OpenCode 1.18.34 (sem modelo)
+
+Uma corrida real com o OpenCode não foi possível: não há credenciais configuradas e os modelos gratuitos do serviço devolveram `Rate limit exceeded` (confirmado em dois modelos, com o serviço acessível). Foi verificado, com o próprio CLI e sem modelo, que carrega o que o kit gera num projecto novo: `opencode agent list` mostra o agente principal `agentforge` e os 23 papéis como subagentes; `opencode debug config` resolve `default_agent: agentforge` e 33 comandos (os 32 `/af-…` mais `/agentforge`); a restrição de só leitura do `secops` aparece resolvida (`edit: deny`, `bash` limitado a `git show*` e `graphify query|path|explain*`); as 40 competências `forge-*` são descobertas. O tema vem de `tui.json`. Continua por provar o comportamento dos fluxos com um modelo no OpenCode e no Codex.
+
 ### Limites desta avaliação
 
 Um modelo, uma repetição, projectos pequenos, pontuação pelo autor. Não foram avaliados `frontend-build`, `agent-build`, `database-optimization`, `technical-documentation` nem `change-request`. O protocolo acima (três repetições, pontuação por outra pessoa) continua a ser o padrão para uma conclusão firme.
