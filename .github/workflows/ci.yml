@@ -18,6 +18,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Dependências com vulnerabilidades conhecidas (graves ou críticas) falham a integração.
+      - run: npm audit --audit-level=high
       # `dist/` é versionado para a instalação directa a partir do Git: tem de reflectir `src/`.
       - name: Confirmar que dist/ está sincronizado com src/
         run: git diff --exit-code -- dist

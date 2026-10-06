@@ -30,7 +30,7 @@ Os testes de operações verificam a agregação de execuções registadas, a id
 
 ## Execução
 
-```powershell
+```bash
 npm test
 npm run smoke
 ```

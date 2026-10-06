@@ -50,7 +50,7 @@ test('query, path and explain answer from the graph and respect the budget', () 
   assert.ok(tight.estimatedTokens <= 20 && tight.omitted > 0);
   assert.equal(path(graph, 'forge-hygiene', 'senior-developer').hops, 2);
   assert.match(path(graph, 'profile:university-student', 'skill:forge-fact-check').steps.join(' '), /has_workflow/);
-  assert.equal(explain(graph, 'qa').connections[0], 'route:economy --routes_to--> role:qa [EXTRACTED]');
+  assert.ok(explain(graph, 'qa').connections.includes('route:economy --routes_to--> role:qa [EXTRACTED]'));
   assert.throws(() => explain(graph, 'nope'), /desconhecido/);
   assert.throws(() => explain(graph, 'repository-audit'), /ambíguo/);
   assert.throws(() => query(graph, 'zzzz qqqq'), /Nenhum nó/);

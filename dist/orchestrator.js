@@ -1,24 +1,7 @@
 import { profiles, tools, validateCatalog, workflows } from './capabilities.js';
 import { route } from './routing.js';
 import { loadOperator } from './operator.js';
-const rules = [
-    { role: 'project-manager', workflow: 'meeting-followup', pattern: /\b(meeting|minutes|actas?|reuni[aã]o|follow.up)\b/i },
-    { role: 'project-manager', workflow: 'risk-review', pattern: /\b(project risk|risk register|riscos? do projecto|gest[aã]o de riscos)\b/i },
-    { role: 'project-manager', workflow: 'project-status', pattern: /\b(project status|estado do projecto|status report|progresso do projecto|relat[oó]rio de (?:estado|progresso))\b/i },
-    { role: 'it-project-manager', workflow: 'solution-briefing', pattern: /\b(business case|solution brief|build vs\.? buy|make or buy|caso de neg[oó]cio|an[aá]lise de op[cç][õo]es|custo.?benef[ií]cio|comprar ou (?:construir|desenvolver)|avalia[cç][aã]o de fornecedores?)\b/i },
-    { role: 'it-project-manager', workflow: 'automation-opportunity', pattern: /\b(automat(?:e|ion|izar|iza[cç][aã]o)|rpa|processo manual|tarefas? repetitivas?)\b/i },
-    { role: 'it-project-manager', workflow: 'tech-exploration', pattern: /\b(spike|proof of concept|poc|prova de conceito|technology radar|explorar (?:uma |a )?(?:nova )?tecnologia|experimentar (?:uma? |o )?(?:nov[ao] )?(?:tecnologia|ferramenta|framework|biblioteca|modelo))\b/i },
-    { role: 'it-project-manager', workflow: 'continuous-improvement', pattern: /\b(retrospectiva|retrospetiva|retrospective|lessons learned|li[cç][õo]es aprendidas|melhoria cont[ií]nua|continuous improvement)\b/i },
-    { role: 'ai-engineer', workflow: 'ai-evaluation', pattern: /\b(benchmark|model evaluation|ai evaluation|rag evaluation|avalia[cç][aã]o (?:de |do )?(?:modelo|rag|ia)|golden dataset)\b/i },
-    { role: 'ai-engineer', workflow: 'ai-solution-design', pattern: /\b(llm|rag|embedding|vector database|knowledge graph|agentic ai|mcp|engenharia de ia|ai solution|solu[cç][aã]o (?:de )?ia)\b/i },
-    { role: 'senior-developer', workflow: 'repository-audit', pattern: /\b(repo(?:sitory)? audit|auditor(?:ia|ar) (?:ao? )?(?:c[oó]digo|reposit[oó]rio)|audita(?:r)? (?:o )?(?:c[oó]digo|reposit[oó]rio)|code review|technical debt|d[ií]vida t[eé]cnica|dead code|c[oó]digo morto|c[oó]digo obsoleto|ficheiros? obsoletos?|depend[eê]ncias? (?:n[aã]o utilizadas|obsoletas)|limpeza do (?:projecto|projeto|reposit[oó]rio)|clean(?: up)? (?:the )?(?:project|repository|codebase))\b/i },
-    { role: 'senior-developer', workflow: 'bug-investigation', pattern: /\b(bug|stack trace|debug|exception|erro da aplica[cç][aã]o|corrigir defeito)\b/i },
-    { role: 'magazine-editor', workflow: 'magazine-article', pattern: /\b(magazine|revista|editorial|artigo jornal[ií]stico|headline|entrevista)\b/i },
-    { role: 'university-student', workflow: 'academic-research', pattern: /\b(academic research|literature review|research paper|bibliograph|pesquisa acad[eé]mica|revis[aã]o de literatura|artigo cient[ií]fico)\b/i },
-    { role: 'university-student', workflow: 'study-session', pattern: /\b(study plan|study session|flashcards?|exam prep|plano de estudo|estudar|exame|universit[aá]ri[oa])\b/i },
-    { role: 'systems-analyst', workflow: 'incident-analysis', pattern: /\b(incident analysis|root cause analysis|incident report|an[aá]lise de incidente|causa raiz|postmortem)\b/i },
-    { role: 'systems-analyst', workflow: 'system-analysis', pattern: /\b(as.is|to.be|gap analysis|impact analysis|systems analysis|an[aá]lise de sistemas|an[aá]lise de impacto|bpmn|uml)\b/i }
-];
+import { ambiguityMargin, minimumScore, score } from './intent.js';
 const explicit = Object.entries(profiles).map(([role, profile]) => ({ role: role, pattern: new RegExp(`\\b${role.replace(/-/g, '[ -]')}\\b|\\b${profile.title}\\b`, 'i') }));
 export function select(prompt, requestedRole, preference = []) {
     validateCatalog();
@@ -29,19 +12,25 @@ export function select(prompt, requestedRole, preference = []) {
     if (preference.some(role => !(role in profiles)))
         throw new Error('Perfil desconhecido na preferência do operador');
     const indicated = requestedRole ?? explicit.find(entry => entry.pattern.test(prompt))?.role;
-    const matches = rules.filter(rule => rule.pattern.test(prompt) && (!indicated || indicated === rule.role));
-    const candidates = [...new Set(matches.map(item => item.role))];
-    if (!indicated && candidates.length > 1) {
-        // Um pedido que cruza gestão e técnica é normal para um perfil híbrido: a ordem declarada
-        // pelo operador desempata de forma determinística, em vez de bloquear o pedido.
-        const preferred = preference.find(role => candidates.includes(role));
-        if (!preferred)
-            throw new Error(`Pedido ambíguo: escolher --role (${candidates.join(', ')})`);
-        const match = matches.find(item => item.role === preferred);
-        return { role: match.role, workflow: match.workflow, selectedBy: 'operator' };
-    }
-    if (matches.length) {
-        return { role: matches[0].role, workflow: matches[0].workflow, selectedBy: requestedRole ? 'explicit' : 'intent' };
+    // Com um perfil indicado só contam os fluxos desse perfil; sem perfil, contam todos.
+    const scored = score(prompt)
+        .filter(item => item.score >= minimumScore && (!indicated || profiles[indicated].workflows.includes(item.intent.workflow)))
+        .sort((a, b) => b.score - a.score);
+    if (scored.length) {
+        const top = scored[0].score;
+        const contenders = scored.filter(item => item.score >= top - ambiguityMargin);
+        const candidates = [...new Set(contenders.map(item => item.intent.role))];
+        if (!indicated && candidates.length > 1) {
+            // Um pedido que cruza gestão e técnica é normal para um perfil híbrido: a ordem declarada
+            // pelo operador desempata de forma determinística, em vez de bloquear o pedido.
+            const preferred = preference.find(role => candidates.includes(role));
+            if (!preferred)
+                throw new Error(`Pedido ambíguo: escolher --role (${candidates.join(', ')})`);
+            const match = contenders.find(item => item.intent.role === preferred);
+            return { role: match.intent.role, workflow: match.intent.workflow, selectedBy: 'operator' };
+        }
+        const best = scored[0].intent;
+        return { role: indicated ?? best.role, workflow: best.workflow, selectedBy: requestedRole ? 'explicit' : 'intent' };
     }
     if (indicated) {
         // An explicit role without a matching trigger needs a workflow choice rather than a guessed default.

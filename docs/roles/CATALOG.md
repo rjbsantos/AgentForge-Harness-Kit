@@ -11,6 +11,13 @@ Fonte de verdade: `profiles` em `src/capabilities.ts`; o catálogo instalado no 
 | Escritor e Editor de Revistas | `editor` | artigos com verificação de factos |
 | Estudante Universitário | `academic-tutor` | investigação académica e estudo |
 | Analista de Sistemas | `systems-analyst` | análise actual e futura, incidentes e requisitos |
+| Engenheiro de Segurança | `security-tester` | avaliação de segurança |
+| Programador Frontend | `frontend-developer` | interface web e investigação de defeitos |
+| Programador Backend | `backend-developer` | implementação de ponta a ponta, defeitos e bases de dados |
+| Arquitecto de Design System | `design-system-architect` | interface web com design system |
+| Engenheiro de Bases de Dados | `database-optimizer` | otimização de bases de dados |
+| Engenheiro de Agentes | `agent-engineer` | construção de agentes, prompts e contexto e memória |
+| Gestor de Contexto | `context-manager` | contexto e memória |
 
 Um perfil não concede ferramentas nem permissões. Utilize `agentforge plan` para consultar os requisitos do fluxo e confirme a disponibilidade e as autorizações antes da execução.
 

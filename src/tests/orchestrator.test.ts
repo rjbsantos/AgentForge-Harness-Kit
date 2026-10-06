@@ -19,6 +19,15 @@ const cases = [
   ['ai-engineer', 'ai-evaluation', 'Preciso de uma avaliação de RAG'],
   ['senior-developer', 'bug-investigation', 'Analisa este erro da aplicação'],
   ['senior-developer', 'repository-audit', 'Faz uma auditoria ao repositório'],
+  ['frontend-developer', 'frontend-build', 'Cria um ecrã React com o design system'],
+  ['database-engineer', 'database-optimization', 'Otimiza esta query lenta em PostgreSQL'],
+  ['ai-engineer', 'agent-build', 'Constrói um agente com LangGraph'],
+  ['ai-engineer', 'prompt-engineering', 'Melhora este prompt do sistema'],
+  ['ai-engineer', 'context-memory-setup', 'Define a gestão de contexto e memória de longo prazo'],
+  ['senior-developer', 'forge-build', 'Quero um novo projeto de raiz'],
+  ['senior-developer', 'production-cleanup', 'Faz a limpeza e otimização do código e prepara para produção'],
+  ['senior-developer', 'technical-documentation', 'Gera a documentação funcional e técnica deste sistema'],
+  ['senior-developer', 'change-request', 'Processa este change request'],
   ['senior-developer', 'repository-audit', 'Identifica código morto, ficheiros obsoletos e dependências não utilizadas'],
   ['magazine-editor', 'magazine-article', 'Escreve um artigo para revista'],
   ['university-student', 'academic-research', 'Faz uma pesquisa académica com fontes'],
@@ -33,7 +42,7 @@ const cases = [
 
 test('catalog contracts: all roles, workflows, skills, tools and templates resolve', () => {
   validateCatalog();
-  assert.equal(Object.keys(profiles).length, 7);
+  assert.equal(Object.keys(profiles).length, 14);
   for (const [id, profile] of Object.entries(profiles)) {
     assert.ok(profile.agent in roles, id);
     for (const workflowName of profile.workflows) assert.ok(workflowName in workflows, workflowName);

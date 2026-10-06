@@ -16,7 +16,7 @@ Pedido do utilizador
   → indicadores e lições sujeitas a revisão humana
 ```
 
-O perfil do operador, definido em `src/operator.ts`, ajuda a desempatar pedidos que correspondam a vários perfis e a aplicar uma postura de risco. A preferência não adivinha um perfil quando não existe correspondência. A classificação e a escolha do fluxo são implementadas em `src/orchestrator.ts`; os perfis e respectivos fluxos são definidos em `src/capabilities.ts`. O encaminhamento por complexidade e modelo encontra-se em `src/routing.ts`.
+O perfil do operador, definido em `src/operator.ts`, ajuda a desempatar pedidos que correspondam a vários perfis e a aplicar uma postura de risco. A preferência não adivinha um perfil quando não existe correspondência. A escolha do fluxo é feita por pontuação de sinais em `src/intent.ts` (mede-se com pedidos reais em `src/tests/intent-data.ts`) e aplicada em `src/orchestrator.ts`; os perfis e respectivos fluxos são definidos em `src/capabilities.ts`. O encaminhamento por complexidade e modelo encontra-se em `src/routing.ts`.
 
 ## Conceitos
 
@@ -29,7 +29,7 @@ O perfil do operador, definido em `src/operator.ts`, ajuda a desempatar pedidos 
 | Ferramenta | Identifica uma capacidade do CLI que deve ser confirmada |
 | Modelo de saída | Define a estrutura esperada do resultado |
 
-Os sete perfis partilham competências através de `src/capabilities.ts`. O catálogo é gerado em `.agentforge/CAPABILITIES.md`, `.agentforge/workflows/`, `.agentforge/templates/` e nos formatos nativos suportados pelo CLI seleccionado. As instruções e definições dos agentes encontram-se em `src/catalog.ts`.
+Os treze perfis partilham competências através de `src/capabilities.ts`. O catálogo é gerado em `.agentforge/CAPABILITIES.md`, `.agentforge/workflows/`, `.agentforge/templates/` e nos formatos nativos suportados pelo CLI seleccionado. As instruções e definições dos agentes encontram-se em `src/skills.ts`, `src/roles.ts`, `src/docs.ts` e `src/generators.ts`, reunidos por `src/catalog.ts`.
 
 ## Limite entre proposta e execução
 
