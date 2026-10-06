@@ -1,5 +1,9 @@
 # Changelog
 
+## Por publicar
+
+- `npm run ci`: repete localmente os passos da CI (instalação limpa, testes, auditoria, `dist/` sincronizado, smoke e Node 20 e 22) para quando a CI remota não está disponível; processo de release manual documentado em `CONTRIBUTING.md`.
+
 ## 0.10.0
 
 - Segurança: novas competências `forge-threat-model` (modelo de ameaças com STRIDE e ameaças de modelos de linguagem) e `forge-security-testing` (testes de segurança executáveis e ferramentas de análise, só contra a própria aplicação em ambiente local, nunca produção nem sistemas de terceiros), novo agente `security-tester`, novo fluxo `security-assessment` e perfil `engenheiro de segurança`. `forge-build` inclui o modelo de ameaças e um passo de testes de segurança em paralelo com a revisão do `secops`; `change-request` também. No próprio kit: `npm audit --audit-level=high` na CI e `src/tests/security.test.ts` (nenhum ficheiro gerado contém segredos, limites dos agentes de segurança, presença nos fluxos).
