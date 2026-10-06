@@ -149,6 +149,8 @@ test('tokens measures the startup footprint and flags oversized user instruction
   const report = JSON.parse(clean.stdout);
   assert.ok(report.startup.total > 0 && report.startup.total <= report.startup.budget);
   assert.ok(report.startup.files.some((item: { file: string }) => item.file.includes('HARNESS.md')));
+  assert.ok(report.nativeListings.skills > 500 && report.nativeListings.agents > 200 && report.nativeListings.commands > 100);
+  assert.equal(report.nativeListings.total, report.nativeListings.skills + report.nativeListings.agents + report.nativeListings.commands);
   assert.deepEqual(report.findings, []);
   const claude = join(root, 'CLAUDE.md');
   await writeFile(claude, 'x'.repeat(10_000) + '\n' + await readFile(claude, 'utf8'));

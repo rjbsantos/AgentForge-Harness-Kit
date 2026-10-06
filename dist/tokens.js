@@ -1,16 +1,16 @@
 import { existsSync } from 'node:fs';
-import { readFile, stat } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { readdir, readFile, stat } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import { beginning, ending } from './blocks.js';
 import { safe } from './installer.js';
 import { targets } from './target.js';
 // Mede o que o harness põe em contexto sem ninguém ver ("tokens fantasma"): instruções de arranque,
 // texto do utilizador nos ficheiros de instruções e crescimento de estado, contexto e registos.
 // A estimativa é a mesma do comando `context`: caracteres ÷ 4, não uma contagem exacta de um modelo.
-export const startupBudgetTokens = 3000;
+export const startupBudgetTokens = 1500;
 const estimate = (chars) => Math.ceil(chars / 4);
-const startupFiles = ['.agentforge/HARNESS.md', '.agentforge/MODEL_ROUTING.md', '.agentforge/work/state.md',
-    '.agentforge/work/context.md', '.agentforge/work/operator.json'];
+// Só o essencial é lido no arranque; o menu, o guia, o encaminhamento, o contexto e o perfil carregam-se a pedido.
+const startupFiles = ['.agentforge/HARNESS.md', '.agentforge/work/state.md'];
 const limits = { state: 600, context: 1200, userInstructions: 2000, log: 200_000 };
 async function size(root, key) {
     const path = safe(root, key);
@@ -18,6 +18,21 @@ async function size(root, key) {
         return undefined;
     const text = await readFile(path, 'utf8');
     return { chars: text.length, bytes: (await stat(path)).size };
+}
+async function listingTokens(root, dir, nested) {
+    const base = safe(root, dir);
+    if (!existsSync(base))
+        return 0;
+    let chars = 0;
+    for (const entry of await readdir(base, { withFileTypes: true })) {
+        const file = nested ? (entry.isDirectory() ? join(base, entry.name, 'SKILL.md') : '') : (entry.isFile() && entry.name.endsWith('.md') ? join(base, entry.name) : '');
+        if (!file || !existsSync(file))
+            continue;
+        const header = /^---\n([\s\S]*?)\n---/.exec(await readFile(file, 'utf8'))?.[1] ?? '';
+        const name = /^name: (.*)$/m.exec(header)?.[1] ?? entry.name.replace(/\.md$/, '');
+        chars += name.length + (/^description: (.*)$/m.exec(header)?.[1] ?? '').length + 4;
+    }
+    return estimate(chars);
 }
 export async function tokenReport(project) {
     const root = resolve(project);
@@ -76,6 +91,10 @@ export async function tokenReport(project) {
             findings.push(`${file}: ${found.bytes} bytes; não é lido no arranque, mas \`insights\` percorre-o inteiro`);
         }
     }
-    return { startup: { files, total, budget: startupBudgetTokens }, instructions, work, findings, estimate: 'chars-divided-by-4' };
+    const skillsTokens = await listingTokens(root, '.claude/skills', true);
+    const agentsTokens = await listingTokens(root, '.claude/agents', false);
+    const commandsTokens = await listingTokens(root, '.claude/commands', false);
+    const nativeListings = { skills: skillsTokens, agents: agentsTokens, commands: commandsTokens, total: skillsTokens + agentsTokens + commandsTokens };
+    return { startup: { files, total, budget: startupBudgetTokens }, nativeListings, instructions, work, findings, estimate: 'chars-divided-by-4' };
 }
 //# sourceMappingURL=tokens.js.map

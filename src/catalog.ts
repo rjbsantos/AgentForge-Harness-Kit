@@ -1,5 +1,6 @@
 import { profiles, templates, tools, workflows } from './capabilities.js';
-import { guide, modelRouting, contextLearning, operatorProfile, operatorDefault, state, activeContext } from './docs.js';
+import { commands } from './commands.js';
+import { guide, manual, modelRouting, contextLearning, operatorProfile, operatorDefault, state, activeContext } from './docs.js';
 import { generated } from './generators.js';
 import { roles } from './roles.js';
 import { skills } from './skills.js';
@@ -23,8 +24,35 @@ ${Object.entries(tools).map(([name, description]) => `- \`${name}\`: ${descripti
 Os fluxos declarativos em \`.agentforge/workflows/\` especificam entradas, passos, validação, tratamento de erros, resultados, modelo de saída e grupos paralelos permitidos (passos numerados a partir de 1, com dependências explícitas). O comando \`agentforge plan\` selecciona uma composição e declara os grupos, mas não executa ferramentas nem agentes; o paralelismo depende do suporte do CLI. Consulta \`work/state.md\` e confirma as permissões antes de agir.
 `;
 
+// Lista de opções, mostrada depois do arranque mínimo (e não lida de início). Gerada do catálogo.
+const menu = `# Opções AgentForge
+
+Descreve o que queres fazer, ou escolhe uma opção. Faço só as perguntas necessárias antes de avançar.
+
+## Comandos
+
+| Comando | O que faz |
+| --- | --- |
+${Object.entries(commands).map(([name, command]) => `| \`/${name}\` | ${command.description} |`).join('\n')}
+
+Em Claude Code e OpenCode os comandos são nativos (escreve \`/\` para os ver). Nos restantes CLIs escreve o nome do comando (por exemplo \`/af-build\`) ou descreve o que queres: o agente reconhece o mesmo comando.
+
+## Opções (fluxos)
+
+| Quero… | Fluxo | Especialista |
+| --- | --- | --- |
+${Object.entries(workflows).map(([name, workflow]) => {
+  const owner = Object.values(profiles).find(profile => (profile.workflows as readonly string[]).includes(name));
+  return `| ${workflow.description} | \`${name}\` | ${owner ? `\`${owner.agent}\`` : '—'} |`;
+}).join('\n')}
+
+Na linha de comandos do sistema: \`agentforge plan --prompt "..."\` e \`agentforge status\`. Detalhes dos fluxos em \`.agentforge/workflows/\`.
+`;
+
 export const shared: Record<string, string> = {
   '.agentforge/HARNESS.md': guide,
+  '.agentforge/GUIDE.md': manual,
+  '.agentforge/MENU.md': menu,
   '.agentforge/CAPABILITIES.md': capabilities,
   '.agentforge/MODEL_ROUTING.md': modelRouting,
   '.agentforge/CONTEXT_LEARNING.md': contextLearning,
@@ -42,7 +70,7 @@ export const shared: Record<string, string> = {
 };
 
 export const instruction = (target: Target): string =>
-  `Para as tarefas abrangidas pelo harness, actua como AgentForge e lê \`.agentforge/HARNESS.md\`, \`.agentforge/work/state.md\` e \`.agentforge/work/context.md\`; o HARNESS indica quando consultar o encaminhamento de modelos e o perfil do operador. Mantém todas as alterações e artefactos do projecto dentro da raiz; valida caminhos antes de escrever, copiar ou eliminar, e pára perante destinos externos ou ligações simbólicas que escapem à raiz. Consulta \`.agentforge/CONTEXT_LEARNING.md\` para consolidar lições verificadas. Classifica cada tarefa pela complexidade e usa modelos configurados apenas se este host permitir a sua selecção. Papéis: \`.agentforge/roles/\`. ${target === 'claude' ? 'Agente principal opcional: claude --agent agentforge; subagentes nativos: .claude/agents/.' : target === 'opencode' ? 'Selecciona agentforge como agente principal; subagentes: .opencode/agents/.' : 'Segue as instruções dos papéis; delega apenas se o host suportar essa capacidade.'}`;
+  `Para as tarefas abrangidas pelo harness, actua como AgentForge. No arranque lê só \`.agentforge/HARNESS.md\` e \`.agentforge/work/state.md\`; depois apresenta as opções de \`.agentforge/MENU.md\`. O resto (\`.agentforge/GUIDE.md\`, contexto, encaminhamento, operador, lições, papéis e competências) carrega-se apenas quando a tarefa o exigir. Mantém todas as alterações e artefactos do projecto dentro da raiz; valida caminhos antes de escrever, copiar ou eliminar, e pára perante destinos externos ou ligações simbólicas que escapem à raiz. ${target === 'claude' ? 'Agente principal opcional: claude --agent agentforge; subagentes nativos: .claude/agents/.' : target === 'opencode' ? 'Selecciona agentforge como agente principal; subagentes: .opencode/agents/.' : 'Segue as instruções dos papéis; delega apenas se o host suportar essa capacidade.'}`;
 
 // Os dois catálogos são declarados em módulos distintos; esta verificação em tempo de carregamento
 // impede que um workflow passe a referir uma skill inexistente sem ninguém dar por isso.
