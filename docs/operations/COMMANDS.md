@@ -2,6 +2,19 @@
 
 Detalhe dos comandos de contexto, manutenção, grafo e poupança de tokens. O arranque rápido e a instalação estão no [README](../../README.md).
 
+## Comandos de utilizador (`/af-…`)
+
+Ao arrancar, o agente apresenta a tabela de comandos com a explicação de cada um (de `.agentforge/MENU.md`, gerado do catálogo). Fonte: `src/commands.ts`.
+
+| CLI | Como aparecem |
+| --- | --- |
+| Claude Code | Comandos nativos em `.claude/commands/` (escrever `/` lista-os) |
+| OpenCode | Comandos nativos em `.opencode/commands/`, executados pelo agente `agentforge`; o `/agentforge` continua a oferecer o menu de tipos de trabalho |
+| Antigravity | Fluxos em `.agents/workflows/` (um por fluxo) e a tabela do `MENU.md` |
+| Codex | Sem comandos nativos: não instalo ficheiros fora da raiz do projecto e não confirmei um mecanismo por projecto; o agente reconhece o texto `/af-…` e mostra o menu ao arrancar |
+
+Comandos: `/af-menu` (lista tudo), `/af-estado`, `/af-retomar`, `/af-plano` (propõe sem executar), `/af-contexto`, e um por fluxo (`/af-build`, `/af-production-cleanup`, `/af-frontend-build`, `/af-agent-build`, …). Todos aceitam o pedido a seguir ao nome.
+
 ## Contexto, memória e melhoria contínua
 
 O estado e o resumo activo ficam em `.agentforge/work/`. Actualize o resumo no fim de uma fase relevante, em vez de acumular transcrições:
@@ -68,7 +81,8 @@ agentforge tokens --project <projeto>           # arranque, instruções do util
 agentforge operator set --project <projeto> --verbosity concise
 ```
 
-- `tokens` mede o arranque (orçamento de 3000 tokens estimados, validado por teste), o texto do próprio utilizador em `CLAUDE.md`/`AGENTS.md` e o crescimento de `state.md` e `context.md`. A estimativa é caracteres ÷ 4.
+- `tokens` mede também as listagens nativas do Claude Code (`nativeListings`: nome e descrição de cada skill, agente e comando, cerca de 3300 tokens por sessão com o kit completo), que não entram no orçamento de 1500 mas costumam pesar mais do que ele.
+- `tokens` mede o arranque (orçamento de 1500 tokens estimados: só `HARNESS.md` e `state.md`, validado por teste), o texto do próprio utilizador em `CLAUDE.md`/`AGENTS.md` e o crescimento de `state.md` e `context.md`. A estimativa é caracteres ÷ 4.
 - `--verbosity concise` instala no `HARNESS.md` regras de respostas directas: sem preâmbulos nem resumos repetidos, mantendo exactos o código, os comandos e os números, e completos os avisos de risco e as aprovações.
 - O `HARNESS.md` inclui regras de higiene de contexto: filtrar a saída das ferramentas na origem e guardar registos longos em `.agentforge/work/logs/` em vez de os colar na conversa.
 - [docs/integrations/TOKEN-TOOLS.md](../integrations/TOKEN-TOOLS.md) mapeia dez ferramentas populares (RTK, Context Mode, Caveman, Token Optimizer, Claude Context e outras) para o que o kit já faz e para o que fica como opção externa, com licenças e riscos. As percentagens de poupança são dos autores e não foram medidas aqui.

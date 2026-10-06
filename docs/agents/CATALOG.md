@@ -16,6 +16,17 @@
 | `editor` | Produz artigos para revistas com investigação baseada em fontes e revisão editorial. |
 | `academic-tutor` | Apoia o estudo e a investigação universitária com referências verificáveis. |
 | `systems-analyst` | Analisa processos actuais e futuros, limites de integração e impacto das alterações. |
+| `tech-writer` | Produz documentação funcional e técnica a partir do código lido, sem inventar comportamento. |
+| `frontend-developer` | Implementa interfaces React e TypeScript com o design system do projecto, testes primeiro e estados completos. |
+| `backend-developer` | Implementa serviços e APIs em Python ou .NET com testes primeiro, dados seguros e configuração fora do código. |
+| `design-system-architect` | Identifica ou cria o design system (aplica o predefinido quando não existe) e governa tokens e componentes. |
+| `accessibility-expert` | Verifica WCAG 2.2 AA: semântica, teclado, foco, contraste e leitores de ecrã. |
+| `ui-visual-validator` | Valida visualmente em vários tamanhos de ecrã e apanha regressões. |
+| `database-optimizer` | Desenha esquemas e otimiza consultas e migrações em SQL, PostgreSQL e MySQL com medição. |
+| `agent-engineer` | Constrói agentes e skills com LangChain, LangGraph ou Microsoft Agent Framework, incluindo memória e ferramentas. |
+| `context-manager` | Desenha e testa a gestão de contexto e memória do Harness ou de um agente. |
+| `security-tester` | Escreve e executa testes de segurança contra a própria aplicação em ambiente local; nunca produção nem sistemas de terceiros. |
+| `devops` | Configura integração contínua e ambientes reprodutíveis a partir dos comandos reais do projecto. |
 
 ## Estrutura de um agente
 

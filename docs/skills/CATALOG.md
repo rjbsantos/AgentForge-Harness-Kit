@@ -26,6 +26,30 @@ A descrição de cada competência começa por «Usar…» e diz quando deve ser
 | `forge-fact-check` | Validar afirmações e referências com fontes verificáveis |
 | `forge-debug` | Investigar defeitos pela causa-raiz, uma hipótese de cada vez, com teste de regressão |
 | `forge-prose` | Rever textos em pt-PT sem marcas de escrita genérica, sem alterar factos nem citações |
+| `forge-checkpoint` | Registar a validação humana (N1 entre fases, N2 em acções difíceis de reverter) e bloquear até haver aprovação explícita |
+| `forge-plan` | Decompor o trabalho aprovado em tarefas pequenas com ficheiros, testes e dependências |
+| `forge-security` | Controlo de segurança com gravidade, confiança e bloqueio em Crítico e Elevado |
+| `forge-docs` | Documentação funcional e técnica de um sistema existente, com referência ao código |
+| `forge-infra` | Ambiente reprodutível e integração contínua sem segredos no repositório |
+| `forge-clarify` | Transformar o pedido num briefing e fazer só as perguntas que mudam o resultado, com recomendação |
+| `forge-tdd` | Ciclo teste que falha, código mínimo e refactorização, em qualquer linguagem |
+| `forge-python` | Boas práticas Python: tipos nas fronteiras, estrutura, erros, assincronia e testes |
+| `forge-dotnet` | Boas práticas .NET: nullable, injecção de dependências, async, EF Core e testes |
+| `forge-react` | Boas práticas React e TypeScript: composição, estado, efeitos, estados de ecrã e testes |
+| `forge-database` | SQL, PostgreSQL e MySQL: esquema, índices, migrações e otimização com plano e medição |
+| `forge-design-system` | Identificar o design system do projecto ou aplicar o predefinido; governar tokens e componentes |
+| `forge-accessibility` | Verificação WCAG 2.2 AA por teclado, semântica e contraste |
+| `forge-visual-validation` | Comparação visual em vários tamanhos de ecrã e classificação de diferenças |
+| `forge-ai-engineering` | Desenho e avaliação de soluções com modelos de linguagem, RAG, custo e segurança |
+| `forge-prompt-engineering` | Prompts claros, avaliados contra exemplos fixos e versionados |
+| `forge-agent-engineering` | Agentes, sistemas multiagente e skills: papéis, ferramentas, estado, limites e avaliação |
+| `forge-langchain` | LangChain e LangGraph com APIs confirmadas na versão instalada, ciclos limitados e checkpoints |
+| `forge-ms-agent-framework` | Microsoft Agent Framework (Python e .NET) e migração de Semantic Kernel ou AutoGen |
+| `forge-threat-model` | Modelo de ameaças (STRIDE e ameaças de modelos de linguagem) na fase de arquitectura, com mitigação e teste por ameaça |
+| `forge-security-testing` | Testes de segurança executáveis e ferramentas de análise contra a própria aplicação, só em ambiente local e com saída real |
+| `forge-production-readiness` | Limpar lixo e preparar para produção: configuração, registo, saúde, build, imagem e dependências, com medição antes e depois |
+| `forge-memory` | Memória de trabalho, curta e longa do Harness e dos agentes, com escopo, retenção e orçamento |
+| `forge-finish` | Fechar um ramo: suite completa, commits de âmbito restrito, pull request sem merge automático e arquivo |
 
 As competências transversais são partilhadas entre perfis. Por exemplo, investigação e verificação de factos servem os perfis académico, editorial e técnico; requisitos e validação servem gestão de projetos, engenharia de IA e análise de sistemas. Não se cria uma cópia por perfil.
 
