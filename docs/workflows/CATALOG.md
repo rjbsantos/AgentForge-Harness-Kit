@@ -46,7 +46,10 @@ Os pontos de validação humana usam `forge-checkpoint`: silêncio não é aprov
 | `prompt-engineering` | `ai-engineer` | Prompt avaliado contra exemplos fixos e versionado |
 | `security-assessment` | `secops`, `security-tester`, `lead-developer` | Modelo de ameaças, revisão de código e testes de segurança executáveis, com o que não foi executado declarado |
 | `production-cleanup` | `reverse-engineer`, `code-critic`, `secops`, `lead-developer`, `devops`, `qa`, `tech-writer` | Código limpo (lixo, código e dependências mortos), otimizado e pronto para produção, com a documentação actualizada |
+| `release-closure` | `product-manager`, `code-critic`, `database-optimizer`, `reverse-engineer`, `secops`, `ui-visual-validator`, `tech-writer`, `lead-developer`, `qa`, `devops` | Versão fechada com checklist de 14 áreas, relatório final e evidência; publicação só com autorização |
 | `context-memory-setup` | `context-manager` | Política de contexto e memória (trabalho, curta, longa) testada |
+
+`release-closure` fecha uma versão com a checklist `.agentforge/templates/release-closure.md` (14 áreas): requisitos e pendentes; em paralelo, limpeza, base de dados, desempenho, segurança, design system e documentação; consolidação com validação humana (N1); correcções em lotes pequenos; testes unitários, de integração e de regressão; testes E2E com Playwright; revisão de Git e ramos; versionamento por Semantic Versioning e changelog; critério de publicação com autorização expressa (N2) para commit, tag e publicação; verificação posterior e rollback; relatório final. Um item sem evidência fica declarado como não aplicável ou não testado, com a razão. Comando: `/af-release-closure`.
 
 `production-cleanup` segue estas fases: linha de base e ramo próprio; mapeamento; candidatos a lixo, segurança para produção e desempenho (em paralelo, quando o CLI suporta subagentes); validação humana do que se remove; aplicação em lotes pequenos com testes e um commit por lote; preparação da entrega; medição antes e depois; actualização e limpeza da documentação. Nada é removido sem evidência e aprovação, e nada é publicado sem autorização.
 

@@ -47,6 +47,8 @@ A descrição de cada competência começa por «Usar…» e diz quando deve ser
 | `forge-ms-agent-framework` | Microsoft Agent Framework (Python e .NET) e migração de Semantic Kernel ou AutoGen |
 | `forge-threat-model` | Modelo de ameaças (STRIDE e ameaças de modelos de linguagem) na fase de arquitectura, com mitigação e teste por ameaça |
 | `forge-security-testing` | Testes de segurança executáveis e ferramentas de análise contra a própria aplicação, só em ambiente local e com saída real |
+| `forge-release` | Fechar uma versão: tipo por SemVer, versão e changelog, critério de publicação, commit e tag só com autorização, verificação posterior e rollback |
+| `forge-e2e` | Testes ponta a ponta com Playwright: fluxos, cenários positivos e negativos, erros e estados, instabilidade e relatório, declarando o que não foi testado |
 | `forge-production-readiness` | Limpar lixo e preparar para produção: configuração, registo, saúde, build, imagem e dependências, com medição antes e depois |
 | `forge-memory` | Memória de trabalho, curta e longa do Harness e dos agentes, com escopo, retenção e orçamento |
 | `forge-finish` | Fechar um ramo: suite completa, commits de âmbito restrito, pull request sem merge automático e arquivo |
