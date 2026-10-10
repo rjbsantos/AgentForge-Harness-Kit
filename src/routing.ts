@@ -1,5 +1,6 @@
 import { readFile, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { resolve } from 'node:path';
+import { safe } from './installer.js';
 import { type Target } from './catalog.js';
 
 export type Tier = 'thinking' | 'economy';
@@ -67,7 +68,7 @@ export function classify(prompt: string, options: RoutingOptions = {}): Omit<Rou
 export async function loadModels(project: string): Promise<ModelProfiles> {
   let raw: string;
   try {
-    raw = await readFile(join(project, '.agentforge', 'work', 'model-profiles.json'), 'utf8');
+    raw = await readFile(safe(resolve(project), '.agentforge/work/model-profiles.json'), 'utf8');
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {} as ModelProfiles;
     throw error;

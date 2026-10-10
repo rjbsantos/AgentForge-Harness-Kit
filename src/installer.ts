@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, lstatSync, statSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -66,17 +66,23 @@ async function load(root: string): Promise<Manifest> {
   return manifest;
 }
 
-async function save(root: string, manifest: Manifest): Promise<void> {
-  const path = safe(root, manifestPath);
-  await mkdir(dirname(path), { recursive: true });
-  const tmp = path + '.tmp';
-  if (existsSync(tmp)) throw new Error(`Ficheiro temporário já existe: ${tmp}`);
+// Escrita atómica: ficheiro temporário único + rename. Um temporário deixado por uma falha anterior
+// nunca bloqueia uma nova tentativa, porque cada escrita usa um nome próprio.
+async function atomicWrite(path: string, content: string): Promise<void> {
+  const tmp = `${path}.${randomUUID()}.tmp`;
   try {
-    await writeFile(tmp, JSON.stringify(manifest, null, 2) + '\n', { flag: 'wx' });
+    await writeFile(tmp, content, { flag: 'wx' });
     await rename(tmp, path);
   } finally {
     if (existsSync(tmp)) await rm(tmp);
   }
+}
+
+async function save(root: string, manifest: Manifest): Promise<void> {
+  const path = safe(root, manifestPath);
+  await mkdir(dirname(path), { recursive: true });
+  await rm(`${path}.tmp`, { force: true }); // nome fixo usado até à 0.10; já não é necessário
+  await atomicWrite(path, JSON.stringify(manifest, null, 2) + '\n');
 }
 
 // Aplica as alterações como unidade: se uma escrita falhar a meio, repõe o conteúdo anterior
@@ -91,7 +97,7 @@ async function transaction(root: string, keys: string[], apply: () => Promise<vo
       const path = safe(root, key);
       try {
         if (content === undefined) await rm(path, { force: true });
-        else await writeFile(path, content, 'utf8');
+        else await atomicWrite(path, content);
       } catch { /* melhor esforço: preservar o erro original */ }
     }
     throw error;
@@ -168,7 +174,7 @@ export async function install(project: string, selected: Target[], dryRun = fals
       for (const [key, content] of writes) {
         const path = safe(root, key);
         await mkdir(dirname(path), { recursive: true });
-        await writeFile(path, content, 'utf8');
+        await atomicWrite(path, content);
       }
       await save(root, next);
     });
@@ -214,7 +220,7 @@ export async function remove(project: string, selected: Target[], dryRun = false
     await transaction(root, [...deletes, ...writes.map(([key]) => key)], async () => {
       for (const key of deletes) await rm(safe(root, key));
       for (const [key, content] of writes) {
-        if (content) await writeFile(safe(root, key), content);
+        if (content) await atomicWrite(safe(root, key), content);
         else await rm(safe(root, key));
       }
       if (Object.keys(next.files).length) await save(root, next);

@@ -71,9 +71,13 @@ const opencodeTheme = {
         syntaxPunctuation: 'foreground'
     }
 };
-// OpenCode: a ordem conta (a última regra que corresponde ganha), por isso «*» vem primeiro. Só comandos de leitura.
-const readOnlyPermission = `permission:\n  edit: deny\n  bash:\n    "*": deny\n${['git status*', 'git diff*', 'git log*', 'git show*', 'graphify query*', 'graphify path*', 'graphify explain*']
-    .map(command => `    "${command}": allow\n`).join('')}`;
+// OpenCode: a ordem conta (a última regra que corresponde ganha), por isso «*» vem primeiro e as
+// recusas finais por último. `--output` faz o git escrever num ficheiro e `--ext-diff` executa um
+// programa externo: ambos contornariam `edit: deny` através de um comando «de leitura».
+const readOnlyAllow = ['git status*', 'git diff*', 'git log*', 'git show*', 'graphify query*', 'graphify path*', 'graphify explain*'];
+const readOnlyDeny = ['*--output*', '*--ext-diff*'];
+const readOnlyPermission = `permission:\n  edit: deny\n  bash:\n    "*": deny\n${readOnlyAllow
+    .map(command => `    "${command}": allow\n`).join('')}${readOnlyDeny.map(command => `    "${command}": deny\n`).join('')}`;
 export function generated(target) {
     const files = {};
     if (target === 'codex' || target === 'opencode' || target === 'antigravity') {

@@ -1,5 +1,6 @@
 import { readFile, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { resolve } from 'node:path';
+import { safe } from './installer.js';
 // Agentes que `classify` pode devolver, por nível. O grafo do catálogo usa esta tabela; um teste
 // garante que `classify` nunca devolve um agente fora dela.
 export const routingTable = {
@@ -47,7 +48,7 @@ export function classify(prompt, options = {}) {
 export async function loadModels(project) {
     let raw;
     try {
-        raw = await readFile(join(project, '.agentforge', 'work', 'model-profiles.json'), 'utf8');
+        raw = await readFile(safe(resolve(project), '.agentforge/work/model-profiles.json'), 'utf8');
     }
     catch (error) {
         if (error.code === 'ENOENT')
