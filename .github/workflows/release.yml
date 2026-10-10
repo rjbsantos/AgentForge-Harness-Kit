@@ -30,7 +30,7 @@ jobs:
       - run: mkdir -p dist-release && npm pack --pack-destination dist-release
       - name: Resumo SHA-256 do tarball
         run: cd dist-release && sha256sum *.tgz > SHA256SUMS
-      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: dist-release/*.tgz
       - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
