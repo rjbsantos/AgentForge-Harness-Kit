@@ -13,7 +13,8 @@ Fora de âmbito: o comportamento dos CLIs anfitriões (Claude Code, Codex, OpenC
 ## Limites conhecidos
 
 - A confirmação em terminal (`learn approve`, `learn reseal`) e o selo HMAC não protegem contra código que já corra com a sua conta: esse código lê a chave e pode simular um terminal.
-- `agentforge harden` recusa leituras pelas ferramentas nativas do Claude Code; não impede `cat .env` por Bash.
+- `agentforge harden` e o `opencode.json` gerado recusam leituras pelas ferramentas nativas do Claude Code e do OpenCode; não impedem `cat .env` por Bash e o Codex não tem regras equivalentes.
+- O classificador de risco é por palavras-chave: pedidos ofuscados ou em idiomas não cobertos podem não escalar.
 - O kit não verifica as permissões efectivas dos CLIs anfitriões.
 
 ## Versões suportadas

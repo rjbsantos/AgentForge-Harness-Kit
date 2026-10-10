@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { appendFile, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve, sep } from 'node:path';
 import { safe } from './installer.js';
 // Observabilidade opcional para o Claude Code. Regista só o instante e o nome da ferramenta:
 // nunca argumentos, resultados, caminhos nem texto de conversas. Só existe se o utilizador
@@ -33,6 +33,23 @@ export async function hookStatus(project) {
     if (list.some(tampered))
         return 'altered';
     return list.some(ours) ? 'ok' : 'absent';
+}
+// Onde `agentforge` se resolve no PATH. Um executável dentro do projecto (por exemplo em
+// `node_modules/.bin` ou `./bin`, que um PR pode acrescentar) executaria código do repositório a
+// cada ferramenta usada; o `doctor` assinala-o.
+export function resolveBinary(project, searchPath = process.env.PATH ?? '') {
+    const root = resolve(project);
+    const names = process.platform === 'win32' ? ['agentforge.cmd', 'agentforge.exe', 'agentforge'] : ['agentforge'];
+    for (const dir of searchPath.split(delimiter).filter(Boolean)) {
+        for (const name of names) {
+            const candidate = join(resolve(dir), name);
+            if (existsSync(candidate)) {
+                const inside = candidate === root || candidate.startsWith(root + sep);
+                return { found: candidate, insideProject: inside };
+            }
+        }
+    }
+    return { insideProject: false };
 }
 export async function installHook(project) {
     const root = resolve(project);
@@ -73,7 +90,9 @@ export async function recordEvent(project, stdin) {
     let tool = 'unknown';
     try {
         const payload = JSON.parse(stdin);
-        const name = payload?.tool_name;
+        // Contrato mínimo, comum a qualquer anfitrião: `tool_name` (Claude Code) ou `tool`.
+        const fields = payload;
+        const name = fields?.tool_name ?? fields?.tool;
         if (typeof name === 'string' && /^[\w.:-]{1,80}$/.test(name))
             tool = name;
     }

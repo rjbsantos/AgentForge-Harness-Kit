@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { appendFile, mkdir, readFile, rename, stat } from 'node:fs/promises';
+import { appendFile, mkdir, readdir, readFile, rename, stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { profiles, tools, workflows } from './capabilities.js';
 import { safe } from './installer.js';
@@ -32,31 +32,48 @@ async function evidenceState(root, evidence, hash) {
 }
 export async function operationInsights(project) {
     const root = resolve(project);
-    let raw;
+    // Os arquivos (`operations.<data>.jsonl`, por ordem cronológica) e o ficheiro actual contam como
+    // um só histórico; as linhas são numeradas em sequência e, num arquivo, o erro indica o ficheiro.
+    const dir = '.agentforge/work';
+    const names = [];
     try {
-        raw = await readFile(safe(root, '.agentforge/work/operations.jsonl'), 'utf8');
+        names.push(...(await readdir(safe(root, dir))).filter(name => /^operations\..+\.jsonl$/.test(name)).sort());
     }
     catch (error) {
-        if (error.code === 'ENOENT')
-            return emptyInsights();
-        throw error;
+        if (error.code !== 'ENOENT')
+            throw error;
     }
+    names.push('operations.jsonl');
+    const sources = [];
+    for (const file of names) {
+        try {
+            for (const line of (await readFile(safe(root, `${dir}/${file}`), 'utf8')).split(/\r?\n/))
+                sources.push({ file, line });
+        }
+        catch (error) {
+            if (error.code !== 'ENOENT')
+                throw error;
+        }
+    }
+    if (!sources.length)
+        return emptyInsights();
     const summary = emptyInsights();
     const workflowsSummary = new Map();
     const errors = new Map();
     let durationTotal = 0;
-    for (const [index, line] of raw.split(/\r?\n/).entries()) {
+    for (const [index, { file, line }] of sources.entries()) {
         if (!line.trim())
             continue;
+        const where = file === 'operations.jsonl' ? '' : ` (${file})`;
         let value;
         try {
             value = JSON.parse(line);
         }
         catch {
-            throw new Error(`Registo de operações inválido na linha ${index + 1}: JSON malformado`);
+            throw new Error(`Registo de operações inválido na linha ${index + 1}${where}: JSON malformado`);
         }
         if (!value || typeof value !== 'object' || Array.isArray(value)) {
-            throw new Error(`Registo de operações inválido na linha ${index + 1}: esperado objecto`);
+            throw new Error(`Registo de operações inválido na linha ${index + 1}${where}: esperado objecto`);
         }
         const run = value;
         const durationMs = run.durationMs;
@@ -74,7 +91,7 @@ export async function operationInsights(project) {
             run.errorCode !== undefined && (typeof run.errorCode !== 'string' || !/^[a-zA-Z0-9_-]{1,60}$/.test(run.errorCode)) ||
             run.evidence !== undefined && (typeof run.evidence !== 'string' || !run.evidence || run.evidence.length > 300 ||
                 typeof run.evidenceHash !== 'string' || !/^[a-f0-9]{64}$/.test(run.evidenceHash))) {
-            throw new Error(`Registo de operações inválido na linha ${index + 1}: campos incompatíveis`);
+            throw new Error(`Registo de operações inválido na linha ${index + 1}${where}: campos incompatíveis`);
         }
         const result = run.result;
         const validation = run.validation;

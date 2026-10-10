@@ -8,7 +8,7 @@ import { kitVersion } from '../version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { applyHardening, hardeningApplied, removeHardening } from '../hardening.js';
 import { trace } from '../trace.js';
-import { eventSummary, hookStatus, installHook, maxHookInputBytes, recordEvent, removeHook } from '../hooks.js';
+import { eventSummary, hookStatus, resolveBinary, installHook, maxHookInputBytes, recordEvent, removeHook } from '../hooks.js';
 import { doctor, install, installedTargets, remove, status, targets, upgrade } from '../installer.js';
 import { route } from '../routing.js';
 import { confirmOnTerminal } from '../approval.js';
@@ -22,7 +22,7 @@ const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|h
     '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
     '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
     '  trace [--requirements CAMINHO] [--plan CAMINHO]  valida que cada requisito Must tem critério, plano e teste; termina com 1 se houver lacunas\n' +
-    '  harden <apply|remove>  (opcional, Claude Code) recusa a leitura de .env, chaves e credenciais em .claude/settings.json\n' +
+    '  harden <apply|remove>  (opcional) recusa a leitura de .env, chaves e credenciais: Claude Code (.claude/settings.json) e opencode.json do utilizador\n' +
     '  graph <query --prompt TEXTO [--budget-tokens N]|path --from NÓ --to NÓ|explain --node NÓ|report>  grafo do catálogo, com confiança EXTRACTED/INFERRED/AMBIGUOUS\n' +
     '  tokens  mede o que o harness põe em contexto (arranque, instruções do utilizador, estado); termina com 1 se houver excessos\n' +
     '  gateway omniroute [--cli NOME] [--write]  propõe (ou grava com --write) o mapeamento thinking/economy para o gateway OmniRoute\n' +
@@ -30,7 +30,7 @@ const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|h
     '  insights  resume execuções verificadas e padrões de erro recorrentes\n' +
     '  operator <show|set [--headline TEXTO] [--roles PERFIL,PERFIL] [--language TAG] [--risk cautious|balanced|exploratory] [--verbosity normal|concise] [--interests A,B]>\n' +
     '  plan --cli NOME --prompt TEXTO [--role PERFIL --workflow FLUXO] [--planned --approved] [--high-risk]\n' +
-    '  record --role PERFIL --workflow FLUXO --result passed|failed|blocked --validation passed|failed|not-run --duration-ms N [--tools LISTA --skills LISTA] [--retries N --tokens N --cost N --error-code CODIGO --evidence CAMINHO]';
+    '  record --role PERFIL --workflow FLUXO --result passed|failed|blocked --validation passed|failed|not-run --duration-ms N [--tools LISTA --skills LISTA] [--retries N --tokens N --cost N --error-code CODIGO --evidence CAMINHO|--no-evidence]';
 function usage() {
     console.error(help);
     process.exit(2);
@@ -62,7 +62,7 @@ async function main(args) {
                 role: { type: 'string' }, workflow: { type: 'string' }, result: { type: 'string' },
                 validation: { type: 'string' }, 'duration-ms': { type: 'string' }, tools: { type: 'string' },
                 skills: { type: 'string' }, retries: { type: 'string' }, tokens: { type: 'string' },
-                cost: { type: 'string' }, 'error-code': { type: 'string' }, requirements: { type: 'string' }, plan: { type: 'string' }, from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }
+                cost: { type: 'string' }, 'error-code': { type: 'string' }, requirements: { type: 'string' }, plan: { type: 'string' }, 'no-evidence': { type: 'boolean' }, from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }
             } }).values;
     }
     catch {
@@ -98,6 +98,8 @@ async function main(args) {
     const dryRun = parsed['dry-run'] === true;
     const write = parsed.write === true;
     if (write && action !== 'gateway')
+        usage();
+    if (parsed['no-evidence'] === true && action !== 'record')
         usage();
     const prompt = text('prompt');
     const planned = parsed.planned === true;
@@ -273,6 +275,11 @@ async function main(args) {
         if (cli !== 'all' || prompt || planned || approved || highRisk || dryRun ||
             !role || !workflow || !result || !validation || durationMs === undefined)
             usage();
+        if (result === 'passed' && !evidence && parsed['no-evidence'] !== true) {
+            throw new Error('Um resultado passed exige --evidence CAMINHO (a saída real da verificação) ou, explicitamente, --no-evidence');
+        }
+        if (parsed['no-evidence'] === true && evidence)
+            usage();
         await recordRun(project, { role, workflow, result, validation, durationMs, toolsUsed, skillsUsed, retries, tokens, cost, errorCode, evidence });
         console.log('Execução registada.');
         return;
@@ -345,6 +352,15 @@ async function main(args) {
             if (await hookStatus(project) === 'altered') {
                 console.log('✗ hook: o comando do AgentForge em .claude/settings.json foi alterado; reveja-o (`agentforge hooks remove` não o reconhece)');
                 process.exitCode = 1;
+            }
+            if (await hookStatus(project) === 'ok') {
+                const binary = resolveBinary(project);
+                if (binary.insideProject) {
+                    console.log(`✗ hook: \`agentforge\` resolve para ${binary.found}, dentro do projecto; o hook executaria código do repositório`);
+                    process.exitCode = 1;
+                }
+                else if (!binary.found)
+                    console.log('✗ hook: `agentforge` não está no PATH; o hook falhará em silêncio');
             }
             if ((await installedTargets(project)).includes('claude') && !await hardeningApplied(project)) {
                 console.log('ℹ segredos: sem regras de recusa de leitura (.env, chaves); `agentforge harden apply` (opcional)');

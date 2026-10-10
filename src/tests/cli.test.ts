@@ -48,10 +48,21 @@ test('install, status, route and uninstall work end to end', async () => project
 
 test('record, insights and lessons round-trip through the CLI', async () => project(async root => {
   assert.equal(run('install', '--project', root, '--cli', 'codex').status, 0);
-  const record = run('record', '--project', root, '--role', 'senior-developer', '--workflow', 'repository-audit',
-    '--result', 'passed', '--validation', 'passed', '--duration-ms', '120', '--tokens', '10');
+  const base = ['record', '--project', root, '--role', 'senior-developer', '--workflow', 'repository-audit',
+    '--result', 'passed', '--validation', 'passed', '--duration-ms', '120', '--tokens', '10'];
+  // `passed` exige evidência ou a declaração explícita de que não existe.
+  const refused = run(...base);
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /--evidence/);
+  assert.equal(run(...base, '--no-evidence', '--evidence', 'x.txt').status, 2);
+  await writeFile(join(root, 'saida.txt'), 'ok 3 testes');
+  assert.equal(run(...base, '--evidence', 'saida.txt').status, 0);
+  const record = run(...base, '--no-evidence');
   assert.equal(record.status, 0, record.stderr);
-  assert.equal(JSON.parse(run('insights', '--project', root).stdout).totalRuns, 1);
+  const summary = JSON.parse(run('insights', '--project', root).stdout);
+  assert.equal(summary.totalRuns, 2);
+  assert.deepEqual(summary.passedEvidence, { verified: 1, changed: 0, missing: 0, none: 1 });
+  assert.equal(run('install', '--project', root, '--cli', 'codex', '--no-evidence').status, 2);
   assert.equal(run('record', '--project', root, '--role', 'senior-developer', '--workflow', 'repository-audit',
     '--result', 'weird', '--validation', 'passed', '--duration-ms', '1').status, 2);
   assert.equal(run('context', 'save', '--project', root, '--summary', 'Fase 1', '--next', 'Testar').status, 0);

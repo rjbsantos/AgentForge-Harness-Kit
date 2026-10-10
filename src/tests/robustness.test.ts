@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { hookStatus, installHook, recordEvent, removeHook } from '../hooks.js';
+import { hookStatus, installHook, recordEvent, removeHook, resolveBinary } from '../hooks.js';
+import { operationInsights } from '../operations.js';
 import { install } from '../installer.js';
 import { maxOperationsBytes, recordRun } from '../operations.js';
 
@@ -57,14 +58,33 @@ test('hook-event limita o stdin e roda o registo ao exceder o limite', () => pro
   assert.equal((await readFile(join(root, '.agentforge/work/events.1.jsonl'), 'utf8')).length, 1_048_577);
 }));
 
-test('operations.jsonl é arquivado ao exceder o limite e os indicadores recomeçam', () => project(async root => {
+test('operations.jsonl é arquivado ao exceder o limite e os indicadores agregam os arquivos', () => project(async root => {
   const log = join(root, '.agentforge/work/operations.jsonl');
-  await writeFile(log, '\n'.repeat(maxOperationsBytes + 1));
-  await recordRun(root, { role: 'project-manager', workflow: 'project-status', result: 'failed', validation: 'failed',
-    durationMs: 1, toolsUsed: ['file-system'] });
+  const run = { role: 'project-manager' as const, workflow: 'project-status', result: 'failed' as const,
+    validation: 'failed' as const, durationMs: 1, toolsUsed: ['file-system'], errorCode: 'E_X' };
+  await recordRun(root, run);
+  const first = (await readFile(log, 'utf8'));
+  await writeFile(log, first + '\n'.repeat(maxOperationsBytes + 1));
+  await recordRun(root, run);
   const names = await readdir(join(root, '.agentforge/work'));
-  assert.equal(names.filter(name => /^operations\..+\.jsonl$/.test(name)).length, 1);
+  const archives = names.filter(name => /^operations\..+\.jsonl$/.test(name));
+  assert.equal(archives.length, 1);
   assert.equal((await readFile(log, 'utf8')).trim().split('\n').length, 1);
+  const insights = await operationInsights(root);
+  assert.equal(insights.totalRuns, 2);
+  assert.equal(insights.recurringErrors[0].occurrences, 2);
+  await writeFile(join(root, '.agentforge/work', archives[0]), 'nao-json\n');
+  await assert.rejects(operationInsights(root), new RegExp(`linha 1 \\(${archives[0].replace(/\./g, '\\.')}\\)`));
+}));
+
+test('hook: o doctor assinala um agentforge resolvido dentro do projecto; o evento aceita `tool`', () => project(async root => {
+  await mkdir(join(root, 'bin'));
+  await writeFile(join(root, 'bin/agentforge'), '#!/bin/sh\n');
+  assert.equal(resolveBinary(root, join(root, 'bin')).insideProject, true);
+  assert.equal(resolveBinary(root, join(root, 'bin')).found, join(root, 'bin/agentforge'));
+  assert.deepEqual(resolveBinary(root, join(root, 'vazio')), { insideProject: false });
+  await recordEvent(root, JSON.stringify({ tool: 'Edit' }));
+  assert.match(await readFile(join(root, '.agentforge/work/events.jsonl'), 'utf8'), /"tool":"Edit"/);
 }));
 
 test('MCP: mensagem acima do limite é recusada e o servidor continua; budgetTokens é limitado', () => project(async root => {

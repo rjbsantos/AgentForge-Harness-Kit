@@ -119,10 +119,34 @@ test('harden acrescenta e remove só as regras do AgentForge, preservando as do 
     assert.equal(applied.model, 'x');
     assert.deepEqual(applied.permissions.allow, ['Bash(ls)']);
     assert.equal(applied.permissions.deny.filter((rule: string) => rule === 'Read(./.env)').length, 1);
-    assert.equal(await applyHardening(root), 'Regras de recusa já presentes.');
+    assert.match(await applyHardening(root), /Claude Code: regras já presentes/);
     await removeHardening(root);
     const restored = JSON.parse(await readFile(settings, 'utf8'));
     assert.deepEqual(restored.permissions.deny, ['Read(./.env)', 'Bash(rm *)']);
     assert.ok(denyRules.length > 5);
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('OpenCode: o opencode.json gerado recusa segredos e o harden respeita o opencode.json do utilizador', async () => {
+  const generatedConfig = JSON.parse(generated('opencode')['opencode.json']);
+  assert.equal(generatedConfig.permission.read['*.env'], 'deny');
+  assert.equal(generatedConfig.permission.read['*.env.example'], 'allow');
+  const root = await mkdtemp(join(tmpdir(), 'agentforge-harden-oc-'));
+  try {
+    await writeFile(join(root, 'opencode.json'), JSON.stringify({ theme: 'x', permission: { read: { '*.env': 'ask' }, bash: 'ask' } }));
+    await install(root, ['opencode']); // preserva o ficheiro do utilizador
+    assert.match(await applyHardening(root), /permission\.read acrescentadas/);
+    const applied = JSON.parse(await readFile(join(root, 'opencode.json'), 'utf8'));
+    assert.equal(applied.permission.read['*.env'], 'ask'); // a escolha do utilizador não é alterada
+    assert.equal(applied.permission.read['*.pem'], 'deny');
+    assert.equal(applied.permission.bash, 'ask');
+    await removeHardening(root);
+    assert.deepEqual(JSON.parse(await readFile(join(root, 'opencode.json'), 'utf8')),
+      { theme: 'x', permission: { read: { '*.env': 'ask' }, bash: 'ask' } });
+  } finally { await rm(root, { recursive: true, force: true }); }
+  const managed = await mkdtemp(join(tmpdir(), 'agentforge-harden-oc2-'));
+  try {
+    await install(managed, ['opencode']);
+    assert.match(await applyHardening(managed), /já inclui as regras/);
+  } finally { await rm(managed, { recursive: true, force: true }); }
 });
