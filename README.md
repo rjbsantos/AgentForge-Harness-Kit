@@ -9,7 +9,7 @@ O kit suporta **OpenCode, Codex CLI, Claude Code e Google Antigravity**. Instala
 ## Arranque rápido
 
 ```bash
-gh release download v0.10.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
+gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
 npm install -g ./agentforge-harness-kit-*.tgz
 agentforge install --project <projeto> --cli claude     # opencode | codex | claude | antigravity | all
 agentforge plan --project <projeto> --cli claude --prompt "Audita o repositório"
@@ -58,8 +58,8 @@ Requer Node.js 20 ou posterior. O repositório é privado, pelo que a conta Git 
 ```powershell
 gh auth login
 npm uninstall -g agentforge-harness-kit
-gh release download v0.10.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.10.0.tgz
-npm install -g .\agentforge-harness-kit-0.10.0.tgz
+gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.11.0.tgz
+npm install -g .\agentforge-harness-kit-0.11.0.tgz
 Get-Command agentforge
 agentforge install --project <projeto> --cli all
 agentforge status --project <projeto>
@@ -69,8 +69,8 @@ agentforge status --project <projeto>
 ```bash
 gh auth login
 npm uninstall -g agentforge-harness-kit
-gh release download v0.10.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.10.0.tgz
-npm install -g ./agentforge-harness-kit-0.10.0.tgz
+gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.11.0.tgz
+npm install -g ./agentforge-harness-kit-0.11.0.tgz
 command -v agentforge
 agentforge install --project ~/WorkSpace/Groot --cli opencode
 ```
@@ -84,7 +84,7 @@ O OpenCode recebe também o comando `/agentforge`, que apresenta na conversa uma
 O tarball também pode ser instalado a partir de qualquer localização local:
 
 ```powershell
-npm install -g D:\transferencias\agentforge-harness-kit-0.10.0.tgz
+npm install -g D:\transferencias\agentforge-harness-kit-0.11.0.tgz
 ```
 
 O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases); como o repositório é privado, autentique-se no GitHub para o descarregar.

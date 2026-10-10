@@ -2,6 +2,11 @@
 
 ## Por publicar
 
+## 0.11.0
+
+Primeira versão da revisão de segurança e rastreabilidade. **Alterações com impacto:** `learn approve` e `learn reseal` exigem um terminal interactivo; os selos antigos de `lessons.json` passam a «sem selo» até `learn reseal`; `record --result passed` exige `--evidence` ou `--no-evidence`; pedidos destrutivos aprovados passam a escalar.
+
+- Toolchain: TypeScript 7.0.2 (`tsconfig.json` declara `types: ["node"]`; o `dist/` versionado fica idêntico) e acções actualizadas e fixadas por SHA (`checkout` 7.0.1, `codeql-action` 4.38.2, `attest-build-provenance` 4.2.2, `action-gh-release` 3.0.3). Dependabot passa a ignorar majors de `@types/node`.
 - Novo fluxo `release-closure` (`/af-release-closure`) para o fecho de uma versão, com a checklist de 14 áreas em `.agentforge/templates/release-closure.md`: requisitos e pendentes, limpeza, base de dados, aplicação, segurança, design system e UX, documentação, testes unitários e de integração, E2E com Playwright, Git e ramos, versionamento, commit/tag/publicação e relatório final. As áreas independentes correm em paralelo; correcções e publicação exigem validação humana (N1 e N2). Novas competências `forge-release` (SemVer, changelog, critério de publicação, tag, rollback) e `forge-e2e` (Playwright).
 - Fecho do backlog técnico:
   - OpenCode: o `opencode.json` gerado passa a recusar a leitura de `.env`, chaves e credenciais (`permission.read`; resolução verificada com `opencode debug agent` no OpenCode 1.18.35, que também confirmou a ordem das recusas de `--output` e `--ext-diff`). `agentforge harden` aplica as mesmas regras a um `opencode.json` do utilizador e remove só as que acrescentou.

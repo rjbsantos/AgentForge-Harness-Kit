@@ -1,6 +1,6 @@
 {
   "name": "agentforge-harness-kit",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Project-local, multi-role and multi-CLI AgentForge harness installer",
   "type": "module",
   "bin": {

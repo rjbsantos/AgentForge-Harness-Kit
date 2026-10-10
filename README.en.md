@@ -20,7 +20,7 @@ AgentForge Harness Kit installs instructions and capabilities for AI coding CLIs
 ## Quick start
 
 ```bash
-gh release download v0.10.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
+gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
 npm install -g ./agentforge-harness-kit-*.tgz
 agentforge install --project <project> --cli claude
 agentforge plan --project <project> --cli claude --prompt "Audit the repository"
@@ -48,7 +48,7 @@ Requires Node.js 20+. The repository is private; download a release tarball with
 
 ```bash
 gh auth login
-gh release download v0.10.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
+gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
 npm install -g ./agentforge-harness-kit-*.tgz
 agentforge install --project /path/to/project --cli all   # opencode | codex | claude | antigravity | all
 ```
