@@ -38,7 +38,7 @@ Salvaguardas:
 - **A suite é código.** As verificações `command` correm no shell. Corre apenas suites em que confias.
 - **POSIX.** O comando usa `/bin/sh`; não corre no Windows.
 
-Ver `golden-suite.example.json` para o formato. As verificações de exemplo dependem do comportamento do modelo e precisam de uma `fixture` tua.
+O repositório inclui uma primeira suite com seis tarefas e fixtures em `evals/` (ver `evals/README.md`: custo, comando e como ler o resultado). `golden-suite.example.json` mostra só o formato. As verificações de exemplo dependem do comportamento do modelo e precisam de uma `fixture` tua.
 
 ## O que isto não resolve
 

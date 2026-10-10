@@ -70,6 +70,7 @@ agentforge flow status
 agentforge flow close                                         # recusa se houver passos pendentes
 ```
 
+- `gate --decider COMANDO` liga um modelo de decisão opcional (ver [integrations/DECISION-MODELS.md](../integrations/DECISION-MODELS.md)); só torna a porta mais exigente. A saída inclui `decisions` (sim/não, pontuação e escolha), no formato de um modelo de decisão; as da heurística não estão calibradas.
 - `gate` mede se o pedido é específico (objectivo, alvo concreto e os dados que o fluxo exige) e devolve no máximo quatro perguntas com uma recomendação cada. É determinístico e não usa modelo. `plan` inclui o mesmo resultado em `gate`: um pedido vago fica com `status: needs-context`. Também existe como ferramenta MCP (`agentforge_gate`).
 - `flow` guarda o estado em `.agentforge/work/flow.json` e arquiva em `.agentforge/work/flows/` ao fechar. Um passo só avança depois dos anteriores (os paralelos podem ir por qualquer ordem), exige `--evidence` (ficheiro do projecto, guardado com SHA-256) ou `--note`, e os passos de decisão humana (validação N1/N2, autorização, aprovação) só avançam com confirmação num terminal, como `learn approve`. Dispensar um passo exige `--reason`. Tudo fica em `audit.jsonl`.
 - `composition` (em `plan`) lista os sub-fluxos que complementam o fluxo escolhido, o passo, a condição e o artefacto que passa de um para o outro.
@@ -88,6 +89,16 @@ agentforge insights                       # inclui «usage» (fluxos, porta de e
 
 - `guard` trava, antes de cada comando Bash: `git commit`, `merge`, `rebase`, `cherry-pick` e `revert` no ramo `main` ou `master`; `git push` para `main`, forçado ou a apagar ramos; publicação de tags, `git tag <nome>`, `gh release create`, `gh pr merge` e `npm publish`. Bloqueia com código 2 e explica como prosseguir. As autorizações (`permit-*`) exigem terminal interactivo, têm prazo (1 a 240 minutos) e âmbito (`main` ou `publish`), e ficam em `audit.jsonl`. Não é uma sandbox: comandos construídos de forma indirecta escapam à análise.
 - `eval run` compara as tuas tarefas com e sem o kit no CLI indicado, com verificações determinísticas. O comando indicado gasta tokens: recusa mais de 12 execuções sem `--max-runs`. Ver [testing/EFFICACY.md](../testing/EFFICACY.md).
+
+## Verificação de versão
+
+Quando corre um comando que uma pessoa usa, o `agentforge` avisa no **stderr** se há uma versão mais recente (`agentforge 0.12.0 disponível (instalada: 0.11.0)…`, com os comandos para actualizar). A saída JSON não é tocada.
+
+- Consulta o GitHub com `gh api` (o repositório é privado, por isso usa a tua autenticação), **só quando há um terminal**, no máximo uma vez por dia e com limite de 2 segundos. A resposta fica em `~/.config/agentforge/update-check.json`. Se falhar, recua 6 horas e não volta a perguntar de imediato; nunca atrasa nem falha um comando.
+- Não corre nos hooks, no `guard`, no `mcp`, no `gate` nem no `eval`; sem terminal (agente, CI) só mostra o aviso a partir da cache.
+- `agentforge doctor` mostra a linha `✓ versão` ou `ℹ versão`.
+- Desactivar: `AGENTFORGE_NO_UPDATE_CHECK=1` (ou `CI` definido). Outra fonte: `AGENTFORGE_UPDATE_COMMAND` (um comando que imprime a última versão).
+- O pedido ao GitHub só revela o teu IP e a tua conta; não envia dados do projecto.
 
 ## Rastreabilidade e evidência
 

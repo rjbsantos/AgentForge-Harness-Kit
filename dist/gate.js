@@ -52,7 +52,12 @@ export function assessPrompt(prompt, workflow) {
     const estimatedTokens = Math.ceil(raw.length / 4);
     if (!raw) {
         return { ready: false, score: 0, workflow: null, estimatedTokens, reasons: ['pedido vazio'],
-            missing: [{ field: 'objectivo', question: 'O que pretende obter?', recommendation: 'Diga o resultado e para quê.' }] };
+            missing: [{ field: 'objectivo', question: 'O que pretende obter?', recommendation: 'Diga o resultado e para quê.' }],
+            decisions: {
+                ready: { type: 'yes-no', value: false, confidence: 1, source: 'heuristic', calibrated: false },
+                specificity: { type: 'score', value: 0 },
+                workflow: { type: 'choice', value: null, source: 'heuristic', candidates: [] }
+            } };
     }
     const ranked = score(raw).filter(item => item.score >= minimumScore).sort((a, b) => b.score - a.score);
     const resolved = workflow ?? ranked[0]?.intent.workflow ?? null;
@@ -91,7 +96,17 @@ export function assessPrompt(prompt, workflow) {
     }
     // Os campos que o fluxo exige e o alvo em falta bloqueiam; um critério em falta só aconselha.
     const blocking = missing.some(item => item.field !== 'criterio') || points < 60;
-    return { ready: !blocking, score: Math.max(0, points), workflow: resolved, estimatedTokens,
-        reasons, missing: missing.slice(0, maxQuestions) };
+    const finalScore = Math.max(0, points);
+    const top = ranked.slice(0, 3);
+    const total = top.reduce((sum, item) => sum + item.score, 0) || 1;
+    return { ready: !blocking, score: finalScore, workflow: resolved, estimatedTokens,
+        reasons, missing: missing.slice(0, maxQuestions),
+        decisions: {
+            ready: { type: 'yes-no', value: !blocking, confidence: Math.round(Math.min(0.99, 0.5 + Math.abs(finalScore - 60) / 80) * 100) / 100,
+                source: 'heuristic', calibrated: false },
+            specificity: { type: 'score', value: Math.round(finalScore) / 100 },
+            workflow: { type: 'choice', value: resolved, source: 'heuristic',
+                candidates: top.map(item => ({ label: item.intent.workflow, score: Math.round(item.score / total * 100) / 100 })) }
+        } };
 }
 //# sourceMappingURL=gate.js.map

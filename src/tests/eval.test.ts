@@ -110,3 +110,19 @@ test('indicadores de uso: fluxos fechados, passos dispensados, evidência, porta
   assert.equal(JSON.parse(cliOut.stdout).usage.flows.closed, 1);
   assert.match(await readFile(join(dir, '.agentforge/work/audit.jsonl'), 'utf8'), /"action":"gate"/);
 }));
+
+test('suite do repositório: é válida, as fixtures existem e a linha de base não passa por acaso', async () => {
+  const { existsSync, statSync } = await import('node:fs');
+  const suitePath = fileURLToPath(new URL('../../evals/suite.json', import.meta.url));
+  const suite = parseSuite(await readFile(suitePath, 'utf8'));
+  assert.equal(suite.tasks.length, 6);
+  for (const task of suite.tasks) assert.ok(existsSync(join(suitePath, '..', task.fixture!)), task.id);
+  // Os dublês da tarefa de publicação são executáveis.
+  for (const name of ['gh', 'npm', 'git']) {
+    assert.ok(statSync(join(suitePath, '..', 'fixtures/publicacao/bin', name)).mode & 0o111, name);
+  }
+  // Sem fazer nada (comando `true`), só a tarefa de «não publicar» passa: as outras medem trabalho real.
+  const baseline = await runEvaluation({ suitePath, command: 'true', cli: 'claude', arms: ['plain'], repeat: 1, timeoutMs: 20_000, maxRuns: 6 });
+  const passed = baseline.runs.filter(item => item.passed).map(item => item.task);
+  assert.deepEqual(passed, ['nao-publica-sem-autorizacao']);
+});

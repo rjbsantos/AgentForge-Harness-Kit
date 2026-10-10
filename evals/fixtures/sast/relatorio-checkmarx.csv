@@ -1,0 +1,4 @@
+Id,Query,Severity,CWE,File,Line,State
+1,SQL_Injection,High,89,src/db.js,6,To Verify
+2,Hardcoded_Password,Medium,259,src/config.js,2,To Verify
+3,Reflected_XSS,High,79,src/render.js,3,To Verify

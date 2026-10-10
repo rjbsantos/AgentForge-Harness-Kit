@@ -8,11 +8,12 @@ import { kitVersion } from '../version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { applyHardening, hardeningApplied, removeHardening } from '../hardening.js';
 import { trace } from '../trace.js';
-import { assessPrompt } from '../gate.js';
+import { assessWithDecider } from '../decider.js';
 import { defaultMaxRuns, runEvaluation, type Arm } from '../eval.js';
 import { usageInsights } from '../usage.js';
 import { existsSync } from 'node:fs';
 import { audit } from '../audit.js';
+import { updateNotice, updateStatus } from '../update.js';
 import { abandonFlow, closeFlow, completeStep, flowStatus, skipStep, startFlow } from '../flow.js';
 import { evaluate, activePermits, grantPermit, revokePermits } from '../guard.js';
 import { eventSummary, guardHookStatus, hookStatus, installGuardHook, removeGuardHook, resolveBinary, installHook, maxHookInputBytes, recordEvent, removeHook } from '../hooks.js';
@@ -32,7 +33,7 @@ const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|h
   '  eval run --suite FICHEIRO --command TEXTO --cli NOME [--arm kit|plain|both] [--repeat N] [--max-runs N] [--timeout-ms N] [--dry-run]  corre as tuas tarefas com e sem o kit no CLI indicado e compara; o comando gasta tokens\n' +
   '  guard <install|remove|status|permit-main|permit-publish [--minutes N]|revoke|check>  (opcional, Claude Code) trava commit em main, push forçado e publicação sem autorização humana; permit-* exige terminal\n' +
   '  flow <start --workflow FLUXO|status|done --step N (--evidence CAMINHO|--note TEXTO)|skip --step N --reason TEXTO|close|abandon>  regista os passos de um fluxo; recusa fechar com passos pendentes; os passos de decisão humana exigem terminal\n' +
-  '  gate --prompt TEXTO [--workflow FLUXO]  verifica se o pedido tem contexto para um fluxo; se não, devolve as perguntas que faltam e termina com 3\n' +
+  '  gate --prompt TEXTO [--workflow FLUXO] [--decider COMANDO]  verifica se o pedido tem contexto para um fluxo; se não, devolve as perguntas que faltam e termina com 3\n' +
   '  trace [--requirements CAMINHO] [--plan CAMINHO]  valida que cada requisito Must tem critério, plano e teste; termina com 1 se houver lacunas\n' +
   '  harden <apply|remove>  (opcional) recusa a leitura de .env, chaves e credenciais: Claude Code (.claude/settings.json) e opencode.json do utilizador\n' +
   '  graph <query --prompt TEXTO [--budget-tokens N]|path --from NÓ --to NÓ|explain --node NÓ|report>  grafo do catálogo, com confiança EXTRACTED/INFERRED/AMBIGUOUS\n' +
@@ -74,7 +75,7 @@ async function main(args: string[]): Promise<void> {
       role: { type: 'string' }, workflow: { type: 'string' }, result: { type: 'string' },
       validation: { type: 'string' }, 'duration-ms': { type: 'string' }, tools: { type: 'string' },
       skills: { type: 'string' }, retries: { type: 'string' }, tokens: { type: 'string' },
-      cost: { type: 'string' }, 'error-code': { type: 'string' }, requirements: { type: 'string' }, plan: { type: 'string' }, step: { type: 'string' }, reason: { type: 'string' }, note: { type: 'string' }, minutes: { type: 'string' }, suite: { type: 'string' }, command: { type: 'string' },
+      cost: { type: 'string' }, 'error-code': { type: 'string' }, requirements: { type: 'string' }, plan: { type: 'string' }, step: { type: 'string' }, reason: { type: 'string' }, note: { type: 'string' }, minutes: { type: 'string' }, decider: { type: 'string' }, suite: { type: 'string' }, command: { type: 'string' },
       arm: { type: 'string' }, repeat: { type: 'string' }, 'max-runs': { type: 'string' }, 'timeout-ms': { type: 'string' }, 'no-evidence': { type: 'boolean' }, from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }
     } }).values;
   } catch {
@@ -141,6 +142,7 @@ async function main(args: string[]): Promise<void> {
   const reasonText = text('reason');
   const noteText = text('note');
   if (action !== 'flow' && (stepNumber !== undefined || reasonText || noteText)) usage();
+  if (action !== 'gate' && text('decider')) usage();
   const requirementsFile = text('requirements');
   const planFile = text('plan');
   const from = text('from');
@@ -327,7 +329,7 @@ async function main(args: string[]): Promise<void> {
   if (action === 'gate') {
     if (!prompt || cli !== 'all' || dryRun || planned || approved || highRisk || role || result || validation || durationMs !== undefined || toolsUsed.length) usage();
     if (workflow !== undefined && !(workflow in workflows)) usage();
-    const verdict = assessPrompt(prompt, workflow);
+    const verdict = await assessWithDecider(prompt, { workflow, decider: text('decider') });
     if (existsSync(join(project, '.agentforge/work'))) {
       await audit(project, 'gate', { ready: String(verdict.ready), workflow: verdict.workflow ?? 'nenhum', score: String(verdict.score) });
     }
@@ -382,6 +384,13 @@ async function main(args: string[]): Promise<void> {
     const diagnosis = await doctor(project, () => lessonsIntegrity(project));
     for (const line of diagnosis.lines) console.log(line);
     try {
+      const info = await updateStatus({ allowNetwork: Boolean(process.stderr.isTTY) });
+      if (info.source === 'disabled') console.log('ℹ versão: verificação de actualizações desactivada');
+      else if (info.outdated) console.log(`ℹ versão: ${info.latest} disponível (instalada: ${info.current})`);
+      else if (info.latest) console.log(`✓ versão: ${info.current} é a última`);
+      else console.log('ℹ versão: não foi possível verificar a última (precisa de `gh` autenticado)');
+    } catch { /* informativo */ }
+    try {
       if (await guardHookStatus(project) === 'altered') {
         console.log('✗ guarda: o comando do guarda em .claude/settings.json foi alterado; reveja-o');
         process.exitCode = 1;
@@ -413,7 +422,19 @@ async function main(args: string[]): Promise<void> {
   for (const line of lines) console.log(line);
 }
 
-main(process.argv.slice(2)).catch((error: unknown) => {
+// Aviso de nova versão: só em comandos que uma pessoa corre (não nos hooks nem no protocolo MCP), depois
+// do resultado e no stderr. Nunca altera o código de saída.
+const quiet = new Set(['hook-event', 'guard', 'mcp', 'gate', 'eval', 'doctor', '--help', '-h']);
+async function announceUpdate(action: string | undefined): Promise<void> {
+  if (!action || quiet.has(action)) return;
+  try {
+    const info = await updateStatus({ allowNetwork: Boolean(process.stderr.isTTY) });
+    const notice = updateNotice(info);
+    if (notice) console.error(`\nℹ ${notice}`);
+  } catch { /* um aviso nunca falha o comando */ }
+}
+
+main(process.argv.slice(2)).then(() => announceUpdate(process.argv[2])).catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });
