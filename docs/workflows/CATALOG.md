@@ -56,6 +56,20 @@ Um fluxo grande chama um menor em vez de o repetir. O campo `uses` de cada fluxo
 
 Cadeia habitual: `incident-analysis` → `bug-investigation` → `change-request`; e `repository-audit` → `production-cleanup` → `release-closure`.
 
+## Fluxos de gestão de projecto
+
+| Fluxo | Resultado | Complementa |
+| --- | --- | --- |
+| `project-plan` | Plano com pacotes, estimativas com intervalo e fonte, dependências, marcos verificáveis e linha de base | chama `requirements-analysis` e `risk-review` |
+| `change-control` | Pedido CC-NNN com impacto em âmbito, prazo e custo, decisão de quem tem autoridade e linha de base actualizada | chama `project-plan`, `stakeholder-communication` e `change-request` (se a alteração for técnica) |
+| `stakeholder-communication` | Plano de comunicação e textos a partir de factos, validados por quem assina; o kit não envia | usado por `project-status` e `meeting-followup` |
+| `budget-tracking` | Orçamento aprovado vs custos reais com fonte, desvios e previsão com método | chama `change-control` quando a correcção exige reforço ou nova linha de base |
+| `project-status`, `meeting-followup`, `risk-review`, `requirements-analysis` | Estado, acta, riscos e requisitos; agora com 4 passos, linha de base, factos separados de previsões e aprovação | chamam os anteriores conforme o caso |
+
+Cadeia habitual: `requirements-analysis` → `project-plan` → `project-status` ↔ `risk-review` / `budget-tracking`; uma decisão que mexe na linha de base passa por `change-control`.
+
+Os valores (datas, custos, estimativas) vêm sempre de uma fonte indicada; sem fonte ficam «em falta». Nenhum fluxo envia mensagens nem altera um orçamento.
+
 ## Fluxos de qualidade, segurança e compatibilidade
 
 | Fluxo | Agentes | Resultado |

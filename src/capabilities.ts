@@ -2,13 +2,15 @@ export const profiles = {
   'project-manager': {
     title: 'Gestor de Projetos',
     agent: 'product-manager',
-    workflows: ['project-status', 'meeting-followup', 'risk-review', 'requirements-analysis']
+    workflows: ['project-status', 'meeting-followup', 'risk-review', 'requirements-analysis', 'project-plan', 'change-control',
+      'stakeholder-communication', 'budget-tracking']
   },
   'it-project-manager': {
     title: 'Gestor de Projetos de SI',
     agent: 'solution-advisor',
     workflows: ['solution-briefing', 'automation-opportunity', 'tech-exploration', 'continuous-improvement',
-      'requirements-analysis', 'system-analysis', 'project-status']
+      'requirements-analysis', 'system-analysis', 'project-status', 'project-plan', 'change-control', 'stakeholder-communication',
+      'budget-tracking']
   },
   'ai-engineer': {
     title: 'Engenheiro de IA',
@@ -104,21 +106,67 @@ const flow = (description: string, trigger: string, steps: string[], skills: str
 
 export const workflows: Record<string, Workflow> = {
   'project-status': flow('Relatório do progresso, riscos e próximos marcos', 'Pedido de estado do projecto',
-    ['Recolher marcos, trabalho concluído e evidência', 'Analisar desvios, riscos e dependências', 'Validar responsáveis e preparar relatório'],
+    ['Recolher marcos, trabalho concluído e evidência, com a data de cada um',
+      'Comparar com a linha de base do plano e, se existir, com o orçamento; analisar desvios, riscos e dependências',
+      'Distinguir factos, previsões e pedidos de decisão; marcar o que é incerto e quem decide',
+      'Validar responsáveis e pedir a revisão de quem responde pelo projecto antes de distribuir o relatório'],
     ['forge-research', 'forge-verify'], ['file-system'], 'Relatório de estado', 'project-status',
-    ['Cada progresso tem evidência e data; incerteza e decisões pendentes identificadas']),
+    ['Cada progresso tem evidência e data; incerteza e decisões pendentes identificadas; factos separados de previsões']),
   'meeting-followup': flow('Acta e acções rastreáveis', 'Pedido de acta ou follow-up',
-    ['Identificar decisões registadas', 'Atribuir acções, responsáveis e prazos confirmados', 'Rever o resumo com participantes'],
+    ['Identificar decisões registadas e o que ficou em aberto, só a partir do que foi dito ou escrito',
+      'Atribuir acções, responsáveis e prazos confirmados; sem responsável confirmado a acção fica «por atribuir»',
+      'Ligar as decisões ao plano, aos riscos e ao orçamento quando os alteram',
+      'Rever o resumo com os participantes antes de o distribuir'],
     ['forge-verify'], ['file-system'], 'Acta e plano de acções', 'meeting-minutes',
-    ['Não inventar participantes, acordos ou responsáveis']),
+    ['Não inventar participantes, acordos ou responsáveis; cada acção tem responsável e prazo confirmados ou está «por atribuir»']),
   'risk-review': flow('Identificar, priorizar e monitorizar riscos', 'Pedido de riscos do projecto',
-    ['Identificar riscos com fonte', 'Avaliar probabilidade e impacto com critérios explícitos', 'Propor mitigação e responsáveis para aprovação'],
+    ['Identificar riscos com fonte (plano, dependências, histórico, incidentes)',
+      'Avaliar probabilidade e impacto com critérios explícitos e escrever o gatilho que mostra que o risco se concretizou',
+      'Propor mitigação, contingência e responsáveis para aprovação',
+      'Registar o risco aceite, quem o aceitou e a data da próxima revisão'],
     ['forge-research', 'forge-verify'], ['file-system'], 'Registo de riscos', 'risk-register',
-    ['Riscos verificáveis; aprovação para custos e mudanças']),
+    ['Riscos verificáveis com fonte e gatilho; aprovação para custos e mudanças; risco aceite com aprovador']),
   'requirements-analysis': flow('Requisitos testáveis e plano', 'Novo pedido de requisitos',
-    ['Clarificar actores e limites', 'Priorizar requisitos e dependências', 'Definir critérios de aceitação e pedir aprovação'],
-    ['forge-requirements', 'forge-verify'], ['file-system'], 'Requisitos rastreáveis', 'requirements',
-    ['Todos os Must têm ID e aceitação testável']),
+    ['Clarificar actores, limites e restrições, com no máximo quatro perguntas e uma recomendação cada',
+      'Numerar os requisitos (REQ), separar requisitos de pressupostos e priorizar por MoSCoW com dependências',
+      'Definir critérios de aceitação verificáveis e executar `agentforge trace` para encontrar lacunas',
+      'Pedir validação humana dos requisitos obrigatórios e dos pontos em aberto (validação N1)'],
+    ['forge-clarify', 'forge-requirements', 'forge-checkpoint', 'forge-verify'], ['file-system', 'terminal'], 'Requisitos rastreáveis', 'requirements',
+    ['Todos os Must têm ID, critério de aceitação testável e aprovação; pressupostos e pontos em aberto listados']),
+  'project-plan': flow('Plano e marcos do projecto: decomposição, estimativas com fonte, dependências, marcos verificáveis e linha de base', 'Pedido de plano, calendário, marcos ou cronograma de um projecto',
+    ['Clarificar o objectivo, o âmbito, as restrições (prazo, equipa, dependências externas) e o que significa «concluído», com no máximo quatro perguntas',
+      'Decompor o âmbito em entregáveis e pacotes de trabalho, cada um com um responsável provisório',
+      'Estimar cada pacote com intervalo e fonte (histórico, analogia, juízo de quem o executa), nunca com um número único sem fonte; identificar dependências e o caminho crítico',
+      'Definir os marcos, cada um com um critério de aceitação verificável, e fixar a linha de base (âmbito, datas e orçamento, se existir)',
+      'Registar os riscos e os pressupostos que afectam o plano e o que acontece se falharem',
+      'Pedir validação humana do plano e da linha de base (validação N1)'],
+    ['forge-clarify', 'forge-project-planning', 'forge-checkpoint', 'forge-verify'], ['file-system'], 'Plano com marcos e linha de base', 'project-plan',
+    ['Cada pacote tem responsável, estimativa com fonte e intervalo; cada marco tem critério verificável; dependências e caminho crítico indicados; pressupostos e riscos listados; linha de base aprovada']),
+  'change-control': flow('Controlo de alterações de âmbito, prazo ou custo de um projecto: pedido, impacto, decisão e actualização da linha de base', 'Pedido de alteração ao âmbito, prazo ou orçamento, ou de avaliar o impacto de uma alteração',
+    ['Registar o pedido de alteração com número (CC-NNN), origem, motivo e resultado pretendido',
+      'Analisar o impacto no âmbito, prazo, custo, qualidade, riscos e dependências, com evidência do plano e da linha de base actuais',
+      'Apresentar as opções (aceitar, aceitar com condições, adiar, rejeitar) e o custo de não fazer',
+      'Registar a decisão de quem tem autoridade para a tomar e os aprovadores (validação N1)',
+      'Se aprovada, actualizar a linha de base, comunicar às partes interessadas e, se for técnica, entregar a implementação a um change request',
+      'Arquivar o pedido com o estado, a decisão e a data'],
+    ['forge-clarify', 'forge-change-control', 'forge-research', 'forge-checkpoint', 'forge-verify'], ['file-system'], 'Pedido de alteração decidido e linha de base actualizada', 'change-control',
+    ['Cada pedido tem número, impacto com evidência e decisão de quem tem autoridade; a linha de base só muda depois da aprovação; nada é implementado antes da decisão']),
+  'stakeholder-communication': flow('Comunicação com as partes interessadas: quem precisa de saber o quê, quando e por que canal, e o texto validado', 'Pedido de comunicado, actualização às partes interessadas ou plano de comunicação',
+    ['Identificar as partes interessadas, o interesse e a influência de cada uma, e o que precisam de saber ou decidir',
+      'Definir por público a mensagem, o canal, a frequência e o responsável por enviar',
+      'Redigir a comunicação a partir de factos verificados (estado, decisões, riscos), separando factos, previsões e pedidos',
+      'Rever o tom e a coerência com as comunicações anteriores e pedir a validação de quem a assina antes de enviar (validação N1)',
+      'Registar o que foi enviado, a quem e o que se espera em resposta'],
+    ['forge-communication', 'forge-research', 'forge-prose', 'forge-checkpoint', 'forge-verify'], ['file-system'], 'Plano de comunicação e textos validados', 'stakeholder-plan',
+    ['Cada afirmação tem fonte ou está marcada como previsão; cada público tem canal, frequência e responsável; nada é enviado sem validação de quem assina; o kit não envia comunicações']),
+  'budget-tracking': flow('Acompanhamento do orçamento: linha de base, custos reais com fonte, desvios e previsão', 'Pedido de acompanhamento de orçamento, custos ou previsão financeira de um projecto',
+    ['Clarificar a moeda, o âmbito, o período e as fontes dos dados; sem fonte não há valor',
+      'Reunir o orçamento aprovado (linha de base) e os custos reais com a fonte de cada um',
+      'Calcular os desvios (absoluto e percentual) e a previsão ao ritmo actual, indicando o método; marcar as estimativas',
+      'Identificar as causas dos desvios e os riscos de custo ainda abertos',
+      'Propor as acções (replaneamento, redução de âmbito, pedido de reforço) para aprovação (validação N1)'],
+    ['forge-clarify', 'forge-budget', 'forge-research', 'forge-checkpoint', 'forge-verify'], ['file-system'], 'Relatório de orçamento com desvios e previsão', 'budget-tracking',
+    ['Cada valor tem fonte e data; estimativas marcadas; desvios e previsão com o método indicado; nenhuma acção de custo sem aprovação; valores nunca inventados']),
   'solution-briefing': flow('Necessidade de negócio traduzida em opções comparáveis e decisão registada',
     'Pedido de caso de negócio, análise de opções ou build vs buy',
     ['Separar o resultado de negócio pretendido da solução já sugerida e identificar quem decide',
@@ -236,7 +284,7 @@ export const workflows: Record<string, Workflow> = {
       'Git: estado do repositório, ramos activos, abandonados e integrados, integração no ramo principal e suite verde na versão final (devops)',
       'Versionamento: tipo de versão por Semantic Versioning, número da versão em todos os locais, changelog e notas da release (devops)',
       'Critério de publicação: verificar cada item da checklist e pedir autorização expressa para commit final, tag e publicação (validação N2)',
-      'Com autorização: commit, tag e publicação a partir do ramo principal; verificar o deploy e a versão em execução; confirmar o procedimento de rollback (devops)',
+      'Com autorização (uma pessoa concede-a num terminal com `agentforge guard permit-publish`): commit, tag e publicação a partir do ramo principal; verificar o deploy e a versão em execução; confirmar o procedimento de rollback (devops)',
       'Relatório final: alterações, bugs, pendentes, resultados e cobertura dos testes, segurança, desempenho, versão, commit, tag, riscos e acções futuras (product-manager)'],
     ['forge-clarify', 'forge-requirements', 'forge-checkpoint', 'forge-hygiene', 'forge-database', 'forge-performance', 'forge-security',
       'forge-visual-validation', 'forge-accessibility', 'forge-docs', 'forge-implementation', 'forge-tdd', 'forge-verify', 'forge-e2e',
@@ -472,7 +520,25 @@ const composition: Record<string, Workflow['uses']> = {
     { workflow: 'tech-exploration', step: 3, when: 'a decisão depende de uma experiência que ainda não existe', handoff: 'veredicto da experiência com versões e resultados' }
   ],
   'project-status': [
-    { workflow: 'risk-review', step: 2, when: 'não existe um registo de riscos actual', handoff: 'registo de riscos com probabilidade, impacto e responsável' }
+    { workflow: 'risk-review', step: 2, when: 'não existe um registo de riscos actual', handoff: 'registo de riscos com probabilidade, impacto e responsável' },
+    { workflow: 'budget-tracking', step: 2, when: 'o projecto tem orçamento', handoff: 'relatório de orçamento com desvios e previsão' },
+    { workflow: 'stakeholder-communication', step: 4, when: 'o relatório vai ser distribuído a partes interessadas', handoff: 'relatório de estado validado' }
+  ],
+  'project-plan': [
+    { workflow: 'requirements-analysis', step: 2, when: 'os requisitos ainda não estão numerados e aprovados', handoff: 'requisitos numerados com critérios de aceitação' },
+    { workflow: 'risk-review', step: 5, when: 'não existe um registo de riscos actual', handoff: 'registo de riscos com gatilhos e responsáveis' }
+  ],
+  'change-control': [
+    { workflow: 'project-plan', step: 5, when: 'a alteração mexe nos marcos ou na linha de base', handoff: 'linha de base nova, aprovada' },
+    { workflow: 'stakeholder-communication', step: 5, when: 'a decisão afecta partes interessadas', handoff: 'decisão com impacto resumido' },
+    { workflow: 'change-request', step: 5, when: 'a alteração aprovada é técnica', handoff: 'pedido aprovado com requisitos e critérios de aceitação' }
+  ],
+  'budget-tracking': [
+    { workflow: 'change-control', step: 5, when: 'a correcção exige reforço, redução de âmbito ou novo prazo', handoff: 'pedido de alteração com impacto de custo' }
+  ],
+  'meeting-followup': [
+    { workflow: 'stakeholder-communication', step: 4, when: 'a acta tem de ser distribuída a quem não esteve na reunião', handoff: 'acta validada' },
+    { workflow: 'change-control', step: 3, when: 'uma decisão altera âmbito, prazo ou custo', handoff: 'decisão registada como pedido de alteração' }
   ],
   'ai-solution-design': [
     { workflow: 'guardrail-design', step: 3, when: 'sempre', handoff: 'guardrails GR-NN testáveis' }
@@ -572,6 +638,10 @@ export const templates: Record<string, string> = {
   'edge-modernization': '# Modernização para o Edge\n\nAplicação, navegadores suportados e linha de base:\n\n| # | Construção legada | Ficheiro:linha | Acção (remover, substituir, reescrever, bloqueado) | Estado | Teste |\n| --- | --- | --- | --- | --- | --- |\n\nContagem antes → depois:\nConfiguração fora do código (lista do modo IE, cabeçalhos, políticas; entregue a quem):\nValidação no Edge (suite, ponta a ponta, acessibilidade, modo padrão):\nOptimização (medição antes → depois):\nPlano de reversão e autorização para desligar a compatibilidade:\n',
   'guardrails': '# Guardrails\n\nCaso de uso, dados permitidos e o que nunca pode acontecer:\n\n| ID | Camada (entrada, contexto, ferramentas, saída, dados, escalada) | Regra | Verificação (teste ou automática) | Acção ao falhar | Imposta em código ou só instrução |\n| --- | --- | --- | --- | --- | --- |\n| GR-01 | | | | | |\n\nRisco aceite (quem aprovou, quando):\n',
   'red-team': '# Red team\n\nAutorização, alvo e ambiente:\nGuardrails e modelo de ameaças usados:\n\n| Caso | Categoria | Entrada | Esperado | Observado (3 execuções) | Veredicto (resistiu, falhou, inconclusivo) | Gravidade |\n| --- | --- | --- | --- | --- | --- | --- |\n\nAchados aprovados para correcção:\nTestes de regressão criados:\nNova execução (resultado comparado):\nO que não foi testado e porquê:\n',
+  'project-plan': '# Plano do projecto\n\nObjectivo, âmbito e o que significa «concluído»:\nRestrições (prazo, equipa, dependências externas):\n\n| ID | Entregável / pacote | Responsável | Estimativa (intervalo) | Fonte da estimativa | Depende de |\n| --- | --- | --- | --- | --- | --- |\n\nCaminho crítico:\n\n| Marco | Data | Critério de aceitação verificável | Estado |\n| --- | --- | --- | --- |\n\nPressupostos e riscos que afectam o plano:\nLinha de base (âmbito, datas, orçamento) e aprovação (quem, quando):\n',
+  'change-control': '# Pedido de alteração CC-NNN\n\nOrigem, data e motivo:\nResultado pretendido:\n\nImpacto (com evidência do plano e da linha de base):\n| Dimensão | Hoje | Com a alteração | Evidência |\n| --- | --- | --- | --- |\n| Âmbito | | | |\n| Prazo | | | |\n| Custo | | | |\n| Qualidade | | | |\n| Riscos e dependências | | | |\n\nOpções (aceitar, aceitar com condições, adiar, rejeitar) e custo de não fazer:\nDecisão, aprovadores e data:\nLinha de base actualizada:\nComunicação às partes interessadas:\nImplementação (change request técnico, se aplicável):\n',
+  'stakeholder-plan': '# Comunicação com as partes interessadas\n\n| Parte interessada | Interesse | Influência | Precisa de saber / decidir | Mensagem | Canal | Frequência | Responsável |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n\nTexto (factos com fonte; previsões marcadas; pedidos de decisão):\nValidado por (quem assina, quando):\nEnviado (a quem, quando) e resposta esperada:\n',
+  'budget-tracking': '# Orçamento\n\nMoeda, âmbito e período:\n\n| Rubrica | Orçamento aprovado | Custo real (fonte, data) | Desvio | Desvio % | Previsão (método) | Estimativa? |\n| --- | --- | --- | --- | --- | --- | --- |\n\nCausas dos desvios:\nRiscos de custo abertos:\nAcções propostas (aprovação):\n',
   'production-cleanup': '# Limpeza e produção\n\nAmbiente alvo e o que é intocável:\nLinha de base (suite, build, tamanho, tempo):\nCandidatos (caminho, evidência, confiança, risco, decisão):\nSegurança para produção:\nOtimizações (medição antes e depois):\nEntrega (configuração, registo, saúde, build, imagem):\nDocumentação actualizada e removida:\nLotes e commits:\n',
   'security-assessment': '# Avaliação de segurança\n\nAlvo e ambiente (do projecto, local ou de teste):\nModelo de ameaças (activos, fronteiras, ameaças priorizadas, mitigação, teste):\nRevisão de código (achado, gravidade, ficheiro:linha, confiança):\nTestes executados (comando e saída real):\nFerramentas não executadas e porquê:\nRiscos aceites (quem decidiu):\nCorrecções aprovadas e verificação:\n',
   'technical-documentation': '# Documentação\n\nÂmbito e público:\n\n## Funcional\nProcessos, regras e perfis (ficheiro de cada regra):\n\n## Técnica\nMódulos, interfaces, dados, configuração, execução e testes (ficheiro de cada afirmação):\n\nInferido (INFERRED) e por perceber (AMBIGUOUS):\nAmostra comparada com o código:\nValidação humana (quem, quando):\n',

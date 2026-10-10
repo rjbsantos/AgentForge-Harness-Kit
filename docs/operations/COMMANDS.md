@@ -74,6 +74,21 @@ agentforge flow close                                         # recusa se houver
 - `flow` guarda o estado em `.agentforge/work/flow.json` e arquiva em `.agentforge/work/flows/` ao fechar. Um passo só avança depois dos anteriores (os paralelos podem ir por qualquer ordem), exige `--evidence` (ficheiro do projecto, guardado com SHA-256) ou `--note`, e os passos de decisão humana (validação N1/N2, autorização, aprovação) só avançam com confirmação num terminal, como `learn approve`. Dispensar um passo exige `--reason`. Tudo fica em `audit.jsonl`.
 - `composition` (em `plan`) lista os sub-fluxos que complementam o fluxo escolhido, o passo, a condição e o artefacto que passa de um para o outro.
 
+## Guarda, avaliação de eficácia e indicadores de uso
+
+```bash
+agentforge guard install                  # opcional, Claude Code: hook PreToolUse em Bash
+agentforge guard status
+agentforge guard permit-main --minutes 15 # uma pessoa, num terminal: libera commit/push em main
+agentforge guard permit-publish           # uma pessoa, num terminal: libera tags, releases, PR merge, npm publish
+agentforge guard revoke
+agentforge eval run --suite suite.json --cli claude --command 'claude -p "$AGENTFORGE_EVAL_PROMPT"' --repeat 3 --dry-run
+agentforge insights                       # inclui «usage» (fluxos, porta de entrada, guarda)
+```
+
+- `guard` trava, antes de cada comando Bash: `git commit`, `merge`, `rebase`, `cherry-pick` e `revert` no ramo `main` ou `master`; `git push` para `main`, forçado ou a apagar ramos; publicação de tags, `git tag <nome>`, `gh release create`, `gh pr merge` e `npm publish`. Bloqueia com código 2 e explica como prosseguir. As autorizações (`permit-*`) exigem terminal interactivo, têm prazo (1 a 240 minutos) e âmbito (`main` ou `publish`), e ficam em `audit.jsonl`. Não é uma sandbox: comandos construídos de forma indirecta escapam à análise.
+- `eval run` compara as tuas tarefas com e sem o kit no CLI indicado, com verificações determinísticas. O comando indicado gasta tokens: recusa mais de 12 execuções sem `--max-runs`. Ver [testing/EFFICACY.md](../testing/EFFICACY.md).
+
 ## Rastreabilidade e evidência
 
 ```bash

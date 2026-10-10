@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { serve } from '../mcp.js';
 import { applyGateway } from '../gateway.js';
@@ -9,8 +9,13 @@ import { buildGraph, explain, path as graphPath, query as graphQuery, report as 
 import { applyHardening, hardeningApplied, removeHardening } from '../hardening.js';
 import { trace } from '../trace.js';
 import { assessPrompt } from '../gate.js';
+import { defaultMaxRuns, runEvaluation } from '../eval.js';
+import { usageInsights } from '../usage.js';
+import { existsSync } from 'node:fs';
+import { audit } from '../audit.js';
 import { abandonFlow, closeFlow, completeStep, flowStatus, skipStep, startFlow } from '../flow.js';
-import { eventSummary, hookStatus, resolveBinary, installHook, maxHookInputBytes, recordEvent, removeHook } from '../hooks.js';
+import { evaluate, activePermits, grantPermit, revokePermits } from '../guard.js';
+import { eventSummary, guardHookStatus, hookStatus, installGuardHook, removeGuardHook, resolveBinary, installHook, maxHookInputBytes, recordEvent, removeHook } from '../hooks.js';
 import { doctor, install, installedTargets, remove, status, targets, upgrade } from '../installer.js';
 import { route } from '../routing.js';
 import { confirmOnTerminal } from '../approval.js';
@@ -19,10 +24,12 @@ import { plan } from '../orchestrator.js';
 import { loadOperator, setOperator } from '../operator.js';
 import { operationInsights, recordRun } from '../operations.js';
 import { profiles, workflows } from '../capabilities.js';
-const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|harden|trace|gate|flow|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO] | --version\n' +
+const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|harden|trace|gate|flow|guard|eval|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO] | --version\n' +
     '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
     '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
     '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
+    '  eval run --suite FICHEIRO --command TEXTO --cli NOME [--arm kit|plain|both] [--repeat N] [--max-runs N] [--timeout-ms N] [--dry-run]  corre as tuas tarefas com e sem o kit no CLI indicado e compara; o comando gasta tokens\n' +
+    '  guard <install|remove|status|permit-main|permit-publish [--minutes N]|revoke|check>  (opcional, Claude Code) trava commit em main, push forçado e publicação sem autorização humana; permit-* exige terminal\n' +
     '  flow <start --workflow FLUXO|status|done --step N (--evidence CAMINHO|--note TEXTO)|skip --step N --reason TEXTO|close|abandon>  regista os passos de um fluxo; recusa fechar com passos pendentes; os passos de decisão humana exigem terminal\n' +
     '  gate --prompt TEXTO [--workflow FLUXO]  verifica se o pedido tem contexto para um fluxo; se não, devolve as perguntas que faltam e termina com 3\n' +
     '  trace [--requirements CAMINHO] [--plan CAMINHO]  valida que cada requisito Must tem critério, plano e teste; termina com 1 se houver lacunas\n' +
@@ -49,9 +56,9 @@ async function main(args) {
         console.log(help);
         return;
     }
-    if (!action || !['install', 'upgrade', 'doctor', 'tokens', 'mcp', 'graph', 'gateway', 'hooks', 'harden', 'trace', 'gate', 'flow', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action))
+    if (!action || !['install', 'upgrade', 'doctor', 'tokens', 'mcp', 'graph', 'gateway', 'hooks', 'harden', 'trace', 'gate', 'flow', 'guard', 'eval', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action))
         usage();
-    const subcommand = (action === 'learn' || action === 'operator' || action === 'flow' || action === 'hooks' || action === 'harden' || action === 'graph' || action === 'gateway') && args[0] && !args[0].startsWith('--') ? args.shift()
+    const subcommand = (action === 'learn' || action === 'operator' || action === 'flow' || action === 'guard' || action === 'eval' || action === 'hooks' || action === 'harden' || action === 'graph' || action === 'gateway') && args[0] && !args[0].startsWith('--') ? args.shift()
         : action === 'context' && args[0] === 'save' ? args.shift() : undefined;
     let parsed;
     try {
@@ -66,7 +73,8 @@ async function main(args) {
                 role: { type: 'string' }, workflow: { type: 'string' }, result: { type: 'string' },
                 validation: { type: 'string' }, 'duration-ms': { type: 'string' }, tools: { type: 'string' },
                 skills: { type: 'string' }, retries: { type: 'string' }, tokens: { type: 'string' },
-                cost: { type: 'string' }, 'error-code': { type: 'string' }, requirements: { type: 'string' }, plan: { type: 'string' }, step: { type: 'string' }, reason: { type: 'string' }, note: { type: 'string' }, 'no-evidence': { type: 'boolean' }, from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }
+                cost: { type: 'string' }, 'error-code': { type: 'string' }, requirements: { type: 'string' }, plan: { type: 'string' }, step: { type: 'string' }, reason: { type: 'string' }, note: { type: 'string' }, minutes: { type: 'string' }, suite: { type: 'string' }, command: { type: 'string' },
+                arm: { type: 'string' }, repeat: { type: 'string' }, 'max-runs': { type: 'string' }, 'timeout-ms': { type: 'string' }, 'no-evidence': { type: 'boolean' }, from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }
             } }).values;
     }
     catch {
@@ -259,6 +267,77 @@ async function main(args) {
             usage();
         return;
     }
+    if (action === 'eval') {
+        const suiteFile = text('suite');
+        const commandText = text('command');
+        const armName = choice('arm', ['kit', 'plain', 'both']) ?? 'both';
+        const repeat = number('repeat', /^\d+$/) ?? 3;
+        const maxRuns = number('max-runs', /^\d+$/) ?? defaultMaxRuns;
+        const timeoutMs = number('timeout-ms', /^\d+$/) ?? 600_000;
+        if (subcommand !== 'run' || !suiteFile || !commandText || cli === 'all' || planned || approved || highRisk || prompt || role ||
+            workflow || result || validation || durationMs !== undefined || toolsUsed.length || summary || next || topic || lesson ||
+            evidence || id || scope || anchor || budgetTokens !== undefined || stepNumber !== undefined || reasonText || noteText)
+            usage();
+        const arms = armName === 'both' ? ['plain', 'kit'] : [armName];
+        const report = await runEvaluation({ suitePath: resolve(project, suiteFile), command: commandText, cli, arms, repeat,
+            timeoutMs, maxRuns, dryRun, project });
+        console.log(JSON.stringify(report, null, 2));
+        return;
+    }
+    if (action === 'guard') {
+        const minutes = number('minutes', /^\d+$/);
+        if (cli !== 'all' || dryRun || prompt || planned || approved || highRisk || role || workflow || result || validation ||
+            durationMs !== undefined || toolsUsed.length || summary || next || topic || lesson || evidence || id || scope || anchor ||
+            budgetTokens !== undefined || stepNumber !== undefined || reasonText || noteText)
+            usage();
+        if (minutes !== undefined && !subcommand?.startsWith('permit-'))
+            usage();
+        if (subcommand === 'install')
+            console.log(await installGuardHook(project));
+        else if (subcommand === 'remove')
+            console.log(await removeGuardHook(project));
+        else if (subcommand === 'status') {
+            console.log(JSON.stringify({ hook: await guardHookStatus(project), permits: await activePermits(project) }, null, 2));
+        }
+        else if (subcommand === 'permit-main' || subcommand === 'permit-publish') {
+            const scopeName = subcommand === 'permit-main' ? 'main' : 'publish';
+            const length = minutes ?? 15;
+            await confirmOnTerminal(`Autorizar ${scopeName === 'main' ? 'commit, merge e push para o ramo principal (e push forçado)' : 'publicação: tags, releases, pull requests e npm publish'} durante ${length} minuto(s) neste projecto?`);
+            console.log(JSON.stringify(await grantPermit(project, scopeName, length), null, 2));
+        }
+        else if (subcommand === 'revoke') {
+            await revokePermits(project);
+            console.log('Autorizações revogadas.');
+        }
+        else if (subcommand === 'check') {
+            // Chamado pelo hook PreToolUse: stdin traz o evento; exit 2 bloqueia e a mensagem vai para o agente.
+            let input = '';
+            for await (const chunk of process.stdin) {
+                input += chunk;
+                if (input.length > maxHookInputBytes)
+                    break;
+            }
+            let commandText = '';
+            try {
+                const payload = JSON.parse(input);
+                if (payload.tool_name === 'Bash' && typeof payload.tool_input?.command === 'string')
+                    commandText = payload.tool_input.command;
+            }
+            catch { /* evento ilegível: não bloquear */ }
+            if (commandText) {
+                const decision = await evaluate(project, commandText);
+                if (!decision.allow) {
+                    const { audit } = await import('../audit.js');
+                    await audit(project, 'guard.deny', { rule: decision.rule ?? 'desconhecida' });
+                    console.error(`AgentForge guarda: ${decision.reason}`);
+                    process.exitCode = 2;
+                }
+            }
+        }
+        else
+            usage();
+        return;
+    }
     if (action === 'flow') {
         if (cli !== 'all' || dryRun || prompt || planned || approved || highRisk || role || result || validation ||
             durationMs !== undefined || toolsUsed.length || summary || next || topic || lesson || id || scope || anchor || budgetTokens !== undefined)
@@ -287,7 +366,7 @@ async function main(args) {
             result || validation || durationMs !== undefined || toolsUsed.length || budgetTokens !== undefined ||
             summary || next || topic || lesson || evidence || id || scope || anchor)
             usage();
-        console.log(JSON.stringify({ ...await operationInsights(project), hookEvents: await eventSummary(project) }, null, 2));
+        console.log(JSON.stringify({ ...await operationInsights(project), hookEvents: await eventSummary(project), usage: await usageInsights(project) }, null, 2));
         return;
     }
     if (summary || next || topic || lesson || (evidence && action !== 'record') || id || scope || anchor)
@@ -322,6 +401,9 @@ async function main(args) {
         if (workflow !== undefined && !(workflow in workflows))
             usage();
         const verdict = assessPrompt(prompt, workflow);
+        if (existsSync(join(project, '.agentforge/work'))) {
+            await audit(project, 'gate', { ready: String(verdict.ready), workflow: verdict.workflow ?? 'nenhum', score: String(verdict.score) });
+        }
         console.log(JSON.stringify(verdict, null, 2));
         if (!verdict.ready)
             process.exitCode = 3;
@@ -392,6 +474,10 @@ async function main(args) {
         for (const line of diagnosis.lines)
             console.log(line);
         try {
+            if (await guardHookStatus(project) === 'altered') {
+                console.log('✗ guarda: o comando do guarda em .claude/settings.json foi alterado; reveja-o');
+                process.exitCode = 1;
+            }
             if (await hookStatus(project) === 'altered') {
                 console.log('✗ hook: o comando do AgentForge em .claude/settings.json foi alterado; reveja-o (`agentforge hooks remove` não o reconhece)');
                 process.exitCode = 1;

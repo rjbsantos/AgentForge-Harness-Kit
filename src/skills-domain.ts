@@ -324,5 +324,57 @@ Finalidade: encontrar como os limites falham antes de outra pessoa o fazer, sem 
 6. Corrigir só o aprovado com teste primeiro; cada falha passa a ser um teste de regressão e o corpus completo volta a correr, comparando com a primeira execução.
 Validação: autorização, alvo e ambiente indicados; cada caso tem esperado, observado, veredicto e três execuções reais; o que não foi testado está declarado; cada falha corrigida tem um teste de regressão e a segunda execução foi comparada com a primeira.
 `
+  },
+  'forge-project-planning': {
+    description: 'Usar ao planear um projecto, para decompor o âmbito em pacotes de trabalho, estimar com intervalo e fonte, identificar dependências e caminho crítico, definir marcos verificáveis e fixar a linha de base.',
+    body: `
+Finalidade: um plano que outra pessoa consegue executar e verificar, e que se pode comparar com a realidade. Entradas: objectivo, âmbito e restrições. Resultado: decomposição, estimativas, marcos e linha de base aprovada.
+1. Escrever o que significa «concluído» e o que fica de fora; um plano sem fronteira de âmbito não se pode controlar.
+2. Decompor em entregáveis (resultados, não actividades) e em pacotes de trabalho pequenos o bastante para um responsável os estimar. Cada pacote tem um responsável provisório.
+3. Estimar com um intervalo (mínimo, provável, máximo) e dizer de onde vem: histórico, analogia, ou juízo de quem executa. Um número único sem fonte é um palpite; marcá-lo como tal. Não somar estimativas incertas como se fossem exactas.
+4. Dependências entre pacotes e com terceiros; o caminho crítico é a cadeia mais longa de dependências e é onde um atraso atrasa o projecto.
+5. Marcos: cada um com um critério de aceitação que alguém consiga verificar (não «fase concluída», mas «relatório X aprovado por Y»).
+6. Pressupostos e riscos que afectam o plano, com o que acontece se falharem.
+7. Fixar a linha de base (âmbito, datas e orçamento, se existir) só depois de aprovada por uma pessoa; a partir daí, qualquer mudança passa por controlo de alterações (forge-change-control).
+Validação: cada pacote tem responsável, estimativa com intervalo e fonte; cada marco tem critério verificável; dependências e caminho crítico estão indicados; pressupostos e riscos estão listados; a linha de base tem aprovação registada.
+`
+  },
+  'forge-change-control': {
+    description: 'Usar quando alguém pede para mudar o âmbito, o prazo ou o orçamento de um projecto, para registar o pedido, medir o impacto com evidência, decidir por quem tem autoridade e só então actualizar a linha de base.',
+    body: `
+Finalidade: nenhuma alteração entra no projecto sem impacto conhecido e decisão registada. Entradas: pedido de alteração, plano e linha de base actuais. Resultado: pedido numerado com impacto, decisão e linha de base actualizada.
+1. Registar o pedido com número sequencial (CC-NNN): quem pede, quando, porquê e o resultado pretendido, distinguindo o resultado de negócio da solução já sugerida.
+2. Medir o impacto contra a linha de base actual, não de memória: âmbito, prazo, custo, qualidade, riscos e dependências, cada um com a evidência (marco, pacote, valor).
+3. Apresentar as opções: aceitar, aceitar com condições, adiar, rejeitar, e o custo de não fazer. Uma alteração urgente também passa por aqui, com a decisão mais rápida, nunca sem decisão.
+4. A decisão é de quem tem autoridade para ela, registada com os aprovadores e a data; silêncio não é aprovação. Nada se implementa antes.
+5. Se aprovada: actualizar a linha de base (forge-project-planning), comunicar às partes interessadas (forge-communication) e, se a alteração for técnica, entregar a um change request com requisitos e critérios de aceitação.
+6. Arquivar o pedido com o estado e a decisão, mesmo quando rejeitado: o histórico evita reabrir a mesma discussão.
+Validação: cada pedido tem número, impacto com evidência e decisão de quem tem autoridade; a linha de base só mudou depois da aprovação; a decisão foi comunicada a quem é afectado.
+`
+  },
+  'forge-communication': {
+    description: 'Usar ao preparar uma comunicação a partes interessadas (estado, decisão, alteração, risco), para decidir quem precisa de saber o quê, redigir a partir de factos verificados e validar antes de enviar.',
+    body: `
+Finalidade: a pessoa certa recebe a informação certa, correcta e a tempo. Entradas: estado, decisões e riscos verificados. Resultado: plano de comunicação e textos validados. O kit não envia nada: a pessoa que assina envia.
+1. Mapear as partes interessadas: o interesse, a influência e o que precisam de saber ou de decidir. Quem decide recebe a decisão pedida, não só a informação.
+2. Por público: mensagem, canal, frequência e quem envia. Menos comunicações e mais úteis; um relatório igual para todos serve mal a cada um.
+3. Redigir a partir de factos com fonte e data. Separar factos, previsões e pedidos de decisão; não afirmar o que não foi verificado e marcar a incerteza.
+4. Coerência: ler as comunicações anteriores e não contradizer sem explicar o que mudou. Tom directo, sem eufemismos para más notícias (forge-prose para rever o texto em português europeu).
+5. Validação de quem assina antes de enviar (forge-checkpoint); registar o que foi enviado, a quem e o que se espera em resposta.
+Validação: cada afirmação tem fonte ou está marcada como previsão; cada público tem canal, frequência e responsável; o texto foi validado por quem assina; ficou registo do que foi enviado.
+`
+  },
+  'forge-budget': {
+    description: 'Usar ao acompanhar o orçamento de um projecto, para comparar o orçamento aprovado com os custos reais, calcular desvios e previsão com o método indicado e propor acções, sem inventar valores.',
+    body: `
+Finalidade: saber onde o dinheiro está a ir e para onde vai, com números que se podem verificar. Entradas: orçamento aprovado e custos reais com fonte. Resultado: desvios, previsão e acções propostas.
+1. Fixar moeda, âmbito e período. Cada valor tem fonte (factura, folha de horas, contrato, estimativa de alguém) e data; um valor sem fonte não entra: fica como «em falta».
+2. Separar custos reais de estimativas e de compromissos ainda não facturados; marcar cada um.
+3. Desvio por rubrica, absoluto e percentual, contra a linha de base aprovada, não contra o último valor visto.
+4. Previsão para o fim do projecto, dizendo o método (ao ritmo actual, ou orçamento restante por estimar de novo) e o intervalo; uma previsão é uma hipótese com a sua margem, não um valor exacto.
+5. Causas dos desvios com evidência e riscos de custo ainda abertos (forge-research).
+6. Acções (replaneamento, redução de âmbito, pedido de reforço) só para aprovação; qualquer alteração à linha de base passa por controlo de alterações (forge-change-control). Nunca comprometer custos.
+Validação: cada valor tem fonte e data; estimativas estão marcadas; os desvios e a previsão indicam o método; nenhuma acção de custo avançou sem aprovação; nenhum valor foi inventado.
+`
   }
 };

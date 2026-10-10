@@ -53,6 +53,10 @@ A descrição de cada competência começa por «Usar…» e diz quando deve ser
 | `forge-edge-compat` | Modernizar para o Edge e deixar o modo de compatibilidade do IE: inventário, correcção por lote, validação e reversão |
 | `forge-guardrails` | Escrever os limites de um agente ou aplicação com IA como regras testáveis, distinguindo o imposto em código do que é só instrução |
 | `forge-red-team` | Atacar de forma controlada um agente ou aplicação com IA em ambiente local e deixar um corpus de regressão |
+| `forge-project-planning` | Planear um projecto: pacotes, estimativas com intervalo e fonte, dependências, marcos verificáveis e linha de base |
+| `forge-change-control` | Controlar alterações de âmbito, prazo ou custo: pedido numerado, impacto com evidência, decisão e linha de base |
+| `forge-communication` | Comunicar com partes interessadas: quem precisa de saber o quê, texto a partir de factos e validação antes de enviar |
+| `forge-budget` | Acompanhar o orçamento: desvios, previsão com método e acções para aprovação, sem inventar valores |
 | `forge-production-readiness` | Limpar lixo e preparar para produção: configuração, registo, saúde, build, imagem e dependências, com medição antes e depois |
 | `forge-memory` | Memória de trabalho, curta e longa do Harness e dos agentes, com escopo, retenção e orçamento |
 | `forge-finish` | Fechar um ramo: suite completa, commits de âmbito restrito, pull request sem merge automático e arquivo |

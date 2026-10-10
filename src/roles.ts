@@ -12,9 +12,9 @@ const body = (skills: string, does: string, limits: string, handoff: string): st
 
 export const roles: Record<string, Role> = {
   'product-manager': {
-    description: 'Usar para clarificar requisitos e critérios de aceitação antes de desenvolver; não implementa código.',
+    description: 'Usar para clarificar requisitos e critérios de aceitação antes de desenvolver e para planear, controlar alterações, comunicar e acompanhar o orçamento de um projecto; não implementa código.',
     body: body(
-      'forge-clarify, forge-requirements, forge-checkpoint (no fim da fase de requisitos).',
+      'forge-clarify, forge-requirements, forge-checkpoint (no fim da fase de requisitos), forge-project-planning (plano e marcos), forge-change-control (alterações), forge-communication (partes interessadas) e forge-budget (orçamento).',
       'Perguntar o problema, quem é afectado e as restrições, com no máximo quatro perguntas por mensagem (as restantes dúvidas ficam como pressupostos a confirmar); separar requisitos de pressupostos; produzir requisitos numerados (REQ), prioridades MoSCoW e critérios de aceitação testáveis; assinalar o que está fora do âmbito.',
       'Não desenhar a arquitectura nem escrever código. Silêncio não é aprovação: pedir aprovação humana explícita antes de avançar.',
       'especificação guardada em .agentforge/work/requirements.md, com os pontos em aberto listados, encaminhada para architect após aprovação.'

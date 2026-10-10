@@ -8,7 +8,7 @@
 | Perceber a arquitectura | [architecture/OVERVIEW.md](architecture/OVERVIEW.md) · [AUDIT.md](architecture/AUDIT.md) · [REQUIREMENTS.md](architecture/REQUIREMENTS.md) |
 | Consultar perfis, agentes, competências, fluxos e ferramentas | [roles](roles/CATALOG.md) · [agents](agents/CATALOG.md) · [skills](skills/CATALOG.md) · [workflows](workflows/CATALOG.md) · [tools](tools/CATALOG.md) |
 | Saber porque foi decidido assim | [decisions/](decisions/) (ADR-0001 a 0003) |
-| Reduzir tokens ou usar um gateway | [integrations/TOKEN-TOOLS.md](integrations/TOKEN-TOOLS.md) · [integrations/OMNIROUTE.md](integrations/OMNIROUTE.md) · [integrations/EVENTS.md](integrations/EVENTS.md) |
+| Reduzir tokens ou usar um gateway | [integrations/TOKEN-TOOLS.md](integrations/TOKEN-TOOLS.md) · [integrations/OMNIROUTE.md](integrations/OMNIROUTE.md) · [integrations/EVENTS.md](integrations/EVENTS.md) · [testing/EFFICACY.md](testing/EFFICACY.md) |
 | Testar e avaliar | [testing/STRATEGY.md](testing/STRATEGY.md) · [testing/EVALUATION.md](testing/EVALUATION.md) |
 | Ver o que falta | [operations/BACKLOG.md](operations/BACKLOG.md) |
 | Contribuir | [CONTRIBUTING](../CONTRIBUTING.md) |

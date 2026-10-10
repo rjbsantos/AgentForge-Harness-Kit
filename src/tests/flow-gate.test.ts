@@ -52,6 +52,9 @@ test('gate: plan devolve needs-context com as perguntas, sem gastar o fluxo', ()
   assert.equal(JSON.parse(refused.stdout).ready, false);
   assert.equal(run('--prompt', 'Fecha a versão 1.5.0 com a checklist').status, 0);
   assert.equal(run('--prompt', 'x', '--workflow', 'nope').status, 2);
+  const withProject = spawnSync(process.execPath, [cli, 'gate', '--prompt', 'melhora isto', '--project', root], { encoding: 'utf8' });
+  assert.equal(withProject.status, 3);
+  assert.match(await readFile(join(root, '.agentforge/work/audit.jsonl'), 'utf8'), /"action":"gate"/);
 }));
 
 test('composição: sub-fluxos existem, não formam ciclos e cada passo está dentro do fluxo', () => {
@@ -77,15 +80,16 @@ test('flow: não deixa dar passos fora de ordem, exige evidência e recusa fecha
   assert.equal((await completeStep(root, 1, { evidence: 'riscos.md' })).done, 1);
   await assert.rejects(completeStep(root, 1, { note: 'x' }), /já está/);
   await assert.rejects(completeStep(root, 2, { evidence: '../fora.md' }), /inválido|fora/);
-  await assert.rejects(closeFlow(root), /faltam os passos 2, 3/);
+  await assert.rejects(closeFlow(root), /faltam os passos 2, 3, 4/);
   await completeStep(root, 2, { note: 'probabilidade e impacto avaliados' });
   // O passo 3 é «pedir aprovação»: exige confirmação humana.
   await assert.rejects(completeStep(root, 3, { note: 'aprovado' }), /decisão humana/);
   await assert.rejects(completeStep(root, 3, { note: 'aprovado', confirm: async () => { throw new Error('Não confirmado'); } }), /Não confirmado/);
-  assert.equal((await flowStatus(root)).pending, 1);
+  assert.equal((await flowStatus(root)).pending, 2);
   await completeStep(root, 3, { note: 'aprovado por quem decide', confirm: async () => undefined });
+  await completeStep(root, 4, { note: 'risco aceite por quem decide, revisão em Janeiro' });
   const closed = await closeFlow(root);
-  assert.equal(closed.done, 3);
+  assert.equal(closed.done, 4);
   assert.match(closed.archive, /\.agentforge\/work\/flows\/.*-risk-review\.json$/);
   await assert.rejects(flowStatus(root), /Nenhum fluxo activo/);
   assert.equal((await readdir(join(root, '.agentforge/work/flows'))).length, 1);
@@ -116,7 +120,7 @@ test('flow: no CLI, os passos de decisão humana são recusados com stdin redire
   assert.notEqual(refused.status, 0);
   assert.match(refused.stderr, /terminal interactivo/);
   assert.equal(run('close').status, 1);
-  assert.equal(JSON.parse(run('status').stdout).pending, 1);
+  assert.equal(JSON.parse(run('status').stdout).pending, 2);
   assert.equal(run('done').status, 2);
   assert.equal(run('start').status, 2);
   await mkdir(join(root, 'x'), { recursive: true });

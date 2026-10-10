@@ -4,6 +4,10 @@
 export type Case = readonly [expected: string | null, prompt: string];
 
 export const tuning: Case[] = [
+  ['project-plan', 'Preciso do plano do projecto com marcos e caminho crítico'],
+  ['change-control', 'O cliente pediu para aumentar o âmbito, faz o controlo de alterações'],
+  ['stakeholder-communication', 'Prepara o plano de comunicação para as partes interessadas'],
+  ['budget-tracking', 'Faz o acompanhamento do orçamento e a previsão de custos do projecto'],
   ['sast-remediation', 'Tenho o relatório do Checkmarx com 40 achados, corrige as vulnerabilidades'],
   ['sast-remediation', 'Trata os findings do scan SAST antes da auditoria'],
   ['edge-modernization', 'Quero deixar de usar o modo de compatibilidade do Internet Explorer no Edge'],

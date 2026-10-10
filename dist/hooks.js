@@ -34,6 +34,51 @@ export async function hookStatus(project) {
         return 'altered';
     return list.some(ours) ? 'ok' : 'absent';
 }
+// Guarda opcional (PreToolUse em Bash): trava `git commit` em main, push forçado e publicação sem
+// autorização humana. Segue as mesmas regras do hook de eventos: só conta o comando exacto.
+const guardMarker = 'agentforge guard check';
+const guardCommand = `${guardMarker} --project "$CLAUDE_PROJECT_DIR"`;
+const guardOurs = (entry) => entry.hooks?.some(hook => hook.command === guardCommand) ?? false;
+const guardTampered = (entry) => entry.hooks?.some(hook => hook.command?.includes(guardMarker) && hook.command !== guardCommand) ?? false;
+export async function guardHookStatus(project) {
+    const list = (await readSettings(resolve(project))).hooks?.PreToolUse ?? [];
+    if (list.some(guardTampered))
+        return 'altered';
+    return list.some(guardOurs) ? 'ok' : 'absent';
+}
+export async function installGuardHook(project) {
+    const root = resolve(project);
+    const settings = await readSettings(root);
+    const hooks = settings.hooks ??= {};
+    const list = hooks.PreToolUse ??= [];
+    if (list.some(guardTampered))
+        throw new Error(`${settingsKey}: o guarda do AgentForge foi alterado; reveja-o e remova-o à mão antes de reinstalar`);
+    if (list.some(guardOurs))
+        return 'Guarda já instalado.';
+    list.push({ matcher: 'Bash', hooks: [{ type: 'command', command: guardCommand }] });
+    const path = safe(root, settingsKey);
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, JSON.stringify(settings, null, 2) + '\n');
+    return `Guarda PreToolUse acrescentado a ${settingsKey}. Trava commit em main, push forçado ou para main e publicação sem autorização (agentforge guard permit-main|permit-publish, num terminal). Requer o comando agentforge no PATH.`;
+}
+export async function removeGuardHook(project) {
+    const root = resolve(project);
+    const settings = await readSettings(root);
+    const list = settings.hooks?.PreToolUse;
+    if (!list?.some(guardOurs))
+        return 'Guarda não instalado.';
+    settings.hooks.PreToolUse = list.filter(entry => !guardOurs(entry));
+    if (!settings.hooks.PreToolUse.length)
+        delete settings.hooks.PreToolUse;
+    if (!Object.keys(settings.hooks).length)
+        delete settings.hooks;
+    const path = safe(root, settingsKey);
+    if (Object.keys(settings).length)
+        await writeFile(path, JSON.stringify(settings, null, 2) + '\n');
+    else
+        await rm(path);
+    return `Guarda removido de ${settingsKey}.`;
+}
 // Onde `agentforge` se resolve no PATH. Um executável dentro do projecto (por exemplo em
 // `node_modules/.bin` ou `./bin`, que um PR pode acrescentar) executaria código do repositório a
 // cada ferramenta usada; o `doctor` assinala-o.
