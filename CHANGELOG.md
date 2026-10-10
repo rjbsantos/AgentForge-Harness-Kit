@@ -2,6 +2,7 @@
 
 ## Por publicar
 
+- Novo fluxo `release-closure` (`/af-release-closure`) para o fecho de uma versão, com a checklist de 14 áreas em `.agentforge/templates/release-closure.md`: requisitos e pendentes, limpeza, base de dados, aplicação, segurança, design system e UX, documentação, testes unitários e de integração, E2E com Playwright, Git e ramos, versionamento, commit/tag/publicação e relatório final. As áreas independentes correm em paralelo; correcções e publicação exigem validação humana (N1 e N2). Novas competências `forge-release` (SemVer, changelog, critério de publicação, tag, rollback) e `forge-e2e` (Playwright).
 - Fecho do backlog técnico:
   - OpenCode: o `opencode.json` gerado passa a recusar a leitura de `.env`, chaves e credenciais (`permission.read`; resolução verificada com `opencode debug agent` no OpenCode 1.18.35, que também confirmou a ordem das recusas de `--output` e `--ext-diff`). `agentforge harden` aplica as mesmas regras a um `opencode.json` do utilizador e remove só as que acrescentou.
   - `record --result passed` exige `--evidence CAMINHO` ou, explicitamente, `--no-evidence` (só no CLI; a API mantém-na opcional). `insights` agrega os arquivos `operations.<data>.jsonl` com o ficheiro actual.

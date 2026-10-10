@@ -4,6 +4,9 @@
 export type Case = readonly [expected: string | null, prompt: string];
 
 export const tuning: Case[] = [
+  ['release-closure', 'Preciso de fechar a versão 1.5.0 com a checklist de release'],
+  ['release-closure', 'Prepara a release: changelog, tag e notas da versão'],
+  ['release-closure', 'Vamos publicar a nova versão, define o tipo de versão por semver'],
   ['forge-build', 'Quero criar uma app de gestão de tarefas com React e PostgreSQL'],
   ['database-optimization', 'A página de login está lenta, a query demora 5 segundos'],
   ['technical-documentation', 'Preciso documentar este projecto para a equipa nova'],

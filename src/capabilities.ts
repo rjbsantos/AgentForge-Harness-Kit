@@ -23,7 +23,7 @@ export const profiles = {
   'backend-developer': {
     title: 'Programador Backend',
     agent: 'backend-developer',
-    workflows: ['forge-build', 'production-cleanup', 'bug-investigation', 'database-optimization']
+    workflows: ['forge-build', 'production-cleanup', 'release-closure', 'bug-investigation', 'database-optimization']
   },
   'design-system-architect': {
     title: 'Arquitecto de Design System',
@@ -53,7 +53,7 @@ export const profiles = {
   'senior-developer': {
     title: 'Programador Sénior',
     agent: 'lead-developer',
-    workflows: ['bug-investigation', 'repository-audit', 'production-cleanup', 'forge-build', 'technical-documentation', 'change-request']
+    workflows: ['bug-investigation', 'repository-audit', 'production-cleanup', 'release-closure', 'forge-build', 'technical-documentation', 'change-request']
   },
   'magazine-editor': {
     title: 'Escritor / Editor de Revistas',
@@ -224,6 +224,40 @@ export const workflows: Record<string, Workflow> = {
         { step: 3, role: 'code-critic', skills: ['forge-hygiene'] },
         { step: 4, role: 'secops', skills: ['forge-security'] },
         { step: 5, role: 'reverse-engineer', skills: ['forge-performance'] }
+      ]
+    }]),
+  'release-closure': flow('Fecho de uma versão: revisão técnica, testes, segurança, documentação, versionamento, publicação com autorização e relatório final', 'Pedido de fechar, preparar ou publicar uma versão (release)',
+    ['Clarificar a versão pretendida, o ambiente e o que significa «pronta»; criar ramo próprio e registar a linha de base (suite, build, tamanho)',
+      'Requisitos e pendentes: verificar requisitos funcionais e não funcionais, correr `agentforge trace`, listar funcionalidades incompletas, bugs conhecidos e débitos (product-manager)',
+      'Limpeza: código morto, duplicado, ficheiros e dependências não usadas, avisos do compilador e do linter (code-critic)',
+      'Base de dados, se existir: estrutura, consultas lentas, índices, migrações, integridade, backups e recuperação (database-optimizer)',
+      'Aplicação: estrangulamentos de desempenho, chamadas à API, caching e tamanho do bundle, com medição (reverse-engineer)',
+      'Segurança: autenticação, autorização, validação de entradas, segredos, dependências vulneráveis, cabeçalhos, logs e análises automatizadas (secops)',
+      'Design system, UX e UI, se houver interface: consistência, estados, formulários, acessibilidade, teclado, contraste e dispositivos (ui-visual-validator)',
+      'Documentação: remover a obsoleta, arquivar a histórica, validar README, instalação, exemplos, variáveis e APIs contra o código (tech-writer)',
+      'Consolidar os achados por gravidade e pedir validação humana do que se corrige antes da release e do que fica como pendente (validação N1)',
+      'Aplicar só o aprovado em lotes pequenos, testes primeiro e um commit por lote (lead-developer)',
+      'Testes unitários, de integração e de regressão, casos-limite, permissões e integrações, com saída real e cobertura (qa)',
+      'Testes ponta a ponta com Playwright: cobertura, cenários positivos e negativos, erros, estados e instabilidade, com relatório (qa)',
+      'Git: estado do repositório, ramos activos, abandonados e integrados, integração no ramo principal e suite verde na versão final (devops)',
+      'Versionamento: tipo de versão por Semantic Versioning, número da versão em todos os locais, changelog e notas da release (devops)',
+      'Critério de publicação: verificar cada item da checklist e pedir autorização expressa para commit final, tag e publicação (validação N2)',
+      'Com autorização: commit, tag e publicação a partir do ramo principal; verificar o deploy e a versão em execução; confirmar o procedimento de rollback (devops)',
+      'Relatório final: alterações, bugs, pendentes, resultados e cobertura dos testes, segurança, desempenho, versão, commit, tag, riscos e acções futuras (product-manager)'],
+    ['forge-clarify', 'forge-requirements', 'forge-checkpoint', 'forge-hygiene', 'forge-database', 'forge-performance', 'forge-security',
+      'forge-visual-validation', 'forge-accessibility', 'forge-docs', 'forge-implementation', 'forge-tdd', 'forge-verify', 'forge-e2e',
+      'forge-finish', 'forge-release'],
+    ['file-system', 'terminal', 'git'], 'Versão fechada com checklist, relatório e evidência', 'release-closure',
+    ['Cada área da checklist tem evidência ou está declarada como não aplicável ou não testada com a razão; sem bugs críticos nem vulnerabilidades críticas conhecidos; testes obrigatórios verdes com saída real; alterações integradas; documentação e versão coerentes; commit, tag e publicação só com autorização expressa; rollback definido'],
+    [{
+      after: [2],
+      workers: [
+        { step: 3, role: 'code-critic', skills: ['forge-hygiene'] },
+        { step: 4, role: 'database-optimizer', skills: ['forge-database'] },
+        { step: 5, role: 'reverse-engineer', skills: ['forge-performance'] },
+        { step: 6, role: 'secops', skills: ['forge-security'] },
+        { step: 7, role: 'ui-visual-validator', skills: ['forge-visual-validation', 'forge-accessibility'] },
+        { step: 8, role: 'tech-writer', skills: ['forge-docs'] }
       ]
     }]),
   'security-assessment': flow('Avaliação de segurança da aplicação: modelo de ameaças, revisão e testes executáveis em ambiente local', 'Pedido de testes de segurança, modelo de ameaças ou avaliação de segurança',
@@ -450,6 +484,7 @@ export const templates: Record<string, string> = {
   'prompt-engineering': '# Prompt\n\nObjectivo e critério de sucesso:\nConjunto de exemplos (incluindo hostis):\nVersões (texto, resultado, alteração):\nFormato de saída e validação:\nVersão final:\n',
   'context-memory-setup': '# Contexto e memória\n\nUso de contexto medido:\nCamadas (trabalho, curta, longa): escopo, retenção, limite:\nResumo e recuperação (regras e orçamento):\nLições (aprovação):\nTestes (isolamento, expiração, apagamento):\n',
   'design-system-default': DESIGN_SYSTEM_DEFAULT,
+  'release-closure': '# Fecho da versão — checklist\n\nVersão actual → proposta (tipo SemVer e justificação):\nRamo e linha de base:\n\nEstado de cada área: OK / pendente / não aplicável / não testado (com a razão e a evidência).\n\n| # | Área | Estado | Evidência (comando e saída, ficheiro ou ligação) |\n| --- | --- | --- | --- |\n| 1 | Requisitos e pendentes (funcionais, não funcionais, bugs, débitos, coerência com o código) | | |\n| 2 | Limpeza do código e das dependências (morto, duplicado, avisos do compilador e do linter) | | |\n| 3 | Base de dados (estrutura, consultas, índices, migrações, backups e recuperação) | | |\n| 4 | Otimização da aplicação (desempenho, API, caching, bundle, regressões) | | |\n| 5 | Documentação (obsoleta, histórica, README, instalação, exemplos, APIs) | | |\n| 6 | Segurança (acessos, entradas, dependências, segredos, cabeçalhos, logs, análises) | | |\n| 7 | Design system, UX e UI (consistência, estados, formulários, acessibilidade, dispositivos) | | |\n| 8 | Testes unitários, de integração e de regressão (casos-limite, permissões, integrações) | | |\n| 9 | Testes E2E com Playwright (fluxos, erros, estados, instabilidade, relatório) | | |\n| 10 | Git e ramos (integrado no ramo principal, ramos limpos, suite verde na versão final) | | |\n| 11 | Versionamento e changelog (SemVer, versão em todos os locais, notas) | | |\n| 12 | Commit, tag e publicação (só com autorização expressa) | | |\n| 13 | Validação pós-release e rollback (deploy, fumo, versão em execução, reversão) | | |\n| 14 | Relatório final de pendentes e riscos | | |\n\nCritério de publicação: sem bugs críticos nem vulnerabilidades críticas conhecidos; testes obrigatórios a passar; alterações integradas; documentação actualizada; versão identificada. Excepções (descrição, aprovador, data):\n\nAutorização para commit, tag e publicação (quem, quando):\n\nRelatório final:\n- Alterações e bugs (estado):\n- Pendentes (requisitos e tarefas):\n- Testes (unitários, integração, E2E) e cobertura; falhas não resolvidas:\n- Segurança e desempenho:\n- Versão, commit e tag:\n- Riscos conhecidos, limitações e acções futuras:\n',
   'production-cleanup': '# Limpeza e produção\n\nAmbiente alvo e o que é intocável:\nLinha de base (suite, build, tamanho, tempo):\nCandidatos (caminho, evidência, confiança, risco, decisão):\nSegurança para produção:\nOtimizações (medição antes e depois):\nEntrega (configuração, registo, saúde, build, imagem):\nDocumentação actualizada e removida:\nLotes e commits:\n',
   'security-assessment': '# Avaliação de segurança\n\nAlvo e ambiente (do projecto, local ou de teste):\nModelo de ameaças (activos, fronteiras, ameaças priorizadas, mitigação, teste):\nRevisão de código (achado, gravidade, ficheiro:linha, confiança):\nTestes executados (comando e saída real):\nFerramentas não executadas e porquê:\nRiscos aceites (quem decidiu):\nCorrecções aprovadas e verificação:\n',
   'technical-documentation': '# Documentação\n\nÂmbito e público:\n\n## Funcional\nProcessos, regras e perfis (ficheiro de cada regra):\n\n## Técnica\nMódulos, interfaces, dados, configuração, execução e testes (ficheiro de cada afirmação):\n\nInferido (INFERRED) e por perceber (AMBIGUOUS):\nAmostra comparada com o código:\nValidação humana (quem, quando):\n',

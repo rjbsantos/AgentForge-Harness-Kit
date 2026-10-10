@@ -243,5 +243,33 @@ Finalidade: lembrar o que ajuda sem arrastar contexto inútil nem expor dados. E
 7. Testar isolamento entre projectos e sessões, expiração, apagamento, deduplicação e conflito.
 Validação: cada camada tem escopo, retenção e limite de tamanho; não há segredos na memória nem nos registos; os testes de isolamento, expiração e apagamento passam; o sistema funciona com a memória longa desligada.
 `
-  }
+  },
+  'forge-release': {
+    description: 'Usar ao fechar uma versão, para decidir o tipo de versão por Semantic Versioning, actualizar versão, changelog e notas, passar o critério de publicação, criar o commit e a tag só com autorização, verificar depois da publicação e preparar a reversão.',
+    body: `
+Finalidade: fechar uma versão de forma verificável, reversível e só com autorização. Entradas: ramo com o trabalho da versão e a checklist \`release-closure\`. Resultado: versão, changelog, notas, tag e relatório final.
+1. Pré-condições: estado do repositório limpo, o trabalho aprovado integrado no ramo principal por uma pessoa e a suite completa verde a partir de um estado limpo, com a saída real guardada. Sem isto não avançar.
+2. Tipo de versão por Semantic Versioning, justificado pela lista de alterações: Major para alterações incompatíveis, Minor para funcionalidades novas compatíveis, Patch para correcções compatíveis. Uma release intermédia com funcionalidades novas é normalmente Minor; não subir a Major só por ser uma release nova. Propor e pedir aprovação.
+3. Actualizar o número da versão em todos os locais: procurar a versão actual no repositório (manifestos, ficheiros de bloqueio, documentação, constantes, cabeçalhos do changelog) em vez de confiar na memória. O changelog e as notas descrevem o que foi efectivamente alterado (histórico desde a última tag), não intenções.
+4. Build final a partir de um estado limpo e validação dos artefactos (conteúdo, versão, tamanho). Confirmar que migrações e configurações estão preparadas e têm reversão.
+5. Critério de publicação (validação N2): sem bugs críticos nem vulnerabilidades críticas conhecidos, testes obrigatórios a passar, alterações integradas, documentação actualizada e versão identificada. Cada excepção fica escrita e aprovada por uma pessoa; silêncio não é aprovação.
+6. Só com autorização expressa: commit final com os ficheiros indicados um a um, tag anotada igual à versão (por exemplo \`v1.5.0\`) e publicação a partir do ramo principal. Nunca forçar o push nem mover ou apagar uma tag já publicada.
+7. Antes de publicar, definir o rollback: versão anterior, como reverter migrações e configuração e quem decide. Depois de publicar, verificar o deploy e o ambiente, correr uma verificação de fumo e confirmar a versão em execução; se falhar, reverter e registar.
+8. Relatório final: alterações, bugs e estado, requisitos e tarefas pendentes, resultados dos testes unitários, de integração e E2E com a cobertura, resultados de segurança e desempenho, versão, commit e tag, riscos conhecidos e acções futuras.
+Validação: o tipo de versão está justificado e aprovado; a versão é a mesma em todos os locais; o changelog corresponde ao histórico; o critério de publicação tem evidência por item e as excepções estão aprovadas; commit, tag e publicação só ocorreram com autorização; existe procedimento de rollback e verificação posterior com saída real.
+`
+  },
+  'forge-e2e': {
+    description: 'Usar para criar, rever e executar testes ponta a ponta de uma interface web com Playwright, cobrindo os fluxos funcionais, os erros e os estados de carregamento, com relatório e sem esconder testes instáveis.',
+    body: `
+Finalidade: provar os percursos críticos do utilizador no browser, e dizer com honestidade o que não ficou coberto. Entradas: requisitos, código da interface e testes existentes. Resultado: suite ponta a ponta, relatório e lista do que não foi testado.
+1. Confirmar com a opção de versão que o Playwright e os browsers estão instalados; não instalar nada sem aprovação. Usar sempre um ambiente de teste controlado com dados sintéticos, nunca produção nem contas reais.
+2. Inventariar os fluxos funcionais a partir dos requisitos e do código (rotas, formulários, autenticação, permissões por perfil) numa lista numerada. Cada requisito obrigatório tem pelo menos um cenário e o seu identificador REQ consta do título do teste, para que \`agentforge trace\` o encontre.
+3. Rever os testes existentes: cobertura por fluxo, dependência de ordem, esperas por tempo fixo e localizadores frágeis. Preferir localizadores por papel e por etiqueta e esperas por estado.
+4. Cenários positivos e negativos: formulários e validações, navegação, autenticação e permissões; estados de carregamento, vazio e erro; falhas de API, tempos limite e indisponibilidade (simular a rede); casos-limite e entradas inválidas; resoluções e browsers suportados.
+5. Executar a suite completa e guardar a saída real, o relatório e, quando aplicável, \`traces\`, capturas de ecrã e vídeos de cada falha. Um teste instável confirma-se repetindo-o; corrige-se a causa. Não aumentar repetições, saltar ou desactivar o teste para o esconder.
+6. Declarar o que não foi testado e porquê. Não afirmar que todos os cenários possíveis estão cobertos sem evidência.
+Validação: cada fluxo da lista está testado ou declarado como não testado com a razão; a execução tem saída real e relatório; não há testes saltados nem repetições a esconder instabilidade; os cenários críticos passam antes da release.
+`
+  },
 };
