@@ -68,3 +68,26 @@ test('insights reject malformed operation history with the offending line', asyn
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('a evidência registada é verificada: alterada ou em falta deixa de contar como verificada', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentforge-evidence-'));
+  try {
+    await install(root, ['codex']);
+    const base = { role: 'project-manager' as const, workflow: 'project-status', result: 'passed' as const,
+      validation: 'passed' as const, durationMs: 1, toolsUsed: ['file-system'] };
+    await writeFile(join(root, 'saida.txt'), 'ok 12 testes');
+    await recordRun(root, { ...base, evidence: 'saida.txt' });
+    await recordRun(root, base);
+    assert.deepEqual((await operationInsights(root)).passedEvidence, { verified: 1, changed: 0, missing: 0, none: 1 });
+    await writeFile(join(root, 'saida.txt'), 'adulterado');
+    assert.deepEqual((await operationInsights(root)).passedEvidence, { verified: 0, changed: 1, missing: 0, none: 1 });
+    await rm(join(root, 'saida.txt'));
+    assert.deepEqual((await operationInsights(root)).passedEvidence, { verified: 0, changed: 0, missing: 1, none: 1 });
+    await writeFile(join(root, 'vazio.txt'), '');
+    await assert.rejects(recordRun(root, { ...base, evidence: 'vazio.txt' }), /Evidência vazia/);
+    await assert.rejects(recordRun(root, { ...base, evidence: '../fora.txt' }), /inválido/);
+    await assert.rejects(recordRun(root, { ...base, evidence: 'inexistente.txt' }), /ENOENT/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

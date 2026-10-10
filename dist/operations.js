@@ -1,4 +1,5 @@
-import { appendFile, mkdir, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { appendFile, mkdir, readFile, stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { profiles, tools, workflows } from './capabilities.js';
 import { safe } from './installer.js';
@@ -9,10 +10,24 @@ function emptyInsights() {
         validations: { passed: 0, failed: 0, 'not-run': 0 },
         tokens: { reportedRuns: 0, total: 0 },
         cost: { reportedRuns: 0, total: 0 },
+        passedEvidence: { verified: 0, changed: 0, missing: 0, none: 0 },
         averageDurationMs: 0,
         byWorkflow: [],
         recurringErrors: []
     };
+}
+const evidenceDigest = (value) => createHash('sha256').update(value).digest('hex');
+async function evidenceState(root, evidence, hash) {
+    if (!evidence)
+        return 'none';
+    try {
+        return evidenceDigest(await readFile(safe(root, evidence))) === hash ? 'verified' : 'changed';
+    }
+    catch (error) {
+        if (error.code === 'ENOENT')
+            return 'missing';
+        throw error;
+    }
 }
 export async function operationInsights(project) {
     const root = resolve(project);
@@ -55,7 +70,9 @@ export async function operationInsights(project) {
             run.tokens !== undefined && (!Number.isInteger(run.tokens) || run.tokens < 0) ||
             run.cost !== undefined && (!Number.isFinite(run.cost) || run.cost < 0) ||
             run.retries !== undefined && (!Number.isInteger(run.retries) || run.retries < 0) ||
-            run.errorCode !== undefined && (typeof run.errorCode !== 'string' || !/^[a-zA-Z0-9_-]{1,60}$/.test(run.errorCode))) {
+            run.errorCode !== undefined && (typeof run.errorCode !== 'string' || !/^[a-zA-Z0-9_-]{1,60}$/.test(run.errorCode)) ||
+            run.evidence !== undefined && (typeof run.evidence !== 'string' || !run.evidence || run.evidence.length > 300 ||
+                typeof run.evidenceHash !== 'string' || !/^[a-f0-9]{64}$/.test(run.evidenceHash))) {
             throw new Error(`Registo de operações inválido na linha ${index + 1}: campos incompatíveis`);
         }
         const result = run.result;
@@ -63,6 +80,8 @@ export async function operationInsights(project) {
         summary.totalRuns++;
         summary.outcomes[result]++;
         summary.validations[validation]++;
+        if (result === 'passed')
+            summary.passedEvidence[await evidenceState(root, run.evidence, run.evidenceHash)]++;
         durationTotal += durationMs;
         if (run.tokens !== undefined) {
             summary.tokens.reportedRuns++;
@@ -103,6 +122,17 @@ export async function operationInsights(project) {
 }
 export async function recordRun(project, record) {
     const root = resolve(project);
+    let evidenceHash;
+    if (record.evidence !== undefined) {
+        if (!record.evidence.trim() || record.evidence.length > 300)
+            throw new Error('Evidência inválida');
+        const file = safe(root, record.evidence);
+        if (!(await stat(file)).isFile())
+            throw new Error(`Evidência não é ficheiro: ${record.evidence}`);
+        if (record.result === 'passed' && (await stat(file)).size === 0)
+            throw new Error('Evidência vazia: um resultado «passed» exige a saída real da verificação');
+        evidenceHash = evidenceDigest(await readFile(file));
+    }
     if (!(record.role in profiles) || !profiles[record.role].workflows.some(name => name === record.workflow) ||
         !(record.workflow in workflows) || !['passed', 'failed', 'blocked'].includes(record.result) ||
         !['passed', 'failed', 'not-run'].includes(record.validation) ||
@@ -123,6 +153,7 @@ export async function recordRun(project, record) {
     await appendFile(path, JSON.stringify({
         timestamp: new Date().toISOString(),
         ...record,
+        evidenceHash,
         agent: profiles[record.role].agent,
         skillsPlanned: workflows[record.workflow].skills
     }) + '\n', 'utf8');

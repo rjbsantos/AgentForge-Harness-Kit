@@ -58,6 +58,17 @@ agentforge mcp --project <projeto>            # servidor MCP só de leitura
 - `hooks install` acrescenta um hook `PostToolUse` a `.claude/settings.json`, preservando o resto da configuração. Regista apenas a hora e o nome da ferramenta em `.agentforge/work/events.jsonl` (nunca argumentos, resultados ou conversas) e requer o comando `agentforge` no PATH. `agentforge hooks remove` desfaz a alteração. O `insights` inclui a contagem por ferramenta.
 - `agentforge mcp` expõe `agentforge_plan`, `agentforge_route`, `agentforge_context`, `agentforge_lessons` e `agentforge_insights`. Não aprova lições, não regista execuções e não altera ficheiros. Exemplo de configuração: `{ "mcpServers": { "agentforge": { "command": "agentforge", "args": ["mcp", "--project", "/caminho/do/projeto"] } } }`.
 
+## Rastreabilidade e evidência
+
+```bash
+agentforge trace --project <projeto> [--requirements CAMINHO] [--plan CAMINHO]
+agentforge record ... --result passed --validation passed --evidence <ficheiro-com-a-saida-real>
+```
+
+- `trace` lê `.agentforge/work/requirements.md` (a tabela do modelo `requirements`), `.agentforge/work/plan.md` e os ficheiros de testes do projecto. Cada requisito Must (`REQ-…`) tem de ter critério de aceitação, aprovação, aparecer no plano e ser citado por um teste. Termina com 1 se houver lacunas. Verifica identificadores, não se o teste exercita o requisito.
+- `--evidence` aponta para um ficheiro do projecto com a saída real da verificação. O CLI guarda o SHA-256; `insights.passedEvidence` separa os `passed` com evidência que ainda coincide (`verified`), alterada (`changed`), em falta (`missing`) e sem evidência (`none`). Um `passed` com evidência vazia é recusado.
+- Os requisitos do próprio kit e os testes que os verificam estão em [architecture/REQUIREMENTS.md](../architecture/REQUIREMENTS.md).
+
 ## Grafo de conhecimento e confiança (conceitos do graphify)
 
 O kit adopta três ideias do [graphify](https://github.com/Graphify-Labs/graphify): consultar um grafo em vez de pesquisar ficheiros, explicar cada ligação com uma etiqueta de confiança, e manter tudo determinístico e local (sem índice vectorial).

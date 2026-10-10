@@ -1,4 +1,5 @@
-import { appendFile, mkdir, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { appendFile, mkdir, readFile, stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { profiles, tools, workflows, type Profile } from './capabilities.js';
 import { safe } from './installer.js';
@@ -15,6 +16,10 @@ export interface RunRecord {
   tokens?: number;
   cost?: number;
   errorCode?: string;
+  /** Ficheiro dentro do projecto com a saída real da verificação (relatório, log de testes). */
+  evidence?: string;
+  /** SHA-256 do ficheiro de evidência no momento do registo; preenchido por `recordRun`. */
+  evidenceHash?: string;
 }
 
 export interface OperationInsights {
@@ -23,6 +28,8 @@ export interface OperationInsights {
   validations: Record<RunRecord['validation'], number>;
   tokens: { reportedRuns: number; total: number };
   cost: { reportedRuns: number; total: number };
+  /** `passed` declarados: com evidência que ainda existe e coincide, alterada, em falta, ou sem evidência. */
+  passedEvidence: { verified: number; changed: number; missing: number; none: number };
   averageDurationMs: number;
   byWorkflow: { workflow: string; total: number; failed: number; blocked: number; retries: number }[];
   recurringErrors: { workflow: string; errorCode: string; occurrences: number; lines: number[] }[];
@@ -35,10 +42,23 @@ function emptyInsights(): OperationInsights {
     validations: { passed: 0, failed: 0, 'not-run': 0 },
     tokens: { reportedRuns: 0, total: 0 },
     cost: { reportedRuns: 0, total: 0 },
+    passedEvidence: { verified: 0, changed: 0, missing: 0, none: 0 },
     averageDurationMs: 0,
     byWorkflow: [],
     recurringErrors: []
   };
+}
+
+const evidenceDigest = (value: Buffer) => createHash('sha256').update(value).digest('hex');
+
+async function evidenceState(root: string, evidence?: string, hash?: string): Promise<'verified' | 'changed' | 'missing' | 'none'> {
+  if (!evidence) return 'none';
+  try {
+    return evidenceDigest(await readFile(safe(root, evidence))) === hash ? 'verified' : 'changed';
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return 'missing';
+    throw error;
+  }
 }
 
 export async function operationInsights(project: string): Promise<OperationInsights> {
@@ -79,7 +99,9 @@ export async function operationInsights(project: string): Promise<OperationInsig
       run.tokens !== undefined && (!Number.isInteger(run.tokens) || run.tokens < 0) ||
       run.cost !== undefined && (!Number.isFinite(run.cost) || run.cost < 0) ||
       run.retries !== undefined && (!Number.isInteger(run.retries) || run.retries < 0) ||
-      run.errorCode !== undefined && (typeof run.errorCode !== 'string' || !/^[a-zA-Z0-9_-]{1,60}$/.test(run.errorCode))) {
+      run.errorCode !== undefined && (typeof run.errorCode !== 'string' || !/^[a-zA-Z0-9_-]{1,60}$/.test(run.errorCode)) ||
+      run.evidence !== undefined && (typeof run.evidence !== 'string' || !run.evidence || run.evidence.length > 300 ||
+        typeof run.evidenceHash !== 'string' || !/^[a-f0-9]{64}$/.test(run.evidenceHash))) {
       throw new Error(`Registo de operações inválido na linha ${index + 1}: campos incompatíveis`);
     }
     const result = run.result as RunRecord['result'];
@@ -87,6 +109,7 @@ export async function operationInsights(project: string): Promise<OperationInsig
     summary.totalRuns++;
     summary.outcomes[result]++;
     summary.validations[validation]++;
+    if (result === 'passed') summary.passedEvidence[await evidenceState(root, run.evidence, run.evidenceHash)]++;
     durationTotal += durationMs;
     if (run.tokens !== undefined) {
       summary.tokens.reportedRuns++;
@@ -124,8 +147,16 @@ export async function operationInsights(project: string): Promise<OperationInsig
   return summary;
 }
 
-export async function recordRun(project: string, record: RunRecord): Promise<void> {
+export async function recordRun(project: string, record: Omit<RunRecord, 'evidenceHash'>): Promise<void> {
   const root = resolve(project);
+  let evidenceHash: string | undefined;
+  if (record.evidence !== undefined) {
+    if (!record.evidence.trim() || record.evidence.length > 300) throw new Error('Evidência inválida');
+    const file = safe(root, record.evidence);
+    if (!(await stat(file)).isFile()) throw new Error(`Evidência não é ficheiro: ${record.evidence}`);
+    if (record.result === 'passed' && (await stat(file)).size === 0) throw new Error('Evidência vazia: um resultado «passed» exige a saída real da verificação');
+    evidenceHash = evidenceDigest(await readFile(file));
+  }
   if (!(record.role in profiles) || !profiles[record.role].workflows.some(name => name === record.workflow) ||
     !(record.workflow in workflows) || !['passed', 'failed', 'blocked'].includes(record.result) ||
     !['passed', 'failed', 'not-run'].includes(record.validation) ||
@@ -146,6 +177,7 @@ export async function recordRun(project: string, record: RunRecord): Promise<voi
   await appendFile(path, JSON.stringify({
     timestamp: new Date().toISOString(),
     ...record,
+    evidenceHash,
     agent: profiles[record.role].agent,
     skillsPlanned: workflows[record.workflow].skills
   }) + '\n', 'utf8');

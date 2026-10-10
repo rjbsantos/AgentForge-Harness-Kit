@@ -7,6 +7,7 @@ import { tokenReport } from '../tokens.js';
 import { kitVersion } from '../version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { applyHardening, hardeningApplied, removeHardening } from '../hardening.js';
+import { trace } from '../trace.js';
 import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
 import { doctor, install, installedTargets, remove, status, targets, upgrade } from '../installer.js';
 import { route } from '../routing.js';
@@ -17,10 +18,11 @@ import { loadOperator, setOperator } from '../operator.js';
 import { operationInsights, recordRun } from '../operations.js';
 import { profiles, type Profile } from '../capabilities.js';
 
-const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|harden|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO] | --version\n' +
+const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|harden|trace|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO] | --version\n' +
   '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
   '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
   '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
+  '  trace [--requirements CAMINHO] [--plan CAMINHO]  valida que cada requisito Must tem critério, plano e teste; termina com 1 se houver lacunas\n' +
   '  harden <apply|remove>  (opcional, Claude Code) recusa a leitura de .env, chaves e credenciais em .claude/settings.json\n' +
   '  graph <query --prompt TEXTO [--budget-tokens N]|path --from NÓ --to NÓ|explain --node NÓ|report>  grafo do catálogo, com confiança EXTRACTED/INFERRED/AMBIGUOUS\n' +
   '  tokens  mede o que o harness põe em contexto (arranque, instruções do utilizador, estado); termina com 1 se houver excessos\n' +
@@ -29,7 +31,7 @@ const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|h
   '  insights  resume execuções verificadas e padrões de erro recorrentes\n' +
   '  operator <show|set [--headline TEXTO] [--roles PERFIL,PERFIL] [--language TAG] [--risk cautious|balanced|exploratory] [--verbosity normal|concise] [--interests A,B]>\n' +
   '  plan --cli NOME --prompt TEXTO [--role PERFIL --workflow FLUXO] [--planned --approved] [--high-risk]\n' +
-  '  record --role PERFIL --workflow FLUXO --result passed|failed|blocked --validation passed|failed|not-run --duration-ms N [--tools LISTA --skills LISTA] [--retries N --tokens N --cost N --error-code CODIGO]';
+  '  record --role PERFIL --workflow FLUXO --result passed|failed|blocked --validation passed|failed|not-run --duration-ms N [--tools LISTA --skills LISTA] [--retries N --tokens N --cost N --error-code CODIGO --evidence CAMINHO]';
 function usage(): never {
   console.error(help);
   process.exit(2);
@@ -45,7 +47,7 @@ async function main(args: string[]): Promise<void> {
     console.log(help);
     return;
   }
-  if (!action || !['install', 'upgrade', 'doctor', 'tokens', 'mcp', 'graph', 'gateway', 'hooks', 'harden', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action)) usage();
+  if (!action || !['install', 'upgrade', 'doctor', 'tokens', 'mcp', 'graph', 'gateway', 'hooks', 'harden', 'trace', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action)) usage();
   const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks' || action === 'harden' || action === 'graph' || action === 'gateway') && args[0] && !args[0].startsWith('--') ? args.shift()
     : action === 'context' && args[0] === 'save' ? args.shift() : undefined;
   let parsed: ReturnType<typeof parseArgs>['values'];
@@ -61,7 +63,7 @@ async function main(args: string[]): Promise<void> {
       role: { type: 'string' }, workflow: { type: 'string' }, result: { type: 'string' },
       validation: { type: 'string' }, 'duration-ms': { type: 'string' }, tools: { type: 'string' },
       skills: { type: 'string' }, retries: { type: 'string' }, tokens: { type: 'string' },
-      cost: { type: 'string' }, 'error-code': { type: 'string' }, from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }
+      cost: { type: 'string' }, 'error-code': { type: 'string' }, requirements: { type: 'string' }, plan: { type: 'string' }, from: { type: 'string' }, to: { type: 'string' }, node: { type: 'string' }
     } }).values;
   } catch {
     usage();
@@ -118,10 +120,12 @@ async function main(args: string[]): Promise<void> {
   const durationMs = number('duration-ms', /^\d+$/);
   const toolsUsed = list('tools', false) ?? [];
   const skillsUsed = list('skills', false);
-  const retries = number('retries', /^\d+(?:\.\d+)?$/);
-  const tokens = number('tokens', /^\d+(?:\.\d+)?$/);
+  const retries = number('retries', /^\d+$/);
+  const tokens = number('tokens', /^\d+$/);
   const cost = number('cost', /^\d+(?:\.\d+)?$/);
   const errorCode = text('error-code');
+  const requirementsFile = text('requirements');
+  const planFile = text('plan');
   const from = text('from');
   const to = text('to');
   const nodeName = text('node');
@@ -210,11 +214,19 @@ async function main(args: string[]): Promise<void> {
     console.log(JSON.stringify({ ...await operationInsights(project), hookEvents: await eventSummary(project) }, null, 2));
     return;
   }
-  if (summary || next || topic || lesson || evidence || id || scope || anchor) usage();
+  if (summary || next || topic || lesson || (evidence && action !== 'record') || id || scope || anchor) usage();
+  if ((requirementsFile || planFile) && action !== 'trace') usage();
+  if (action === 'trace') {
+    if (cli !== 'all' || dryRun || evidence) usage();
+    const report = await trace(project, { requirements: requirementsFile, plan: planFile });
+    console.log(JSON.stringify(report, null, 2));
+    if (report.findings.length) process.exitCode = 1;
+    return;
+  }
   if (action === 'record') {
     if (cli !== 'all' || prompt || planned || approved || highRisk || dryRun ||
       !role || !workflow || !result || !validation || durationMs === undefined) usage();
-    await recordRun(project, { role, workflow, result, validation, durationMs, toolsUsed, skillsUsed, retries, tokens, cost, errorCode });
+    await recordRun(project, { role, workflow, result, validation, durationMs, toolsUsed, skillsUsed, retries, tokens, cost, errorCode, evidence });
     console.log('Execução registada.');
     return;
   }
