@@ -5,8 +5,9 @@ import { route } from './routing.js';
 import { getContext, listLessons } from './memory.js';
 import { operationInsights } from './operations.js';
 import { targets } from './installer.js';
-import { profiles } from './capabilities.js';
+import { profiles, workflows } from './capabilities.js';
 import { lastCheckpointApproved } from './checkpoints.js';
+import { assessPrompt } from './gate.js';
 import { kitVersion } from './version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from './graph.js';
 const cliProperty = { type: 'string', enum: [...targets] };
@@ -48,6 +49,17 @@ export const tools = {
                 role: role, workflow: optional(args, 'workflow'),
                 planned: flag(args, 'planned'), approved: await approval(project, args), highRisk: flag(args, 'highRisk')
             });
+        }
+    },
+    agentforge_gate: {
+        description: 'Verifica se um pedido tem contexto suficiente para iniciar um fluxo; se não, devolve as perguntas que faltam (máx. 4). Chamar antes de agentforge_plan.',
+        properties: { prompt: { type: 'string' }, workflow: { type: 'string' } },
+        required: ['prompt'],
+        run: async (_project, args) => {
+            const workflow = optional(args, 'workflow');
+            if (workflow !== undefined && !(workflow in workflows))
+                throw new Error(`Fluxo desconhecido: ${workflow}`);
+            return assessPrompt(text(args, 'prompt'), workflow);
         }
     },
     agentforge_route: {

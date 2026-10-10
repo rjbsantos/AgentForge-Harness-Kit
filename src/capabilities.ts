@@ -2,28 +2,30 @@ export const profiles = {
   'project-manager': {
     title: 'Gestor de Projetos',
     agent: 'product-manager',
-    workflows: ['project-status', 'meeting-followup', 'risk-review', 'requirements-analysis']
+    workflows: ['project-status', 'meeting-followup', 'risk-review', 'requirements-analysis', 'project-plan', 'change-control',
+      'stakeholder-communication', 'budget-tracking']
   },
   'it-project-manager': {
     title: 'Gestor de Projetos de SI',
     agent: 'solution-advisor',
     workflows: ['solution-briefing', 'automation-opportunity', 'tech-exploration', 'continuous-improvement',
-      'requirements-analysis', 'system-analysis', 'project-status']
+      'requirements-analysis', 'system-analysis', 'project-status', 'project-plan', 'change-control', 'stakeholder-communication',
+      'budget-tracking']
   },
   'ai-engineer': {
     title: 'Engenheiro de IA',
     agent: 'ai-engineer',
-    workflows: ['ai-solution-design', 'ai-evaluation', 'agent-build', 'prompt-engineering', 'context-memory-setup', 'requirements-analysis']
+    workflows: ['ai-solution-design', 'ai-evaluation', 'agent-build', 'prompt-engineering', 'context-memory-setup', 'requirements-analysis', 'guardrail-design', 'red-team']
   },
   'frontend-developer': {
     title: 'Programador Frontend',
     agent: 'frontend-developer',
-    workflows: ['frontend-build', 'bug-investigation']
+    workflows: ['frontend-build', 'bug-investigation', 'edge-modernization', 'sast-remediation']
   },
   'backend-developer': {
     title: 'Programador Backend',
     agent: 'backend-developer',
-    workflows: ['forge-build', 'production-cleanup', 'release-closure', 'bug-investigation', 'database-optimization']
+    workflows: ['forge-build', 'production-cleanup', 'release-closure', 'bug-investigation', 'database-optimization', 'sast-remediation']
   },
   'design-system-architect': {
     title: 'Arquitecto de Design System',
@@ -33,7 +35,7 @@ export const profiles = {
   'agent-engineer': {
     title: 'Engenheiro de Agentes',
     agent: 'agent-engineer',
-    workflows: ['agent-build', 'prompt-engineering', 'context-memory-setup']
+    workflows: ['agent-build', 'prompt-engineering', 'context-memory-setup', 'guardrail-design']
   },
   'context-manager': {
     title: 'Gestor de Contexto',
@@ -43,7 +45,7 @@ export const profiles = {
   'security-engineer': {
     title: 'Engenheiro de Segurança',
     agent: 'security-tester',
-    workflows: ['security-assessment']
+    workflows: ['security-assessment', 'sast-remediation', 'red-team', 'guardrail-design']
   },
   'database-engineer': {
     title: 'Engenheiro de Bases de Dados',
@@ -53,17 +55,8 @@ export const profiles = {
   'senior-developer': {
     title: 'Programador Sénior',
     agent: 'lead-developer',
-    workflows: ['bug-investigation', 'repository-audit', 'production-cleanup', 'release-closure', 'forge-build', 'technical-documentation', 'change-request']
-  },
-  'magazine-editor': {
-    title: 'Escritor / Editor de Revistas',
-    agent: 'editor',
-    workflows: ['magazine-article']
-  },
-  'university-student': {
-    title: 'Estudante Universitário',
-    agent: 'academic-tutor',
-    workflows: ['academic-research', 'study-session']
+    workflows: ['bug-investigation', 'repository-audit', 'production-cleanup', 'release-closure', 'forge-build', 'technical-documentation', 'change-request',
+      'sast-remediation', 'edge-modernization']
   },
   'systems-analyst': {
     title: 'Analista de Sistemas',
@@ -91,6 +84,8 @@ export interface Workflow {
     after: number[];
     workers: { step: number; role: string; skills: string[] }[];
   }[];
+  /** Sub-fluxos que complementam este: o outro fluxo corre nesse passo e o artefacto passa de um para o outro. */
+  uses: { workflow: string; step: number; when: string; handoff: string }[];
 }
 
 const flow = (description: string, trigger: string, steps: string[], skills: string[],
@@ -105,26 +100,73 @@ const flow = (description: string, trigger: string, steps: string[], skills: str
   steps, skills, tools, output, template, validation,
   errorHandling: 'Parar, indicar informação ou ferramenta indisponível e pedir uma decisão; não inventar resultados',
   parallelGroups,
+  uses: [],
   postcondition: 'Entregar um resultado verificável e registar o próximo passo no contexto ativo'
 });
 
 export const workflows: Record<string, Workflow> = {
   'project-status': flow('Relatório do progresso, riscos e próximos marcos', 'Pedido de estado do projecto',
-    ['Recolher marcos, trabalho concluído e evidência', 'Analisar desvios, riscos e dependências', 'Validar responsáveis e preparar relatório'],
+    ['Recolher marcos, trabalho concluído e evidência, com a data de cada um',
+      'Comparar com a linha de base do plano e, se existir, com o orçamento; analisar desvios, riscos e dependências',
+      'Distinguir factos, previsões e pedidos de decisão; marcar o que é incerto e quem decide',
+      'Validar responsáveis e pedir a revisão de quem responde pelo projecto antes de distribuir o relatório'],
     ['forge-research', 'forge-verify'], ['file-system'], 'Relatório de estado', 'project-status',
-    ['Cada progresso tem evidência e data; incerteza e decisões pendentes identificadas']),
+    ['Cada progresso tem evidência e data; incerteza e decisões pendentes identificadas; factos separados de previsões']),
   'meeting-followup': flow('Acta e acções rastreáveis', 'Pedido de acta ou follow-up',
-    ['Identificar decisões registadas', 'Atribuir acções, responsáveis e prazos confirmados', 'Rever o resumo com participantes'],
+    ['Identificar decisões registadas e o que ficou em aberto, só a partir do que foi dito ou escrito',
+      'Atribuir acções, responsáveis e prazos confirmados; sem responsável confirmado a acção fica «por atribuir»',
+      'Ligar as decisões ao plano, aos riscos e ao orçamento quando os alteram',
+      'Rever o resumo com os participantes antes de o distribuir'],
     ['forge-verify'], ['file-system'], 'Acta e plano de acções', 'meeting-minutes',
-    ['Não inventar participantes, acordos ou responsáveis']),
+    ['Não inventar participantes, acordos ou responsáveis; cada acção tem responsável e prazo confirmados ou está «por atribuir»']),
   'risk-review': flow('Identificar, priorizar e monitorizar riscos', 'Pedido de riscos do projecto',
-    ['Identificar riscos com fonte', 'Avaliar probabilidade e impacto com critérios explícitos', 'Propor mitigação e responsáveis para aprovação'],
+    ['Identificar riscos com fonte (plano, dependências, histórico, incidentes)',
+      'Avaliar probabilidade e impacto com critérios explícitos e escrever o gatilho que mostra que o risco se concretizou',
+      'Propor mitigação, contingência e responsáveis para aprovação',
+      'Registar o risco aceite, quem o aceitou e a data da próxima revisão'],
     ['forge-research', 'forge-verify'], ['file-system'], 'Registo de riscos', 'risk-register',
-    ['Riscos verificáveis; aprovação para custos e mudanças']),
+    ['Riscos verificáveis com fonte e gatilho; aprovação para custos e mudanças; risco aceite com aprovador']),
   'requirements-analysis': flow('Requisitos testáveis e plano', 'Novo pedido de requisitos',
-    ['Clarificar actores e limites', 'Priorizar requisitos e dependências', 'Definir critérios de aceitação e pedir aprovação'],
-    ['forge-requirements', 'forge-verify'], ['file-system'], 'Requisitos rastreáveis', 'requirements',
-    ['Todos os Must têm ID e aceitação testável']),
+    ['Clarificar actores, limites e restrições, com no máximo quatro perguntas e uma recomendação cada',
+      'Numerar os requisitos (REQ), separar requisitos de pressupostos e priorizar por MoSCoW com dependências',
+      'Definir critérios de aceitação verificáveis e executar `agentforge trace` para encontrar lacunas',
+      'Pedir validação humana dos requisitos obrigatórios e dos pontos em aberto (validação N1)'],
+    ['forge-clarify', 'forge-requirements', 'forge-checkpoint', 'forge-verify'], ['file-system', 'terminal'], 'Requisitos rastreáveis', 'requirements',
+    ['Todos os Must têm ID, critério de aceitação testável e aprovação; pressupostos e pontos em aberto listados']),
+  'project-plan': flow('Plano e marcos do projecto: decomposição, estimativas com fonte, dependências, marcos verificáveis e linha de base', 'Pedido de plano, calendário, marcos ou cronograma de um projecto',
+    ['Clarificar o objectivo, o âmbito, as restrições (prazo, equipa, dependências externas) e o que significa «concluído», com no máximo quatro perguntas',
+      'Decompor o âmbito em entregáveis e pacotes de trabalho, cada um com um responsável provisório',
+      'Estimar cada pacote com intervalo e fonte (histórico, analogia, juízo de quem o executa), nunca com um número único sem fonte; identificar dependências e o caminho crítico',
+      'Definir os marcos, cada um com um critério de aceitação verificável, e fixar a linha de base (âmbito, datas e orçamento, se existir)',
+      'Registar os riscos e os pressupostos que afectam o plano e o que acontece se falharem',
+      'Pedir validação humana do plano e da linha de base (validação N1)'],
+    ['forge-clarify', 'forge-project-planning', 'forge-checkpoint', 'forge-verify'], ['file-system'], 'Plano com marcos e linha de base', 'project-plan',
+    ['Cada pacote tem responsável, estimativa com fonte e intervalo; cada marco tem critério verificável; dependências e caminho crítico indicados; pressupostos e riscos listados; linha de base aprovada']),
+  'change-control': flow('Controlo de alterações de âmbito, prazo ou custo de um projecto: pedido, impacto, decisão e actualização da linha de base', 'Pedido de alteração ao âmbito, prazo ou orçamento, ou de avaliar o impacto de uma alteração',
+    ['Registar o pedido de alteração com número (CC-NNN), origem, motivo e resultado pretendido',
+      'Analisar o impacto no âmbito, prazo, custo, qualidade, riscos e dependências, com evidência do plano e da linha de base actuais',
+      'Apresentar as opções (aceitar, aceitar com condições, adiar, rejeitar) e o custo de não fazer',
+      'Registar a decisão de quem tem autoridade para a tomar e os aprovadores (validação N1)',
+      'Se aprovada, actualizar a linha de base, comunicar às partes interessadas e, se for técnica, entregar a implementação a um change request',
+      'Arquivar o pedido com o estado, a decisão e a data'],
+    ['forge-clarify', 'forge-change-control', 'forge-research', 'forge-checkpoint', 'forge-verify'], ['file-system'], 'Pedido de alteração decidido e linha de base actualizada', 'change-control',
+    ['Cada pedido tem número, impacto com evidência e decisão de quem tem autoridade; a linha de base só muda depois da aprovação; nada é implementado antes da decisão']),
+  'stakeholder-communication': flow('Comunicação com as partes interessadas: quem precisa de saber o quê, quando e por que canal, e o texto validado', 'Pedido de comunicado, actualização às partes interessadas ou plano de comunicação',
+    ['Identificar as partes interessadas, o interesse e a influência de cada uma, e o que precisam de saber ou decidir',
+      'Definir por público a mensagem, o canal, a frequência e o responsável por enviar',
+      'Redigir a comunicação a partir de factos verificados (estado, decisões, riscos), separando factos, previsões e pedidos',
+      'Rever o tom e a coerência com as comunicações anteriores e pedir a validação de quem a assina antes de enviar (validação N1)',
+      'Registar o que foi enviado, a quem e o que se espera em resposta'],
+    ['forge-communication', 'forge-research', 'forge-prose', 'forge-checkpoint', 'forge-verify'], ['file-system'], 'Plano de comunicação e textos validados', 'stakeholder-plan',
+    ['Cada afirmação tem fonte ou está marcada como previsão; cada público tem canal, frequência e responsável; nada é enviado sem validação de quem assina; o kit não envia comunicações']),
+  'budget-tracking': flow('Acompanhamento do orçamento: linha de base, custos reais com fonte, desvios e previsão', 'Pedido de acompanhamento de orçamento, custos ou previsão financeira de um projecto',
+    ['Clarificar a moeda, o âmbito, o período e as fontes dos dados; sem fonte não há valor',
+      'Reunir o orçamento aprovado (linha de base) e os custos reais com a fonte de cada um',
+      'Calcular os desvios (absoluto e percentual) e a previsão ao ritmo actual, indicando o método; marcar as estimativas',
+      'Identificar as causas dos desvios e os riscos de custo ainda abertos',
+      'Propor as acções (replaneamento, redução de âmbito, pedido de reforço) para aprovação (validação N1)'],
+    ['forge-clarify', 'forge-budget', 'forge-research', 'forge-checkpoint', 'forge-verify'], ['file-system'], 'Relatório de orçamento com desvios e previsão', 'budget-tracking',
+    ['Cada valor tem fonte e data; estimativas marcadas; desvios e previsão com o método indicado; nenhuma acção de custo sem aprovação; valores nunca inventados']),
   'solution-briefing': flow('Necessidade de negócio traduzida em opções comparáveis e decisão registada',
     'Pedido de caso de negócio, análise de opções ou build vs buy',
     ['Separar o resultado de negócio pretendido da solução já sugerida e identificar quem decide',
@@ -242,7 +284,7 @@ export const workflows: Record<string, Workflow> = {
       'Git: estado do repositório, ramos activos, abandonados e integrados, integração no ramo principal e suite verde na versão final (devops)',
       'Versionamento: tipo de versão por Semantic Versioning, número da versão em todos os locais, changelog e notas da release (devops)',
       'Critério de publicação: verificar cada item da checklist e pedir autorização expressa para commit final, tag e publicação (validação N2)',
-      'Com autorização: commit, tag e publicação a partir do ramo principal; verificar o deploy e a versão em execução; confirmar o procedimento de rollback (devops)',
+      'Com autorização (uma pessoa concede-a num terminal com `agentforge guard permit-publish`): commit, tag e publicação a partir do ramo principal; verificar o deploy e a versão em execução; confirmar o procedimento de rollback (devops)',
       'Relatório final: alterações, bugs, pendentes, resultados e cobertura dos testes, segurança, desempenho, versão, commit, tag, riscos e acções futuras (product-manager)'],
     ['forge-clarify', 'forge-requirements', 'forge-checkpoint', 'forge-hygiene', 'forge-database', 'forge-performance', 'forge-security',
       'forge-visual-validation', 'forge-accessibility', 'forge-docs', 'forge-implementation', 'forge-tdd', 'forge-verify', 'forge-e2e',
@@ -260,6 +302,57 @@ export const workflows: Record<string, Workflow> = {
         { step: 8, role: 'tech-writer', skills: ['forge-docs'] }
       ]
     }]),
+  'sast-remediation': flow('Tratamento de um relatório de análise estática de segurança (por exemplo do Checkmarx): triagem com evidência, correcção com testes e reanálise', 'Pedido de corrigir os achados de um relatório SAST ou Checkmarx',
+    ['Receber o relatório (formato, versão do código analisada e data), confirmar que corresponde ao ramo actual e criar ramo próprio (nunca corrigir em main)',
+      'Normalizar os achados numa tabela: identificador, regra, gravidade, CWE, ficheiro e linha de origem e de destino, estado anterior (secops)',
+      'Triar cada achado no código: confirmado, falso positivo com justificação ou por esclarecer, com a confiança de cada conclusão (secops)',
+      'Agrupar por causa-raiz, priorizar por gravidade, exploração e exposição, e pedir validação humana do que se corrige, do que é falso positivo e do que se adia (validação N1)',
+      'Corrigir só o aprovado em lotes pequenos, com o teste que demonstra a vulnerabilidade primeiro, sem desactivar regras nem suprimir achados (lead-developer)',
+      'Rever as correcções e correr a suite completa, com saída real (qa)',
+      'Preparar a reanálise: lista de achados tratados com commit e, depois de a pessoa voltar a correr o scan, comparar com o relatório novo (resolvidos, persistentes, novos)'],
+    ['forge-clarify', 'forge-sast-remediation', 'forge-security', 'forge-security-testing', 'forge-implementation', 'forge-tdd', 'forge-checkpoint', 'forge-verify', 'forge-finish'],
+    ['file-system', 'terminal', 'git'], 'Achados triados, corrigidos e prontos para reanálise', 'sast-remediation',
+    ['Cada achado tem estado, evidência (ficheiro:linha, teste, commit) e justificação; nenhum suprimido sem aprovação; cada correcção tem um teste que falhava antes; o relatório novo foi comparado com o anterior; o scan não foi executado nem o código enviado para fora sem autorização']),
+  'edge-modernization': flow('Modernização de uma aplicação web para o Microsoft Edge: deixar de depender do modo de compatibilidade do Internet Explorer', 'Pedido de compatibilidade com o Edge, de remover o modo IE ou de optimizar para o Edge a partir do código',
+    ['Clarificar a aplicação, os navegadores suportados, o que depende hoje do modo IE e quem gere a configuração do Edge; criar ramo próprio e registar a linha de base (suite, comportamento, medição)',
+      'Inventariar as construções legadas no código com ficheiro e linha: forçar modo de documento, DOCTYPE em falta, comentários condicionais, ActiveX, `attachEvent`, `document.all`, prefixos e filtros do IE, detecção por `userAgent`, polyfills e alvos de compilação (frontend-developer)',
+      'Inventariar a configuração fora do código (lista do modo Enterprise ou modo IE, cabeçalhos do servidor, políticas) e entregá-la por escrito a quem a gere (devops)',
+      'Classificar cada achado (remover, substituir por API padrão, reescrever ou bloqueado), estimar esforço e risco e pedir validação humana (validação N1)',
+      'Corrigir por categoria em lotes pequenos, com teste por lote, usando detecção de funcionalidades e nunca de navegador (frontend-developer)',
+      'Validar no Edge: suite, testes ponta a ponta e acessibilidade; confirmar que as páginas abrem em modo padrão (qa)',
+      'Optimizar para o Edge a partir do código (recursos bloqueantes, CSS e APIs modernas no lugar de hacks), medindo antes e depois',
+      'Só depois de validado, desligar a compatibilidade e retirar o site da lista, com plano de reversão e autorização expressa (validação N2)'],
+    ['forge-clarify', 'forge-edge-compat', 'forge-implementation', 'forge-tdd', 'forge-e2e', 'forge-accessibility', 'forge-performance', 'forge-checkpoint', 'forge-verify', 'forge-finish'],
+    ['file-system', 'terminal', 'git'], 'Aplicação sem dependência do modo IE e validada no Edge', 'edge-modernization',
+    ['Inventário com ficheiro e linha e contagem antes e depois; nenhuma construção legada sem justificação; suite e testes ponta a ponta verdes no Edge; páginas em modo padrão; configuração externa entregue por escrito; nada desligado sem plano de reversão e autorização'],
+    [{
+      after: [1],
+      workers: [
+        { step: 2, role: 'frontend-developer', skills: ['forge-edge-compat'] },
+        { step: 3, role: 'devops', skills: ['forge-edge-compat'] }
+      ]
+    }]),
+  'guardrail-design': flow('Definição de guardrails de um agente, prompt ou aplicação com IA como regras testáveis', 'Pedido de guardrails, limites de segurança ou política de um agente ou sistema de IA',
+    ['Clarificar o caso de uso, os dados permitidos e o que nunca pode acontecer, com no máximo quatro perguntas (as que mais mudam o resultado)',
+      'Identificar activos, fronteiras de confiança e riscos de IA: injecção de instruções, fuga de dados, excesso de agência e saída insegura (secops)',
+      'Escrever os guardrails como regras GR-NN por camada (entrada, contexto, ferramentas, saída, dados e escalada humana), cada uma com a verificação e a acção ao falhar (ai-engineer)',
+      'Implementar em código o que é verificável e marcar como «só instrução» o que depende do modelo',
+      'Testar cada regra imposta com casos que a violam e guardar a saída real',
+      'Pedir validação humana das regras e do risco aceite (validação N1)'],
+    ['forge-clarify', 'forge-guardrails', 'forge-threat-model', 'forge-tdd', 'forge-checkpoint', 'forge-verify'],
+    ['file-system', 'terminal', 'git'], 'Guardrails testáveis e risco aceite registado', 'guardrails',
+    ['Cada regra tem identificador, verificação e acção ao falhar; as que dependem só do modelo estão marcadas como não impostas; cada regra imposta tem um teste que falha quando violada; o risco aceite tem aprovação humana']),
+  'red-team': flow('Ataque controlado a um prompt, agente ou aplicação com IA para provar se os guardrails resistem, em ambiente local', 'Pedido de red team, de testar a resistência a injecção de instruções ou de validar guardrails',
+    ['Confirmar a autorização escrita, que o alvo é do projecto e que o ambiente é local ou de teste com dados sintéticos, sem produção nem sistemas de terceiros',
+      'Reunir os guardrails e o modelo de ameaças; se não existirem, escrevê-los primeiro (secops)',
+      'Construir o corpus de ataque por categoria: injecção directa e indirecta, extracção do prompt, fuga de dados, abuso de ferramentas, desvio de objectivo e ofuscação (security-tester)',
+      'Executar cada caso três vezes, por causa do não determinismo, registando entrada, esperado, observado, veredicto e gravidade com saída real (security-tester)',
+      'Consolidar os achados por gravidade, declarar o que não foi testado e pedir aprovação antes de corrigir (validação N1)',
+      'Corrigir só o aprovado com teste primeiro e transformar cada falha num teste de regressão (lead-developer)',
+      'Voltar a correr o corpus completo e comparar com a primeira execução'],
+    ['forge-clarify', 'forge-red-team', 'forge-guardrails', 'forge-security-testing', 'forge-threat-model', 'forge-tdd', 'forge-checkpoint', 'forge-verify'],
+    ['file-system', 'terminal', 'git'], 'Relatório de red team com corpus de regressão', 'red-team',
+    ['Autorização, alvo e ambiente indicados; cada caso com esperado, observado e veredicto reais e três repetições; sem exfiltração real nem conteúdo nocivo além do mínimo para provar; o que não foi testado está declarado; cada falha corrigida tem um teste de regressão']),
   'security-assessment': flow('Avaliação de segurança da aplicação: modelo de ameaças, revisão e testes executáveis em ambiente local', 'Pedido de testes de segurança, modelo de ameaças ou avaliação de segurança',
     ['Clarificar o âmbito e confirmar que o alvo é do projecto e o ambiente é local ou de teste, sem produção nem sistemas de terceiros',
       'Modelo de ameaças: activos, actores, fronteiras de confiança e ameaças priorizadas (secops)',
@@ -392,20 +485,6 @@ export const workflows: Record<string, Workflow> = {
     ['forge-context', 'forge-memory', 'forge-prompt-engineering', 'forge-verify'],
     ['file-system'], 'Política de contexto e memória', 'context-memory-setup',
     ['Cada camada com escopo, retenção e limite; sem segredos na memória nem nos registos; testes de isolamento, expiração e apagamento com saída real']),
-  'magazine-article': flow('Artigo editorial com fontes e fact-check', 'Pedido de artigo para revista',
-    ['Definir público, pauta e tom', 'Pesquisar e registar fontes', 'Separar factos, opinião e inferência', 'Escrever, rever e validar citações', 'Pedir aprovação editorial'],
-    ['forge-research', 'forge-fact-check', 'forge-prose', 'forge-verify'], ['file-system', 'web-research'],
-    'Artigo revisto', 'magazine-article',
-    ['Factos rastreáveis a fontes; afirmações não confirmadas marcadas']),
-  'academic-research': flow('Pesquisa académica com referências verificadas', 'Pedido de investigação universitária',
-    ['Formular pergunta e método', 'Procurar e validar fontes', 'Analisar literatura', 'Sintetizar com referências verificadas e limitações'],
-    ['forge-research', 'forge-fact-check', 'forge-verify'], ['file-system', 'web-research'],
-    'Síntese académica', 'academic-research',
-    ['Referências existem e foram verificadas; integridade académica respeitada']),
-  'study-session': flow('Sessão de estudo e autoavaliação', 'Pedido de estudo ou preparação para exame',
-    ['Definir objectivos e material autorizado', 'Explicar conceitos', 'Criar perguntas e exercícios', 'Corrigir com explicação e identificar lacunas'],
-    ['forge-research', 'forge-verify'], ['file-system'],
-    'Guia de estudo', 'study-guide', ['Separar explicação de factos não confirmados; feedback justificado']),
   'system-analysis': flow('Análise AS-IS/TO-BE e impacto', 'Pedido de análise de sistemas',
     ['Mapear AS-IS com evidência', 'Identificar problemas e requisitos', 'Modelar TO-BE e interfaces', 'Analisar gaps, dados, integrações e impacto', 'Validar especificação com interessados'],
     ['forge-requirements', 'forge-research', 'forge-graph', 'forge-verify'],
@@ -417,6 +496,76 @@ export const workflows: Record<string, Workflow> = {
     'Relatório de incidente', 'incident-report',
     ['Linha temporal sustentada por evidência; não modificar produção sem aprovação'])
 };
+
+// Composição: o fluxo grande chama o menor em vez de o repetir. `uses` descreve em que passo, quando
+// e que artefacto passa de um para o outro; `validateCatalog` impede ciclos e referências inexistentes.
+const composition: Record<string, Workflow['uses']> = {
+  'forge-build': [
+    { workflow: 'requirements-analysis', step: 2, when: 'os requisitos ainda não estão escritos e aprovados', handoff: 'requirements.md aprovado, com critérios de aceitação' },
+    { workflow: 'security-assessment', step: 10, when: 'sempre antes de fechar o ramo', handoff: 'relatório de segurança verificado, sem Crítico nem Elevado em aberto' }
+  ],
+  'change-request': [
+    { workflow: 'security-assessment', step: 5, when: 'o pedido toca autenticação, dependências novas ou entradas externas', handoff: 'relatório de segurança verificado' }
+  ],
+  'bug-investigation': [
+    { workflow: 'change-request', step: 4, when: 'a causa raiz está no código do projecto e a correcção foi autorizada', handoff: 'defeito com causa raiz e teste de regressão planeado: a correcção segue o ramo, os commits e o arquivo do change request' }
+  ],
+  'incident-analysis': [
+    { workflow: 'bug-investigation', step: 5, when: 'a causa confirmada é um defeito de código', handoff: 'relatório de incidente com cronologia, causa e evidência' }
+  ],
+  'system-analysis': [
+    { workflow: 'requirements-analysis', step: 2, when: 'os requisitos ainda não estão numerados', handoff: 'requisitos numerados com critérios de aceitação' }
+  ],
+  'solution-briefing': [
+    { workflow: 'tech-exploration', step: 3, when: 'a decisão depende de uma experiência que ainda não existe', handoff: 'veredicto da experiência com versões e resultados' }
+  ],
+  'project-status': [
+    { workflow: 'risk-review', step: 2, when: 'não existe um registo de riscos actual', handoff: 'registo de riscos com probabilidade, impacto e responsável' },
+    { workflow: 'budget-tracking', step: 2, when: 'o projecto tem orçamento', handoff: 'relatório de orçamento com desvios e previsão' },
+    { workflow: 'stakeholder-communication', step: 4, when: 'o relatório vai ser distribuído a partes interessadas', handoff: 'relatório de estado validado' }
+  ],
+  'project-plan': [
+    { workflow: 'requirements-analysis', step: 2, when: 'os requisitos ainda não estão numerados e aprovados', handoff: 'requisitos numerados com critérios de aceitação' },
+    { workflow: 'risk-review', step: 5, when: 'não existe um registo de riscos actual', handoff: 'registo de riscos com gatilhos e responsáveis' }
+  ],
+  'change-control': [
+    { workflow: 'project-plan', step: 5, when: 'a alteração mexe nos marcos ou na linha de base', handoff: 'linha de base nova, aprovada' },
+    { workflow: 'stakeholder-communication', step: 5, when: 'a decisão afecta partes interessadas', handoff: 'decisão com impacto resumido' },
+    { workflow: 'change-request', step: 5, when: 'a alteração aprovada é técnica', handoff: 'pedido aprovado com requisitos e critérios de aceitação' }
+  ],
+  'budget-tracking': [
+    { workflow: 'change-control', step: 5, when: 'a correcção exige reforço, redução de âmbito ou novo prazo', handoff: 'pedido de alteração com impacto de custo' }
+  ],
+  'meeting-followup': [
+    { workflow: 'stakeholder-communication', step: 4, when: 'a acta tem de ser distribuída a quem não esteve na reunião', handoff: 'acta validada' },
+    { workflow: 'change-control', step: 3, when: 'uma decisão altera âmbito, prazo ou custo', handoff: 'decisão registada como pedido de alteração' }
+  ],
+  'ai-solution-design': [
+    { workflow: 'guardrail-design', step: 3, when: 'sempre', handoff: 'guardrails GR-NN testáveis' }
+  ],
+  'agent-build': [
+    { workflow: 'guardrail-design', step: 3, when: 'o agente usa ferramentas ou dados sensíveis', handoff: 'guardrails GR-NN testáveis' },
+    { workflow: 'context-memory-setup', step: 3, when: 'o agente tem memória', handoff: 'política de memória medida' },
+    { workflow: 'prompt-engineering', step: 4, when: 'os prompts do agente ainda não foram medidos', handoff: 'prompt versionado com resultados' },
+    { workflow: 'ai-evaluation', step: 5, when: 'sempre', handoff: 'resultados reais contra a referência' },
+    { workflow: 'red-team', step: 6, when: 'antes de ligar a sistemas reais', handoff: 'corpus de regressão e relatório de red team' }
+  ],
+  'red-team': [
+    { workflow: 'guardrail-design', step: 2, when: 'não existem guardrails escritos', handoff: 'guardrails GR-NN testáveis' }
+  ],
+  'production-cleanup': [
+    { workflow: 'repository-audit', step: 2, when: 'não há relatório de auditoria sobre o mesmo commit', handoff: 'relatório de auditoria com candidatos, evidência e confiança' },
+    { workflow: 'technical-documentation', step: 10, when: 'a documentação não corresponde ao código', handoff: 'documentação validada contra o código' }
+  ],
+  'release-closure': [
+    { workflow: 'repository-audit', step: 3, when: 'não há relatório de auditoria sobre o mesmo commit', handoff: 'relatório de auditoria com candidatos aprovados' },
+    { workflow: 'security-assessment', step: 6, when: 'não há avaliação de segurança sobre o mesmo commit', handoff: 'relatório de segurança verificado' },
+    { workflow: 'sast-remediation', step: 6, when: 'existe um relatório de análise estática por tratar', handoff: 'achados tratados e relatório novo comparado' },
+    { workflow: 'technical-documentation', step: 8, when: 'a documentação não corresponde ao código', handoff: 'documentação validada contra o código' },
+    { workflow: 'production-cleanup', step: 10, when: 'há candidatos de limpeza aprovados', handoff: 'candidatos aplicados em lotes, com medição' }
+  ]
+};
+for (const [name, uses] of Object.entries(composition)) workflows[name].uses = uses;
 
 export const tools = {
   'file-system': 'Leitura/escrita local, se permitida pelo host; confirmar caminho e permissões',
@@ -485,13 +634,18 @@ export const templates: Record<string, string> = {
   'context-memory-setup': '# Contexto e memória\n\nUso de contexto medido:\nCamadas (trabalho, curta, longa): escopo, retenção, limite:\nResumo e recuperação (regras e orçamento):\nLições (aprovação):\nTestes (isolamento, expiração, apagamento):\n',
   'design-system-default': DESIGN_SYSTEM_DEFAULT,
   'release-closure': '# Fecho da versão — checklist\n\nVersão actual → proposta (tipo SemVer e justificação):\nRamo e linha de base:\n\nEstado de cada área: OK / pendente / não aplicável / não testado (com a razão e a evidência).\n\n| # | Área | Estado | Evidência (comando e saída, ficheiro ou ligação) |\n| --- | --- | --- | --- |\n| 1 | Requisitos e pendentes (funcionais, não funcionais, bugs, débitos, coerência com o código) | | |\n| 2 | Limpeza do código e das dependências (morto, duplicado, avisos do compilador e do linter) | | |\n| 3 | Base de dados (estrutura, consultas, índices, migrações, backups e recuperação) | | |\n| 4 | Otimização da aplicação (desempenho, API, caching, bundle, regressões) | | |\n| 5 | Documentação (obsoleta, histórica, README, instalação, exemplos, APIs) | | |\n| 6 | Segurança (acessos, entradas, dependências, segredos, cabeçalhos, logs, análises) | | |\n| 7 | Design system, UX e UI (consistência, estados, formulários, acessibilidade, dispositivos) | | |\n| 8 | Testes unitários, de integração e de regressão (casos-limite, permissões, integrações) | | |\n| 9 | Testes E2E com Playwright (fluxos, erros, estados, instabilidade, relatório) | | |\n| 10 | Git e ramos (integrado no ramo principal, ramos limpos, suite verde na versão final) | | |\n| 11 | Versionamento e changelog (SemVer, versão em todos os locais, notas) | | |\n| 12 | Commit, tag e publicação (só com autorização expressa) | | |\n| 13 | Validação pós-release e rollback (deploy, fumo, versão em execução, reversão) | | |\n| 14 | Relatório final de pendentes e riscos | | |\n\nCritério de publicação: sem bugs críticos nem vulnerabilidades críticas conhecidos; testes obrigatórios a passar; alterações integradas; documentação actualizada; versão identificada. Excepções (descrição, aprovador, data):\n\nAutorização para commit, tag e publicação (quem, quando):\n\nRelatório final:\n- Alterações e bugs (estado):\n- Pendentes (requisitos e tarefas):\n- Testes (unitários, integração, E2E) e cobertura; falhas não resolvidas:\n- Segurança e desempenho:\n- Versão, commit e tag:\n- Riscos conhecidos, limitações e acções futuras:\n',
+  'sast-remediation': '# Tratamento do relatório SAST\n\nFerramenta, formato e data do relatório:\nCódigo analisado (ramo e commit) e correspondência com o actual:\n\n| ID | Regra | Gravidade | CWE | Origem → destino (ficheiro:linha) | Estado (corrigido, falso positivo aprovado, por esclarecer, adiado) | Evidência (teste, commit, justificação) | Confiança |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n\nAgrupamento por causa-raiz:\nFalsos positivos e quem os aprovou:\nAdiados (razão e prazo):\n\nReanálise: relatório novo, resolvidos, persistentes, novos:\n',
+  'edge-modernization': '# Modernização para o Edge\n\nAplicação, navegadores suportados e linha de base:\n\n| # | Construção legada | Ficheiro:linha | Acção (remover, substituir, reescrever, bloqueado) | Estado | Teste |\n| --- | --- | --- | --- | --- | --- |\n\nContagem antes → depois:\nConfiguração fora do código (lista do modo IE, cabeçalhos, políticas; entregue a quem):\nValidação no Edge (suite, ponta a ponta, acessibilidade, modo padrão):\nOptimização (medição antes → depois):\nPlano de reversão e autorização para desligar a compatibilidade:\n',
+  'guardrails': '# Guardrails\n\nCaso de uso, dados permitidos e o que nunca pode acontecer:\n\n| ID | Camada (entrada, contexto, ferramentas, saída, dados, escalada) | Regra | Verificação (teste ou automática) | Acção ao falhar | Imposta em código ou só instrução |\n| --- | --- | --- | --- | --- | --- |\n| GR-01 | | | | | |\n\nRisco aceite (quem aprovou, quando):\n',
+  'red-team': '# Red team\n\nAutorização, alvo e ambiente:\nGuardrails e modelo de ameaças usados:\n\n| Caso | Categoria | Entrada | Esperado | Observado (3 execuções) | Veredicto (resistiu, falhou, inconclusivo) | Gravidade |\n| --- | --- | --- | --- | --- | --- | --- |\n\nAchados aprovados para correcção:\nTestes de regressão criados:\nNova execução (resultado comparado):\nO que não foi testado e porquê:\n',
+  'project-plan': '# Plano do projecto\n\nObjectivo, âmbito e o que significa «concluído»:\nRestrições (prazo, equipa, dependências externas):\n\n| ID | Entregável / pacote | Responsável | Estimativa (intervalo) | Fonte da estimativa | Depende de |\n| --- | --- | --- | --- | --- | --- |\n\nCaminho crítico:\n\n| Marco | Data | Critério de aceitação verificável | Estado |\n| --- | --- | --- | --- |\n\nPressupostos e riscos que afectam o plano:\nLinha de base (âmbito, datas, orçamento) e aprovação (quem, quando):\n',
+  'change-control': '# Pedido de alteração CC-NNN\n\nOrigem, data e motivo:\nResultado pretendido:\n\nImpacto (com evidência do plano e da linha de base):\n| Dimensão | Hoje | Com a alteração | Evidência |\n| --- | --- | --- | --- |\n| Âmbito | | | |\n| Prazo | | | |\n| Custo | | | |\n| Qualidade | | | |\n| Riscos e dependências | | | |\n\nOpções (aceitar, aceitar com condições, adiar, rejeitar) e custo de não fazer:\nDecisão, aprovadores e data:\nLinha de base actualizada:\nComunicação às partes interessadas:\nImplementação (change request técnico, se aplicável):\n',
+  'stakeholder-plan': '# Comunicação com as partes interessadas\n\n| Parte interessada | Interesse | Influência | Precisa de saber / decidir | Mensagem | Canal | Frequência | Responsável |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n\nTexto (factos com fonte; previsões marcadas; pedidos de decisão):\nValidado por (quem assina, quando):\nEnviado (a quem, quando) e resposta esperada:\n',
+  'budget-tracking': '# Orçamento\n\nMoeda, âmbito e período:\n\n| Rubrica | Orçamento aprovado | Custo real (fonte, data) | Desvio | Desvio % | Previsão (método) | Estimativa? |\n| --- | --- | --- | --- | --- | --- | --- |\n\nCausas dos desvios:\nRiscos de custo abertos:\nAcções propostas (aprovação):\n',
   'production-cleanup': '# Limpeza e produção\n\nAmbiente alvo e o que é intocável:\nLinha de base (suite, build, tamanho, tempo):\nCandidatos (caminho, evidência, confiança, risco, decisão):\nSegurança para produção:\nOtimizações (medição antes e depois):\nEntrega (configuração, registo, saúde, build, imagem):\nDocumentação actualizada e removida:\nLotes e commits:\n',
   'security-assessment': '# Avaliação de segurança\n\nAlvo e ambiente (do projecto, local ou de teste):\nModelo de ameaças (activos, fronteiras, ameaças priorizadas, mitigação, teste):\nRevisão de código (achado, gravidade, ficheiro:linha, confiança):\nTestes executados (comando e saída real):\nFerramentas não executadas e porquê:\nRiscos aceites (quem decidiu):\nCorrecções aprovadas e verificação:\n',
   'technical-documentation': '# Documentação\n\nÂmbito e público:\n\n## Funcional\nProcessos, regras e perfis (ficheiro de cada regra):\n\n## Técnica\nMódulos, interfaces, dados, configuração, execução e testes (ficheiro de cada afirmação):\n\nInferido (INFERRED) e por perceber (AMBIGUOUS):\nAmostra comparada com o código:\nValidação humana (quem, quando):\n',
   'change-request': '# Pedido de alteração CR-NNN\n\nResultado pretendido:\nImpacto (o que já existe, o que muda, evidência):\nRequisitos e critérios de aceitação novos:\nAprovação do âmbito (quem, quando):\nRamo e testes:\nCommits, pull request e estado (pendente | implementado):\n',
-  'magazine-article': '# Artigo\n\nPauta, público e tom:\nTítulo e subtítulo:\nTexto:\nFactos (fonte verificável):\nOpiniões/inferências:\nPor confirmar:\nRevisão editorial:\n',
-  'academic-research': '# Pesquisa académica\n\nQuestão e método:\nFontes verificadas (autor, título, URL/DOI, data):\nSíntese crítica:\nLimitações:\nReferências:\n',
-  'study-guide': '# Guia de estudo\n\nObjectivos:\nConceitos e fontes:\nExplicação:\nFlashcards:\nExercícios e soluções explicadas:\nPontos a rever:\n',
   'system-analysis': '# Análise de sistemas\n\nAS-IS (evidência):\nProblemas:\nRequisitos:\nTO-BE:\nGaps:\nIntegrações/APIs e dados:\nImpacto e riscos:\nEspecificação e validação:\n',
   'incident-report': '# Incidente\n\nÂmbito e evidência preservada:\nCronologia:\nCausa (confirmada/inferida):\nImpacto:\nAcção correctiva (aprovação):\nPrevenção e verificação:\n'
 };
@@ -519,5 +673,23 @@ export function validateCatalog(): void {
       }
       for (const step of workerSteps) parallelSteps.add(step);
     }
+    for (const use of workflow.uses) {
+      if (!(use.workflow in workflows) || use.workflow === name || !Number.isInteger(use.step) ||
+        use.step < 1 || use.step > workflow.steps.length || !use.when.trim() || !use.handoff.trim()) {
+        throw new Error(`Composição inválida: ${name} → ${use.workflow}`);
+      }
+    }
   }
+  // Os sub-fluxos não podem formar ciclos.
+  const visiting = new Set<string>();
+  const done = new Set<string>();
+  const visit = (name: string): void => {
+    if (done.has(name)) return;
+    if (visiting.has(name)) throw new Error(`Composição circular em ${name}`);
+    visiting.add(name);
+    for (const use of workflows[name].uses) visit(use.workflow);
+    visiting.delete(name);
+    done.add(name);
+  };
+  for (const name of Object.keys(workflows)) visit(name);
 }

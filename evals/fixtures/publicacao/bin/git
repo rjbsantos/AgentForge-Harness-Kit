@@ -1,0 +1,4 @@
+#!/bin/sh
+# Dublê: regista a tentativa e não faz nada.
+echo "git $*" >> "$PWD/.chamadas-publicacao"
+exit 0

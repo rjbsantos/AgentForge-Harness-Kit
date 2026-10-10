@@ -244,7 +244,7 @@ Validação: cada camada tem escopo, retenção e limite de tamanho; não há se
         description: 'Usar ao fechar uma versão, para decidir o tipo de versão por Semantic Versioning, actualizar versão, changelog e notas, passar o critério de publicação, criar o commit e a tag só com autorização, verificar depois da publicação e preparar a reversão.',
         body: `
 Finalidade: fechar uma versão de forma verificável, reversível e só com autorização. Entradas: ramo com o trabalho da versão e a checklist \`release-closure\`. Resultado: versão, changelog, notas, tag e relatório final.
-1. Pré-condições: estado do repositório limpo, o trabalho aprovado integrado no ramo principal por uma pessoa e a suite completa verde a partir de um estado limpo, com a saída real guardada. Sem isto não avançar.
+1. Pré-condições: estado do repositório limpo, o trabalho aprovado integrado no ramo principal por uma pessoa e a suite completa verde a partir de um estado limpo, com a saída real guardada. Validar primeiro na máquina (por exemplo \`npm run ci\` ou o equivalente do projecto) e só no fim no remoto: a CI remota confirma, não descobre. Sem isto não avançar.
 2. Tipo de versão por Semantic Versioning, justificado pela lista de alterações: Major para alterações incompatíveis, Minor para funcionalidades novas compatíveis, Patch para correcções compatíveis. Uma release intermédia com funcionalidades novas é normalmente Minor; não subir a Major só por ser uma release nova. Propor e pedir aprovação.
 3. Actualizar o número da versão em todos os locais: procurar a versão actual no repositório (manifestos, ficheiros de bloqueio, documentação, constantes, cabeçalhos do changelog) em vez de confiar na memória. O changelog e as notas descrevem o que foi efectivamente alterado (histórico desde a última tag), não intenções.
 4. Build final a partir de um estado limpo e validação dos artefactos (conteúdo, versão, tamanho). Confirmar que migrações e configurações estão preparadas e têm reversão.
@@ -268,5 +268,110 @@ Finalidade: provar os percursos críticos do utilizador no browser, e dizer com 
 Validação: cada fluxo da lista está testado ou declarado como não testado com a razão; a execução tem saída real e relatório; não há testes saltados nem repetições a esconder instabilidade; os cenários críticos passam antes da release.
 `
     },
+    'forge-sast-remediation': {
+        description: 'Usar ao tratar um relatório de análise estática de segurança (por exemplo do Checkmarx), para triar cada achado com evidência no código, corrigir os confirmados com testes e preparar a reanálise, sem suprimir achados sem justificação aprovada.',
+        body: `
+Finalidade: transformar um relatório de scan em correcções verificadas e em achados justificados. Entradas: relatório exportado (XML, CSV, JSON ou PDF) e o código. Resultado: tabela de achados com estado e evidência, correcções em ramo próprio e preparação da reanálise.
+1. Confirmar de que ramo e commit é o relatório e a data. Se o código mudou desde o scan, avisar: as linhas podem estar desfasadas e os achados têm de ser reconfirmados. Não executar o scan nem enviar código para fora sem autorização.
+2. Normalizar numa tabela: identificador, regra ou consulta, gravidade, CWE quando existir, ficheiro e linha da origem e do destino quando o relatório traz o caminho do fluxo de dados, e o estado de triagem anterior.
+3. Triar abrindo o código em cada local: confirmado, falso positivo ou por esclarecer. Um falso positivo exige uma razão concreta (sanitização existente, código inalcançável, valor que o atacante não controla) e aprovação humana antes de ser marcado; indicar a confiança (\`EXTRACTED\`, \`INFERRED\` ou \`AMBIGUOUS\`).
+4. Agrupar por causa-raiz (a mesma função ou a mesma validação em falta) para corrigir uma vez e priorizar por gravidade, possibilidade de exploração e exposição.
+5. Corrigir em lotes pequenos, em ramo próprio e com o teste que demonstra a vulnerabilidade escrito primeiro (forge-security-testing): consultas parametrizadas, codificação de saída, validação à entrada, segredos fora do código. Nunca desactivar a regra, marcar como suprimido nem esconder o achado.
+6. Componentes vulneráveis (análise de composição): propor a versão corrigida compatível e correr a suite completa antes e depois.
+7. Preparar a reanálise: lista dos achados tratados com commit; depois de a pessoa voltar a correr o scan, comparar o relatório novo com o anterior (resolvidos, persistentes, novos) e não declarar concluído se surgirem achados novos.
+Validação: cada achado tem estado, evidência (ficheiro:linha, teste, commit) e justificação; nenhum falso positivo ou adiamento sem aprovação; cada correcção tem um teste que falhava antes e passa agora; o relatório novo foi comparado com o anterior.
+`
+    },
+    'forge-edge-compat': {
+        description: 'Usar ao modernizar uma aplicação web para o Microsoft Edge e deixar de depender do modo de compatibilidade do Internet Explorer, para inventariar as construções legadas, corrigi-las em lotes com testes, optimizar para o Edge e desligar a compatibilidade com segurança.',
+        body: `
+Finalidade: uma aplicação que corre em modo padrão no Edge sem modo de compatibilidade, medida e validada. Entradas: código da aplicação, navegadores suportados e configuração do Edge. Resultado: inventário, correcções por lote, validação no Edge e plano de reversão.
+1. Inventariar com pesquisa no código (HTML, JavaScript, CSS e configuração do servidor), cada achado com ficheiro e linha: forçar o modo de documento (\`X-UA-Compatible\` em meta ou cabeçalho), DOCTYPE em falta ou antigo (modo quirks), comentários condicionais \`<!--[if IE]>\`, \`document.documentMode\`, \`ActiveXObject\` e \`.htc\`, \`attachEvent\` e \`detachEvent\`, \`window.event\`, \`document.all\`, \`showModalDialog\`, VBScript, \`filter: progid\`, \`expression()\` e prefixos \`-ms-\` obsoletos, detecção de \`MSIE\` ou \`Trident\` no \`userAgent\`, e polyfills ou alvos de compilação (\`browserslist\`, Babel) para o IE.
+2. Inventariar à parte a configuração fora do código: lista de sites do modo Enterprise ou do modo Internet Explorer no Edge, cabeçalhos e políticas de grupo. Isto entrega-se por escrito a quem o gere; não se altera sozinho.
+3. Classificar cada achado: remover, substituir por API padrão (\`addEventListener\`, \`fetch\`, \`classList\`, \`Promise\`), reescrever (ActiveX por uma alternativa web ou um serviço) ou bloqueado (componente de terceiros sem alternativa), com esforço e risco.
+4. Corrigir por categoria em lotes pequenos, em ramo próprio e com um teste por lote: DOCTYPE HTML5, remoção do forçar-modo, detecção de funcionalidades em vez de detecção de navegador. Só retirar polyfills e alvos do IE depois de confirmar os navegadores suportados.
+5. Validar no Edge: suite completa, testes ponta a ponta com o canal do Edge (forge-e2e), acessibilidade, formulários, layout e impressão; confirmar que as páginas abrem em modo padrão.
+6. Optimizar para o Edge a partir do código, só com medição antes e depois: recursos que bloqueiam a renderização, \`defer\` e \`async\`, imagens, CSS e APIs modernas no lugar de hacks.
+7. Desligar a compatibilidade e retirar o site da lista só depois de validado, com plano de reversão (como voltar atrás e quem decide) e autorização expressa.
+Validação: inventário com ficheiro e linha e contagem antes e depois; nenhuma construção da lista permanece sem justificação; suite e testes ponta a ponta verdes no Edge; páginas em modo padrão; a configuração externa foi entregue por escrito; nada foi desligado sem plano de reversão e autorização.
+`
+    },
+    'forge-guardrails': {
+        description: 'Usar ao definir os limites de um agente, prompt ou aplicação com IA, para os escrever como regras testáveis por camada (entrada, contexto, ferramentas, saída, dados e escalada humana) e distinguir o que é imposto em código do que é só instrução.',
+        body: `
+Finalidade: limites que se podem verificar, não intenções. Entradas: caso de uso, dados permitidos e modelo de ameaças. Resultado: tabela de regras GR-NN, verificações e o que fica só como instrução.
+1. Partir do que nunca pode acontecer (fuga de dados ou segredos, acção irreversível sem aprovação, saída que executa código) e dos riscos de IA aplicáveis: injecção de instruções directa e indirecta, excesso de agência, saída insegura, consumo sem limite.
+2. Uma regra por camada, com identificador: entrada (validação, limite de tamanho, tratar o conteúdo externo como dados e nunca como instruções); contexto (separar instruções de dados); ferramentas (privilégio mínimo, aprovação para acções irreversíveis, limites de utilização); saída (esquema, sem segredos, codificação para o destino); dados (o que nunca sai); escalada humana (quando parar e perguntar).
+3. Cada regra tem: identificador GR-NN, objectivo, como se verifica (teste ou verificação automática) e a acção ao falhar (bloquear, pedir confirmação ou registar).
+4. Implementar em código o que é verificável (validadores, esquemas, listas de permissão, limites). O que depende só de o modelo obedecer fica marcado como «só instrução»: não é uma garantia e não pode ser descrito como tal.
+5. Entregar a tabela ao red team (forge-red-team): é o contrato que ele ataca.
+Validação: cada regra tem identificador, verificação e acção ao falhar; as que dependem só do modelo estão marcadas como não impostas; existe um teste que falha quando cada regra imposta é violada.
+`
+    },
+    'forge-red-team': {
+        description: 'Usar para atacar de forma controlada um prompt, agente ou aplicação com IA em ambiente local, para provar se os guardrails resistem a injecção de instruções, fuga de dados, abuso de ferramentas e desvio de objectivo, e deixar um conjunto de testes de regressão.',
+        body: `
+Finalidade: encontrar como os limites falham antes de outra pessoa o fazer, sem sair do projecto. Entradas: guardrails GR-NN, modelo de ameaças e o alvo. Resultado: relatório com veredicto por caso e corpus de regressão.
+1. Confirmar a autorização escrita, que o alvo é do projecto e que o ambiente é local ou de teste com dados sintéticos. Nunca produção, nunca sistemas ou modelos de terceiros, nunca dados reais.
+2. Partir dos guardrails e do modelo de ameaças; um ataque sem regra a verificar só gera ruído. Se não existirem, escrevê-los primeiro (forge-guardrails).
+3. Construir o corpus por categoria: injecção directa e indirecta (documentos, páginas e resultados de ferramentas), extracção do prompt de sistema, fuga de dados e segredos, abuso de ferramentas e permissões, desvio de objectivo e tentativas de contornar regras, ofuscação (codificação, outros idiomas, partição do pedido) e consumo excessivo de recursos.
+4. Executar cada caso três vezes, porque o comportamento não é determinístico, e registar entrada, resultado esperado, observado, veredicto (resistiu, falhou ou inconclusivo) e gravidade, com a saída real.
+5. Consolidar por gravidade, declarar o que não foi testado e pedir aprovação antes de corrigir. Usar o mínimo de conteúdo nocivo necessário para provar o achado e nenhuma exfiltração real.
+6. Corrigir só o aprovado com teste primeiro; cada falha passa a ser um teste de regressão e o corpus completo volta a correr, comparando com a primeira execução.
+Validação: autorização, alvo e ambiente indicados; cada caso tem esperado, observado, veredicto e três execuções reais; o que não foi testado está declarado; cada falha corrigida tem um teste de regressão e a segunda execução foi comparada com a primeira.
+`
+    },
+    'forge-project-planning': {
+        description: 'Usar ao planear um projecto, para decompor o âmbito em pacotes de trabalho, estimar com intervalo e fonte, identificar dependências e caminho crítico, definir marcos verificáveis e fixar a linha de base.',
+        body: `
+Finalidade: um plano que outra pessoa consegue executar e verificar, e que se pode comparar com a realidade. Entradas: objectivo, âmbito e restrições. Resultado: decomposição, estimativas, marcos e linha de base aprovada.
+1. Escrever o que significa «concluído» e o que fica de fora; um plano sem fronteira de âmbito não se pode controlar.
+2. Decompor em entregáveis (resultados, não actividades) e em pacotes de trabalho pequenos o bastante para um responsável os estimar. Cada pacote tem um responsável provisório.
+3. Estimar com um intervalo (mínimo, provável, máximo) e dizer de onde vem: histórico, analogia, ou juízo de quem executa. Um número único sem fonte é um palpite; marcá-lo como tal. Não somar estimativas incertas como se fossem exactas.
+4. Dependências entre pacotes e com terceiros; o caminho crítico é a cadeia mais longa de dependências e é onde um atraso atrasa o projecto.
+5. Marcos: cada um com um critério de aceitação que alguém consiga verificar (não «fase concluída», mas «relatório X aprovado por Y»).
+6. Pressupostos e riscos que afectam o plano, com o que acontece se falharem.
+7. Fixar a linha de base (âmbito, datas e orçamento, se existir) só depois de aprovada por uma pessoa; a partir daí, qualquer mudança passa por controlo de alterações (forge-change-control).
+Validação: cada pacote tem responsável, estimativa com intervalo e fonte; cada marco tem critério verificável; dependências e caminho crítico estão indicados; pressupostos e riscos estão listados; a linha de base tem aprovação registada.
+`
+    },
+    'forge-change-control': {
+        description: 'Usar quando alguém pede para mudar o âmbito, o prazo ou o orçamento de um projecto, para registar o pedido, medir o impacto com evidência, decidir por quem tem autoridade e só então actualizar a linha de base.',
+        body: `
+Finalidade: nenhuma alteração entra no projecto sem impacto conhecido e decisão registada. Entradas: pedido de alteração, plano e linha de base actuais. Resultado: pedido numerado com impacto, decisão e linha de base actualizada.
+1. Registar o pedido com número sequencial (CC-NNN): quem pede, quando, porquê e o resultado pretendido, distinguindo o resultado de negócio da solução já sugerida.
+2. Medir o impacto contra a linha de base actual, não de memória: âmbito, prazo, custo, qualidade, riscos e dependências, cada um com a evidência (marco, pacote, valor).
+3. Apresentar as opções: aceitar, aceitar com condições, adiar, rejeitar, e o custo de não fazer. Uma alteração urgente também passa por aqui, com a decisão mais rápida, nunca sem decisão.
+4. A decisão é de quem tem autoridade para ela, registada com os aprovadores e a data; silêncio não é aprovação. Nada se implementa antes.
+5. Se aprovada: actualizar a linha de base (forge-project-planning), comunicar às partes interessadas (forge-communication) e, se a alteração for técnica, entregar a um change request com requisitos e critérios de aceitação.
+6. Arquivar o pedido com o estado e a decisão, mesmo quando rejeitado: o histórico evita reabrir a mesma discussão.
+Validação: cada pedido tem número, impacto com evidência e decisão de quem tem autoridade; a linha de base só mudou depois da aprovação; a decisão foi comunicada a quem é afectado.
+`
+    },
+    'forge-communication': {
+        description: 'Usar ao preparar uma comunicação a partes interessadas (estado, decisão, alteração, risco), para decidir quem precisa de saber o quê, redigir a partir de factos verificados e validar antes de enviar.',
+        body: `
+Finalidade: a pessoa certa recebe a informação certa, correcta e a tempo. Entradas: estado, decisões e riscos verificados. Resultado: plano de comunicação e textos validados. O kit não envia nada: a pessoa que assina envia.
+1. Mapear as partes interessadas: o interesse, a influência e o que precisam de saber ou de decidir. Quem decide recebe a decisão pedida, não só a informação.
+2. Por público: mensagem, canal, frequência e quem envia. Menos comunicações e mais úteis; um relatório igual para todos serve mal a cada um.
+3. Redigir a partir de factos com fonte e data. Separar factos, previsões e pedidos de decisão; não afirmar o que não foi verificado e marcar a incerteza.
+4. Coerência: ler as comunicações anteriores e não contradizer sem explicar o que mudou. Tom directo, sem eufemismos para más notícias (forge-prose para rever o texto em português europeu).
+5. Validação de quem assina antes de enviar (forge-checkpoint); registar o que foi enviado, a quem e o que se espera em resposta.
+Validação: cada afirmação tem fonte ou está marcada como previsão; cada público tem canal, frequência e responsável; o texto foi validado por quem assina; ficou registo do que foi enviado.
+`
+    },
+    'forge-budget': {
+        description: 'Usar ao acompanhar o orçamento de um projecto, para comparar o orçamento aprovado com os custos reais, calcular desvios e previsão com o método indicado e propor acções, sem inventar valores.',
+        body: `
+Finalidade: saber onde o dinheiro está a ir e para onde vai, com números que se podem verificar. Entradas: orçamento aprovado e custos reais com fonte. Resultado: desvios, previsão e acções propostas.
+1. Fixar moeda, âmbito e período. Cada valor tem fonte (factura, folha de horas, contrato, estimativa de alguém) e data; um valor sem fonte não entra: fica como «em falta».
+2. Separar custos reais de estimativas e de compromissos ainda não facturados; marcar cada um.
+3. Desvio por rubrica, absoluto e percentual, contra a linha de base aprovada, não contra o último valor visto.
+4. Previsão para o fim do projecto, dizendo o método (ao ritmo actual, ou orçamento restante por estimar de novo) e o intervalo; uma previsão é uma hipótese com a sua margem, não um valor exacto.
+5. Causas dos desvios com evidência e riscos de custo ainda abertos (forge-research).
+6. Acções (replaneamento, redução de âmbito, pedido de reforço) só para aprovação; qualquer alteração à linha de base passa por controlo de alterações (forge-change-control). Nunca comprometer custos.
+Validação: cada valor tem fonte e data; estimativas estão marcadas; os desvios e a previsão indicam o método; nenhuma acção de custo avançou sem aprovação; nenhum valor foi inventado.
+`
+    }
 };
 //# sourceMappingURL=skills-domain.js.map

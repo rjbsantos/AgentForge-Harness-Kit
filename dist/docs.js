@@ -74,7 +74,7 @@ export const guide = `# AgentForge Harness
 3. Não carregues mais nada à partida. Quando a tarefa o exigir, carrega só o necessário: \`.agentforge/GUIDE.md\` (encaminhamento, fluxos, perfis, grafo), \`.agentforge/MODEL_ROUTING.md\` (classificar a tarefa), \`.agentforge/work/context.md\` (retomar decisões), \`.agentforge/work/operator.json\` (preferências), \`.agentforge/CONTEXT_LEARNING.md\` (lições), \`.agentforge/roles/\` e \`.agentforge/workflows/\` (só os do fluxo escolhido).
 
 ## Perguntas
-Num pedido novo ou vago, usa \`forge-clarify\`: procura a resposta no projecto e faz só as perguntas que mudam o resultado, **no máximo quatro por mensagem, cada uma com uma só decisão e sem subperguntas** (assume o predefinido nas restantes e lista-as como pressupostos), cada uma com uma opção recomendada. Pergunta sempre antes de decisões caras de reverter (stack, dados, autenticação, custos, publicação); no resto, assume o predefinido e regista o pressuposto.
+Antes de iniciar um fluxo, valida o pedido com \`agentforge gate --prompt "…"\`: se \`ready\` for falso, faz só as perguntas de \`missing\` (no máximo quatro) e não inicies o fluxo. Num pedido novo ou vago, usa \`forge-clarify\`: procura a resposta no projecto e faz só as perguntas que mudam o resultado, **no máximo quatro por mensagem, cada uma com uma só decisão e sem subperguntas** (assume o predefinido nas restantes e lista-as como pressupostos), cada uma com uma opção recomendada. Pergunta sempre antes de decisões caras de reverter (stack, dados, autenticação, custos, publicação); no resto, assume o predefinido e regista o pressuposto.
 
 ## Limite do projecto e organização
 Confirma a raiz do projecto (a pasta indicada ou a raiz Git). Todas as alterações e artefactos (código, testes, relatórios, configurações, temporários) ficam dentro dela. Antes de cada escrita, cópia ou eliminação resolve o caminho e verifica que não sai da raiz nem atravessa uma ligação simbólica para fora; se sair, pára e pede instruções. Ficheiros externos só se forem fornecidos explicitamente, para leitura. Não inspecciones pastas pessoais, de sistema ou outros projectos.
@@ -87,6 +87,7 @@ Lê \`verbosity\` em \`operator.json\`. Com \`concise\`: começa pelo resultado,
 
 ## Estado e pontos de controlo
 \`.agentforge/work/state.md\` é a fonte de verdade: regista fluxo, fase, entradas aprovadas, artefactos e próximos passos, sem segredos. Se o estado entrar em conflito com a conversa, pára e confirma. Só mudas de fase com os critérios cumpridos. Depois de transferires o trabalho, actualiza o resumo ativo; lições só com evidência, como pendentes, até aprovação. Nunca alteres este manual automaticamente.
+Um fluxo corre sempre completo: \`agentforge flow start --workflow F\` regista os passos; cada passo fecha com \`--evidence\` ou \`--note\` (os de decisão humana, só com confirmação da pessoa) e \`flow close\` recusa passos pendentes. Um fluxo grande chama os menores indicados em \`composition\`.
 `;
 export const manual = `# AgentForge — guia detalhado (carregar a pedido)
 

@@ -43,7 +43,7 @@ test('MCP server lists read-only tools and answers plan, route and context calls
     assert.equal(byId.get(1).result.serverInfo.name, 'agentforge');
     const listed = byId.get(2).result.tools;
     assert.deepEqual(listed.map((tool: any) => tool.name).sort(),
-      ['agentforge_context', 'agentforge_graph', 'agentforge_insights', 'agentforge_lessons', 'agentforge_plan', 'agentforge_route']);
+      ['agentforge_context', 'agentforge_gate', 'agentforge_graph', 'agentforge_insights', 'agentforge_lessons', 'agentforge_plan', 'agentforge_route']);
     assert.ok(listed.every((tool: any) => tool.annotations.readOnlyHint));
     assert.equal(JSON.parse(byId.get(3).result.content[0].text).tier, 'thinking');
     assert.equal(JSON.parse(byId.get(4).result.content[0].text).workflow, 'repository-audit');

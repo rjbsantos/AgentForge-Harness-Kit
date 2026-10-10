@@ -17,8 +17,6 @@
 | --- | --- | --- |
 | Programador sénior | Defeito com falha reproduzível (`bug-investigation`) | Reproduz antes de corrigir **(bloqueante)**; indica a causa com etiqueta de confiança; teste de regressão que falhava antes; não faz push sem pedido **(bloqueante)** |
 | Programador sénior | Auditoria de repositório | Cada achado com ficheiro:linha e confiança; verifica referências dinâmicas antes de chamar «morto» **(bloqueante)**; não altera código sem aprovação **(bloqueante)** |
-| Editor | Artigo curto com três afirmações factuais | Cada afirmação tem fonte consultável **(bloqueante)**; factos, inferências e opiniões separados; sem citações inventadas **(bloqueante)**; texto em pt-PT sem os vícios listados em `forge-prose` |
-| Estudante | Resumo com referências | Referências existem **(bloqueante)**; limitações indicadas; o trabalho continua a ser da pessoa autora |
 | Analista de sistemas | Estado actual de um módulo | Cada afirmação AS-IS com fonte; impactos e critérios de aceitação rastreáveis |
 | Gestor de projetos de SI | Comprar ou desenvolver | Critérios definidos antes da avaliação; inclui manter a situação actual; risco aceite registado |
 | Todos | Pedido ambíguo | Pede clarificação em vez de adivinhar o perfil **(bloqueante)** |

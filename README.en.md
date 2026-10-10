@@ -6,7 +6,7 @@ AgentForge Harness Kit installs instructions and capabilities for AI coding CLIs
 
 ## What it provides
 
-- Thirteen working profiles and 22 specialist agents (project and IS management, AI and agent engineering, senior, frontend and backend development, design system, databases, context and memory, magazine editing, university study, systems analysis), 39 reusable skills (TDD, Python, .NET, React, SQL/PostgreSQL/MySQL, design system with a default, accessibility, visual validation, AI and prompt engineering, LangChain/LangGraph, Microsoft Agent Framework, memory, production readiness), `/af-…` commands (native in Claude Code and OpenCode), an end-to-end `/af-build` flow, a minimal startup (HARNESS.md and state only) and reusable skills and verifiable workflows.
+- Twelve working profiles and 21 specialist agents (project and IS management, AI and agent engineering, senior, frontend and backend development, design system, databases, context and memory, magazine editing, university study, systems analysis), 39 reusable skills (TDD, Python, .NET, React, SQL/PostgreSQL/MySQL, design system with a default, accessibility, visual validation, AI and prompt engineering, LangChain/LangGraph, Microsoft Agent Framework, memory, production readiness), `/af-…` commands (native in Claude Code and OpenCode), an end-to-end `/af-build` flow, a minimal startup (HARNESS.md and state only) and reusable skills and verifiable workflows.
 - Complexity-based model routing: it *recommends* a reasoning or an economy model; it never switches models or calls providers.
 - Local context and memory: project state, an active summary and lessons that need evidence and human approval. `lessons.json` is sealed with a hash; edits made outside the CLI are detected and the lessons are not reused until a person runs `learn reseal`.
 - Reversible installation: a manifest with file hashes, conflict detection, transactional writes (rollback on failure), path-traversal and symlink protection. User-modified files and work data are preserved on update and uninstall.
@@ -20,7 +20,7 @@ AgentForge Harness Kit installs instructions and capabilities for AI coding CLIs
 ## Quick start
 
 ```bash
-gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
+gh release download v0.12.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
 npm install -g ./agentforge-harness-kit-*.tgz
 agentforge install --project <project> --cli claude
 agentforge plan --project <project> --cli claude --prompt "Audit the repository"
@@ -48,7 +48,7 @@ Requires Node.js 20+. The repository is private; download a release tarball with
 
 ```bash
 gh auth login
-gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
+gh release download v0.12.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
 npm install -g ./agentforge-harness-kit-*.tgz
 agentforge install --project /path/to/project --cli all   # opencode | codex | claude | antigravity | all
 ```

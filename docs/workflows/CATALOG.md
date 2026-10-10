@@ -8,7 +8,6 @@ Na instalação, cada fluxo é escrito em formato JSON em `.agentforge/workflows
 
 Os fluxos combinam competências existentes, sem as duplicar:
 
-- Artigos e investigação académica: `forge-research`, `forge-fact-check` e `forge-verify`.
 - Análise de sistemas: `forge-requirements`, `forge-research` e `forge-verify`.
 - Auditoria de repositórios: `forge-audit`, `forge-research`, `forge-performance` e `forge-verify`.
 - Decisão de solução: `forge-requirements`, `forge-research`, `forge-tradeoff` e `forge-verify`.
@@ -34,6 +33,53 @@ O fluxo `repository-audit` pode repartir a análise de qualidade, segurança e d
 | Manutenção | `change-request` e `bug-investigation` | pedido numerado, análise de impacto, aprovação do âmbito, ramo próprio, testes primeiro, pull request sem merge automático e arquivo |
 
 Os pontos de validação humana usam `forge-checkpoint`: silêncio não é aprovação e cada passagem fica registada em `.agentforge/work/checkpoints/`. Segurança Crítica ou Elevada devolve o trabalho à implementação. `bug-investigation` mantém a regra de implementar só com autorização.
+
+## Composição: fluxos que se completam
+
+Um fluxo grande chama um menor em vez de o repetir. O campo `uses` de cada fluxo diz em que passo, quando e que artefacto passa de um para o outro; `agentforge plan` devolve-o em `composition` e um teste impede ciclos e referências inexistentes.
+
+| Fluxo | Chama | No passo | Quando |
+| --- | --- | --- | --- |
+| `forge-build` | `requirements-analysis` | 2 | os requisitos ainda não estão aprovados |
+| `forge-build` | `security-assessment` | 10 | sempre, antes de fechar o ramo |
+| `change-request` | `security-assessment` | 5 | toca autenticação, dependências ou entradas externas |
+| `bug-investigation` | `change-request` | 4 | a causa está no código e a correcção foi autorizada |
+| `incident-analysis` | `bug-investigation` | 5 | a causa confirmada é um defeito de código |
+| `system-analysis` | `requirements-analysis` | 2 | os requisitos ainda não estão numerados |
+| `solution-briefing` | `tech-exploration` | 3 | a decisão depende de uma experiência |
+| `project-status` | `risk-review` | 2 | não existe um registo de riscos actual |
+| `ai-solution-design` | `guardrail-design` | 3 | sempre |
+| `agent-build` | `guardrail-design`, `context-memory-setup`, `prompt-engineering`, `ai-evaluation`, `red-team` | 3 a 6 | conforme o agente (ferramentas, memória, prompts) |
+| `red-team` | `guardrail-design` | 2 | não existem guardrails escritos |
+| `production-cleanup` | `repository-audit`, `technical-documentation` | 2, 10 | sem auditoria sobre o mesmo commit; documentação desfasada |
+| `release-closure` | `repository-audit`, `security-assessment`, `sast-remediation`, `technical-documentation`, `production-cleanup` | 3, 6, 6, 8, 10 | sem relatório sobre o mesmo commit; SAST por tratar; limpeza aprovada |
+
+Cadeia habitual: `incident-analysis` → `bug-investigation` → `change-request`; e `repository-audit` → `production-cleanup` → `release-closure`.
+
+## Fluxos de gestão de projecto
+
+| Fluxo | Resultado | Complementa |
+| --- | --- | --- |
+| `project-plan` | Plano com pacotes, estimativas com intervalo e fonte, dependências, marcos verificáveis e linha de base | chama `requirements-analysis` e `risk-review` |
+| `change-control` | Pedido CC-NNN com impacto em âmbito, prazo e custo, decisão de quem tem autoridade e linha de base actualizada | chama `project-plan`, `stakeholder-communication` e `change-request` (se a alteração for técnica) |
+| `stakeholder-communication` | Plano de comunicação e textos a partir de factos, validados por quem assina; o kit não envia | usado por `project-status` e `meeting-followup` |
+| `budget-tracking` | Orçamento aprovado vs custos reais com fonte, desvios e previsão com método | chama `change-control` quando a correcção exige reforço ou nova linha de base |
+| `project-status`, `meeting-followup`, `risk-review`, `requirements-analysis` | Estado, acta, riscos e requisitos; agora com 4 passos, linha de base, factos separados de previsões e aprovação | chamam os anteriores conforme o caso |
+
+Cadeia habitual: `requirements-analysis` → `project-plan` → `project-status` ↔ `risk-review` / `budget-tracking`; uma decisão que mexe na linha de base passa por `change-control`.
+
+Os valores (datas, custos, estimativas) vêm sempre de uma fonte indicada; sem fonte ficam «em falta». Nenhum fluxo envia mensagens nem altera um orçamento.
+
+## Fluxos de qualidade, segurança e compatibilidade
+
+| Fluxo | Agentes | Resultado |
+| --- | --- | --- |
+| `sast-remediation` | `secops`, `lead-developer`, `qa` | Relatório do Checkmarx (ou outro SAST) triado com evidência, correcções com testes e comparação com o relatório novo |
+| `edge-modernization` | `frontend-developer`, `devops`, `qa` | Aplicação sem dependência do modo IE, validada no Edge e optimizada, com plano de reversão |
+| `guardrail-design` | `secops`, `ai-engineer` | Regras GR-NN testáveis por camada, com o que é imposto em código e o que é só instrução |
+| `red-team` | `security-tester`, `lead-developer` | Corpus de ataque, veredicto por caso com três execuções e testes de regressão |
+
+`guardrail-design` e `red-team` complementam-se: o primeiro escreve o contrato, o segundo ataca-o. Em `red-team` e `agent-build` o ataque só corre em ambiente local, com dados sintéticos, nunca em produção nem em sistemas de terceiros.
 
 ## Fluxos de desenvolvimento especializados
 

@@ -9,7 +9,7 @@ O kit suporta **OpenCode, Codex CLI, Claude Code e Google Antigravity**. Instala
 ## Arranque rápido
 
 ```bash
-gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
+gh release download v0.12.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern 'agentforge-harness-kit-*.tgz'
 npm install -g ./agentforge-harness-kit-*.tgz
 agentforge install --project <projeto> --cli claude     # opencode | codex | claude | antigravity | all
 agentforge plan --project <projeto> --cli claude --prompt "Audita o repositório"
@@ -22,11 +22,11 @@ Nos exemplos, `<projeto>` é a pasta do projeto (por exemplo `/home/ana/app` ou 
 
 ## O que oferece
 
-- **Treze perfis de trabalho** e 22 agentes especializados: gestão de projectos e de SI, engenharia de IA e de agentes, programação sénior, frontend, backend, design system, bases de dados, contexto e memória, edição de revistas, estudo universitário e análise de sistemas.
+- **Doze perfis de trabalho** e 21 agentes especializados, 33 fluxos: gestão de projectos e de SI, engenharia de IA e de agentes, programação sénior, frontend, backend, design system, bases de dados, contexto e memória, edição de revistas, estudo universitário e análise de sistemas.
 - **Projecto de ponta a ponta:** `/af-build` conduz da ideia ao software testado — clarificação com perguntas, requisitos, arquitectura, plano, implementação com testes primeiro, revisão, segurança, qualidade, infraestrutura e documentação, com validação humana em cada passagem.
 - **Comandos `/af-…`:** nativos no Claude Code e no OpenCode; listados com a explicação ao arrancar em qualquer CLI (ver [comandos](docs/operations/COMMANDS.md)).
 - **Arranque mínimo:** só o `HARNESS.md` e o estado (cerca de 1000 tokens estimados); o menu, o guia e o contexto carregam-se a pedido. No Claude Code, a listagem nativa de skills, agentes e comandos acrescenta cerca de 3300 tokens por sessão (medido por `agentforge tokens`, em `nativeListings`).
-- **41 competências reutilizáveis**, incluindo TDD, Python, .NET, React, SQL/PostgreSQL/MySQL, design system (com um predefinido), acessibilidade, validação visual, engenharia de IA e de prompts, LangChain/LangGraph, Microsoft Agent Framework, memória e preparação para produção. Entre elas: análise de requisitos, investigação, verificação de factos, auditoria e higiene do código, implementação, testes, análise de desempenho, tomada de decisão, experimentação técnica, encaminhamento de modelos e gestão de contexto.
+- **50 competências reutilizáveis**, incluindo TDD, Python, .NET, React, SQL/PostgreSQL/MySQL, design system (com um predefinido), acessibilidade, validação visual, engenharia de IA e de prompts, LangChain/LangGraph, Microsoft Agent Framework, memória e preparação para produção. Entre elas: análise de requisitos, investigação, verificação de factos, auditoria e higiene do código, implementação, testes, análise de desempenho, tomada de decisão, experimentação técnica, encaminhamento de modelos e gestão de contexto.
 - **Higiene do projecto:** identifica código, ficheiros e dependências potencialmente mortos ou obsoletos, com evidência e verificação contra referências dinâmicas; não remove nada sem aprovação.
 - **Fluxos de trabalho verificáveis:** análise de incidentes, auditoria de repositórios, desenho e avaliação de soluções de IA, análise de sistemas, exploração técnica, automação de processos, entre outros.
 - **Encaminhamento por complexidade:** recomenda modelos de raciocínio para decisões incertas ou de risco elevado e modelos económicos para execução delimitada e aprovada. Só selecciona um modelo quando o CLI suporta essa opção e existe um modelo configurado.
@@ -58,8 +58,8 @@ Requer Node.js 20 ou posterior. O repositório é privado, pelo que a conta Git 
 ```powershell
 gh auth login
 npm uninstall -g agentforge-harness-kit
-gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.11.0.tgz
-npm install -g .\agentforge-harness-kit-0.11.0.tgz
+gh release download v0.12.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.12.0.tgz
+npm install -g .\agentforge-harness-kit-0.12.0.tgz
 Get-Command agentforge
 agentforge install --project <projeto> --cli all
 agentforge status --project <projeto>
@@ -69,8 +69,8 @@ agentforge status --project <projeto>
 ```bash
 gh auth login
 npm uninstall -g agentforge-harness-kit
-gh release download v0.11.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.11.0.tgz
-npm install -g ./agentforge-harness-kit-0.11.0.tgz
+gh release download v0.12.0 --repo rjbsantos/AgentForge-Harness-Kit --pattern agentforge-harness-kit-0.12.0.tgz
+npm install -g ./agentforge-harness-kit-0.12.0.tgz
 command -v agentforge
 agentforge install --project ~/WorkSpace/Groot --cli opencode
 ```
@@ -84,7 +84,7 @@ O OpenCode recebe também o comando `/agentforge`, que apresenta na conversa uma
 O tarball também pode ser instalado a partir de qualquer localização local:
 
 ```powershell
-npm install -g D:\transferencias\agentforge-harness-kit-0.11.0.tgz
+npm install -g D:\transferencias\agentforge-harness-kit-0.12.0.tgz
 ```
 
 O kit não está publicado no registo npm. O tarball de uma versão deve ser obtido na página oficial de [versões do projeto](https://github.com/rjbsantos/AgentForge-Harness-Kit/releases); como o repositório é privado, autentique-se no GitHub para o descarregar.
