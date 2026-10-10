@@ -12,6 +12,7 @@
     "test": "npm run build && node scripts/test.mjs",
     "smoke": "npm run build && node scripts/smoke.mjs",
     "ci": "node scripts/ci.mjs",
+    "hooks:install": "git config core.hooksPath .githooks",
     "coverage": "npm run build && node scripts/test.mjs --experimental-test-coverage"
   },
   "engines": {

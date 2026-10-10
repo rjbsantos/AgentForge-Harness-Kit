@@ -58,6 +58,22 @@ agentforge mcp --project <projeto>            # servidor MCP só de leitura
 - `hooks install` acrescenta um hook `PostToolUse` a `.claude/settings.json`, preservando o resto da configuração. Regista apenas a hora e o nome da ferramenta em `.agentforge/work/events.jsonl` (nunca argumentos, resultados ou conversas) e requer o comando `agentforge` no PATH. `agentforge hooks remove` desfaz a alteração. O `insights` inclui a contagem por ferramenta. Só o comando exacto escrito pelo kit é reconhecido: se for alterado, `doctor` falha e `hooks install` recusa reinstalar até o rever. O stdin do hook é limitado a 64 KB e `events.jsonl` roda para `events.1.jsonl` acima de 1 MiB; `operations.jsonl` é arquivado em `operations.<data>.jsonl` acima de 5 MiB (os indicadores contam só o ficheiro actual).
 - `agentforge mcp` expõe `agentforge_plan`, `agentforge_route`, `agentforge_context`, `agentforge_lessons` e `agentforge_insights`. Não aprova lições, não regista execuções e não altera ficheiros. Processa uma mensagem de cada vez, recusa mensagens acima de 1 MiB e limita `budgetTokens` a 32000; um `approved: true` só tem efeito se o último checkpoint em `.agentforge/work/checkpoints/` tiver `veredicto: APROVADO`. Exemplo de configuração: `{ "mcpServers": { "agentforge": { "command": "agentforge", "args": ["mcp", "--project", "/caminho/do/projeto"] } } }`.
 
+## Porta de entrada, execução de fluxos e composição
+
+```bash
+agentforge gate --prompt "Corrige isto"                       # ready:false + perguntas; termina com 3
+agentforge flow start --workflow release-closure
+agentforge flow done --step 1 --evidence .agentforge/work/baseline.txt
+agentforge flow done --step 2 --note "trace sem lacunas"
+agentforge flow skip --step 7 --reason "sem interface neste projecto"
+agentforge flow status
+agentforge flow close                                         # recusa se houver passos pendentes
+```
+
+- `gate` mede se o pedido é específico (objectivo, alvo concreto e os dados que o fluxo exige) e devolve no máximo quatro perguntas com uma recomendação cada. É determinístico e não usa modelo. `plan` inclui o mesmo resultado em `gate`: um pedido vago fica com `status: needs-context`. Também existe como ferramenta MCP (`agentforge_gate`).
+- `flow` guarda o estado em `.agentforge/work/flow.json` e arquiva em `.agentforge/work/flows/` ao fechar. Um passo só avança depois dos anteriores (os paralelos podem ir por qualquer ordem), exige `--evidence` (ficheiro do projecto, guardado com SHA-256) ou `--note`, e os passos de decisão humana (validação N1/N2, autorização, aprovação) só avançam com confirmação num terminal, como `learn approve`. Dispensar um passo exige `--reason`. Tudo fica em `audit.jsonl`.
+- `composition` (em `plan`) lista os sub-fluxos que complementam o fluxo escolhido, o passo, a condição e o artefacto que passa de um para o outro.
+
 ## Rastreabilidade e evidência
 
 ```bash

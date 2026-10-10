@@ -2,6 +2,7 @@ import { profiles, tools, validateCatalog, workflows } from './capabilities.js';
 import { route } from './routing.js';
 import { loadOperator } from './operator.js';
 import { ambiguityMargin, minimumScore, score } from './intent.js';
+import { assessPrompt } from './gate.js';
 const explicit = Object.entries(profiles).map(([role, profile]) => ({ role: role, pattern: new RegExp(`\\b${role.replace(/-/g, '[ -]')}\\b|\\b${profile.title}\\b`, 'i') }));
 export function select(prompt, requestedRole, preference = []) {
     validateCatalog();
@@ -37,7 +38,7 @@ export function select(prompt, requestedRole, preference = []) {
         throw new Error(`Fluxo não identificado para ${indicated}; especifique --workflow (${profiles[indicated].workflows.join(', ')})`);
     }
     const hint = preference.length ? ` (perfis habituais: ${preference.join(', ')})` : '';
-    throw new Error(`Perfil e fluxo não identificados; indique --role e --workflow${hint}`);
+    throw new Error(`Perfil e fluxo não identificados; indique --role e --workflow${hint}, ou refine o pedido (\`agentforge gate --prompt …\` diz o que falta)`);
 }
 export function choose(prompt, requestedRole) {
     const { role, workflow } = select(prompt, requestedRole);
@@ -60,6 +61,7 @@ export async function plan(project, cli, prompt, options = {}) {
     const workflow = workflows[selection.workflow];
     const decision = await route(project, cli, prompt, { ...options, cautious: operator.riskPosture === 'cautious' });
     const { tier, complexity, reasons, model, modelSelection } = decision;
+    const gate = assessPrompt(prompt, selection.workflow);
     if (!workflow.tools.every(tool => tool in tools))
         throw new Error('Ferramenta desconhecida no catálogo');
     return {
@@ -84,7 +86,10 @@ export async function plan(project, cli, prompt, options = {}) {
             maxDelegationDepth: 1,
             singleWriter: true
         },
-        model: { tier, complexity, reasons, model, modelSelection }, status: 'proposed'
+        model: { tier, complexity, reasons, model, modelSelection },
+        composition: workflow.uses,
+        gate,
+        status: gate.ready ? 'proposed' : 'needs-context'
     };
 }
 //# sourceMappingURL=orchestrator.js.map

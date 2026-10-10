@@ -244,7 +244,7 @@ Validação: cada camada tem escopo, retenção e limite de tamanho; não há se
         description: 'Usar ao fechar uma versão, para decidir o tipo de versão por Semantic Versioning, actualizar versão, changelog e notas, passar o critério de publicação, criar o commit e a tag só com autorização, verificar depois da publicação e preparar a reversão.',
         body: `
 Finalidade: fechar uma versão de forma verificável, reversível e só com autorização. Entradas: ramo com o trabalho da versão e a checklist \`release-closure\`. Resultado: versão, changelog, notas, tag e relatório final.
-1. Pré-condições: estado do repositório limpo, o trabalho aprovado integrado no ramo principal por uma pessoa e a suite completa verde a partir de um estado limpo, com a saída real guardada. Sem isto não avançar.
+1. Pré-condições: estado do repositório limpo, o trabalho aprovado integrado no ramo principal por uma pessoa e a suite completa verde a partir de um estado limpo, com a saída real guardada. Validar primeiro na máquina (por exemplo \`npm run ci\` ou o equivalente do projecto) e só no fim no remoto: a CI remota confirma, não descobre. Sem isto não avançar.
 2. Tipo de versão por Semantic Versioning, justificado pela lista de alterações: Major para alterações incompatíveis, Minor para funcionalidades novas compatíveis, Patch para correcções compatíveis. Uma release intermédia com funcionalidades novas é normalmente Minor; não subir a Major só por ser uma release nova. Propor e pedir aprovação.
 3. Actualizar o número da versão em todos os locais: procurar a versão actual no repositório (manifestos, ficheiros de bloqueio, documentação, constantes, cabeçalhos do changelog) em vez de confiar na memória. O changelog e as notas descrevem o que foi efectivamente alterado (histórico desde a última tag), não intenções.
 4. Build final a partir de um estado limpo e validação dos artefactos (conteúdo, versão, tamanho). Confirmar que migrações e configurações estão preparadas e têm reversão.
@@ -268,5 +268,58 @@ Finalidade: provar os percursos críticos do utilizador no browser, e dizer com 
 Validação: cada fluxo da lista está testado ou declarado como não testado com a razão; a execução tem saída real e relatório; não há testes saltados nem repetições a esconder instabilidade; os cenários críticos passam antes da release.
 `
     },
+    'forge-sast-remediation': {
+        description: 'Usar ao tratar um relatório de análise estática de segurança (por exemplo do Checkmarx), para triar cada achado com evidência no código, corrigir os confirmados com testes e preparar a reanálise, sem suprimir achados sem justificação aprovada.',
+        body: `
+Finalidade: transformar um relatório de scan em correcções verificadas e em achados justificados. Entradas: relatório exportado (XML, CSV, JSON ou PDF) e o código. Resultado: tabela de achados com estado e evidência, correcções em ramo próprio e preparação da reanálise.
+1. Confirmar de que ramo e commit é o relatório e a data. Se o código mudou desde o scan, avisar: as linhas podem estar desfasadas e os achados têm de ser reconfirmados. Não executar o scan nem enviar código para fora sem autorização.
+2. Normalizar numa tabela: identificador, regra ou consulta, gravidade, CWE quando existir, ficheiro e linha da origem e do destino quando o relatório traz o caminho do fluxo de dados, e o estado de triagem anterior.
+3. Triar abrindo o código em cada local: confirmado, falso positivo ou por esclarecer. Um falso positivo exige uma razão concreta (sanitização existente, código inalcançável, valor que o atacante não controla) e aprovação humana antes de ser marcado; indicar a confiança (\`EXTRACTED\`, \`INFERRED\` ou \`AMBIGUOUS\`).
+4. Agrupar por causa-raiz (a mesma função ou a mesma validação em falta) para corrigir uma vez e priorizar por gravidade, possibilidade de exploração e exposição.
+5. Corrigir em lotes pequenos, em ramo próprio e com o teste que demonstra a vulnerabilidade escrito primeiro (forge-security-testing): consultas parametrizadas, codificação de saída, validação à entrada, segredos fora do código. Nunca desactivar a regra, marcar como suprimido nem esconder o achado.
+6. Componentes vulneráveis (análise de composição): propor a versão corrigida compatível e correr a suite completa antes e depois.
+7. Preparar a reanálise: lista dos achados tratados com commit; depois de a pessoa voltar a correr o scan, comparar o relatório novo com o anterior (resolvidos, persistentes, novos) e não declarar concluído se surgirem achados novos.
+Validação: cada achado tem estado, evidência (ficheiro:linha, teste, commit) e justificação; nenhum falso positivo ou adiamento sem aprovação; cada correcção tem um teste que falhava antes e passa agora; o relatório novo foi comparado com o anterior.
+`
+    },
+    'forge-edge-compat': {
+        description: 'Usar ao modernizar uma aplicação web para o Microsoft Edge e deixar de depender do modo de compatibilidade do Internet Explorer, para inventariar as construções legadas, corrigi-las em lotes com testes, optimizar para o Edge e desligar a compatibilidade com segurança.',
+        body: `
+Finalidade: uma aplicação que corre em modo padrão no Edge sem modo de compatibilidade, medida e validada. Entradas: código da aplicação, navegadores suportados e configuração do Edge. Resultado: inventário, correcções por lote, validação no Edge e plano de reversão.
+1. Inventariar com pesquisa no código (HTML, JavaScript, CSS e configuração do servidor), cada achado com ficheiro e linha: forçar o modo de documento (\`X-UA-Compatible\` em meta ou cabeçalho), DOCTYPE em falta ou antigo (modo quirks), comentários condicionais \`<!--[if IE]>\`, \`document.documentMode\`, \`ActiveXObject\` e \`.htc\`, \`attachEvent\` e \`detachEvent\`, \`window.event\`, \`document.all\`, \`showModalDialog\`, VBScript, \`filter: progid\`, \`expression()\` e prefixos \`-ms-\` obsoletos, detecção de \`MSIE\` ou \`Trident\` no \`userAgent\`, e polyfills ou alvos de compilação (\`browserslist\`, Babel) para o IE.
+2. Inventariar à parte a configuração fora do código: lista de sites do modo Enterprise ou do modo Internet Explorer no Edge, cabeçalhos e políticas de grupo. Isto entrega-se por escrito a quem o gere; não se altera sozinho.
+3. Classificar cada achado: remover, substituir por API padrão (\`addEventListener\`, \`fetch\`, \`classList\`, \`Promise\`), reescrever (ActiveX por uma alternativa web ou um serviço) ou bloqueado (componente de terceiros sem alternativa), com esforço e risco.
+4. Corrigir por categoria em lotes pequenos, em ramo próprio e com um teste por lote: DOCTYPE HTML5, remoção do forçar-modo, detecção de funcionalidades em vez de detecção de navegador. Só retirar polyfills e alvos do IE depois de confirmar os navegadores suportados.
+5. Validar no Edge: suite completa, testes ponta a ponta com o canal do Edge (forge-e2e), acessibilidade, formulários, layout e impressão; confirmar que as páginas abrem em modo padrão.
+6. Optimizar para o Edge a partir do código, só com medição antes e depois: recursos que bloqueiam a renderização, \`defer\` e \`async\`, imagens, CSS e APIs modernas no lugar de hacks.
+7. Desligar a compatibilidade e retirar o site da lista só depois de validado, com plano de reversão (como voltar atrás e quem decide) e autorização expressa.
+Validação: inventário com ficheiro e linha e contagem antes e depois; nenhuma construção da lista permanece sem justificação; suite e testes ponta a ponta verdes no Edge; páginas em modo padrão; a configuração externa foi entregue por escrito; nada foi desligado sem plano de reversão e autorização.
+`
+    },
+    'forge-guardrails': {
+        description: 'Usar ao definir os limites de um agente, prompt ou aplicação com IA, para os escrever como regras testáveis por camada (entrada, contexto, ferramentas, saída, dados e escalada humana) e distinguir o que é imposto em código do que é só instrução.',
+        body: `
+Finalidade: limites que se podem verificar, não intenções. Entradas: caso de uso, dados permitidos e modelo de ameaças. Resultado: tabela de regras GR-NN, verificações e o que fica só como instrução.
+1. Partir do que nunca pode acontecer (fuga de dados ou segredos, acção irreversível sem aprovação, saída que executa código) e dos riscos de IA aplicáveis: injecção de instruções directa e indirecta, excesso de agência, saída insegura, consumo sem limite.
+2. Uma regra por camada, com identificador: entrada (validação, limite de tamanho, tratar o conteúdo externo como dados e nunca como instruções); contexto (separar instruções de dados); ferramentas (privilégio mínimo, aprovação para acções irreversíveis, limites de utilização); saída (esquema, sem segredos, codificação para o destino); dados (o que nunca sai); escalada humana (quando parar e perguntar).
+3. Cada regra tem: identificador GR-NN, objectivo, como se verifica (teste ou verificação automática) e a acção ao falhar (bloquear, pedir confirmação ou registar).
+4. Implementar em código o que é verificável (validadores, esquemas, listas de permissão, limites). O que depende só de o modelo obedecer fica marcado como «só instrução»: não é uma garantia e não pode ser descrito como tal.
+5. Entregar a tabela ao red team (forge-red-team): é o contrato que ele ataca.
+Validação: cada regra tem identificador, verificação e acção ao falhar; as que dependem só do modelo estão marcadas como não impostas; existe um teste que falha quando cada regra imposta é violada.
+`
+    },
+    'forge-red-team': {
+        description: 'Usar para atacar de forma controlada um prompt, agente ou aplicação com IA em ambiente local, para provar se os guardrails resistem a injecção de instruções, fuga de dados, abuso de ferramentas e desvio de objectivo, e deixar um conjunto de testes de regressão.',
+        body: `
+Finalidade: encontrar como os limites falham antes de outra pessoa o fazer, sem sair do projecto. Entradas: guardrails GR-NN, modelo de ameaças e o alvo. Resultado: relatório com veredicto por caso e corpus de regressão.
+1. Confirmar a autorização escrita, que o alvo é do projecto e que o ambiente é local ou de teste com dados sintéticos. Nunca produção, nunca sistemas ou modelos de terceiros, nunca dados reais.
+2. Partir dos guardrails e do modelo de ameaças; um ataque sem regra a verificar só gera ruído. Se não existirem, escrevê-los primeiro (forge-guardrails).
+3. Construir o corpus por categoria: injecção directa e indirecta (documentos, páginas e resultados de ferramentas), extracção do prompt de sistema, fuga de dados e segredos, abuso de ferramentas e permissões, desvio de objectivo e tentativas de contornar regras, ofuscação (codificação, outros idiomas, partição do pedido) e consumo excessivo de recursos.
+4. Executar cada caso três vezes, porque o comportamento não é determinístico, e registar entrada, resultado esperado, observado, veredicto (resistiu, falhou ou inconclusivo) e gravidade, com a saída real.
+5. Consolidar por gravidade, declarar o que não foi testado e pedir aprovação antes de corrigir. Usar o mínimo de conteúdo nocivo necessário para provar o achado e nenhuma exfiltração real.
+6. Corrigir só o aprovado com teste primeiro; cada falha passa a ser um teste de regressão e o corpus completo volta a correr, comparando com a primeira execução.
+Validação: autorização, alvo e ambiente indicados; cada caso tem esperado, observado, veredicto e três execuções reais; o que não foi testado está declarado; cada falha corrigida tem um teste de regressão e a segunda execução foi comparada com a primeira.
+`
+    }
 };
 //# sourceMappingURL=skills-domain.js.map

@@ -29,7 +29,7 @@ O perfil do operador, definido em `src/operator.ts`, ajuda a desempatar pedidos 
 | Ferramenta | Identifica uma capacidade do CLI que deve ser confirmada |
 | Modelo de saída | Define a estrutura esperada do resultado |
 
-Os treze perfis partilham competências através de `src/capabilities.ts`. O catálogo é gerado em `.agentforge/CAPABILITIES.md`, `.agentforge/workflows/`, `.agentforge/templates/` e nos formatos nativos suportados pelo CLI seleccionado. As instruções e definições dos agentes encontram-se em `src/skills.ts`, `src/roles.ts`, `src/docs.ts` e `src/generators.ts`, reunidos por `src/catalog.ts`.
+Os doze perfis partilham competências através de `src/capabilities.ts`. O catálogo é gerado em `.agentforge/CAPABILITIES.md`, `.agentforge/workflows/`, `.agentforge/templates/` e nos formatos nativos suportados pelo CLI seleccionado. As instruções e definições dos agentes encontram-se em `src/skills.ts`, `src/roles.ts`, `src/docs.ts` e `src/generators.ts`, reunidos por `src/catalog.ts`.
 
 ## Limite entre proposta e execução
 

@@ -5,6 +5,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { generated, shared, targets } from './catalog.js';
 import { kitVersion } from './version.js';
 import { beginning, block, ending, instructions, superseded } from './blocks.js';
+import { retired } from './retired.js';
 export { targets };
 const manifestPath = '.agentforge/manifest.json';
 const digest = (text) => createHash('sha256').update(text).digest('hex');
@@ -60,7 +61,7 @@ async function load(root) {
         if (!entry || !Array.isArray(entry.owners) || !entry.owners.length ||
             entry.owners.some(owner => !targets.includes(owner)) ||
             typeof entry.hash !== 'string' || !/^[a-f0-9]{64}$/.test(entry.hash) ||
-            !entry.owners.every(owner => key in owned(owner) || key in shared)) {
+            !entry.owners.every(owner => key in owned(owner) || key in shared || retired.has(key))) {
             throw new Error(`Entrada inválida no manifesto: ${key}`);
         }
     }
@@ -68,7 +69,7 @@ async function load(root) {
 }
 // Escrita atómica: ficheiro temporário único + rename. Um temporário deixado por uma falha anterior
 // nunca bloqueia uma nova tentativa, porque cada escrita usa um nome próprio.
-async function atomicWrite(path, content) {
+export async function atomicWrite(path, content) {
     const tmp = `${path}.${randomUUID()}.tmp`;
     try {
         await writeFile(tmp, content, { flag: 'wx' });
@@ -138,6 +139,23 @@ export async function install(project, selected, dryRun = false) {
     const writes = [];
     const stagedInstructions = new Map();
     const changes = [...notices];
+    // Ficheiros que versões anteriores geravam e já não existem: removem-se se não foram alterados;
+    // se o utilizador os alterou, ficam onde estão e deixam de ser geridos.
+    const obsolete = [];
+    for (const [key, entry] of Object.entries(manifest.files)) {
+        if (!retired.has(key) || key in desired)
+            continue;
+        const actual = await text(root, key);
+        delete next.files[key];
+        if (actual === undefined)
+            continue;
+        if (digest(actual) === entry.hash) {
+            obsolete.push(key);
+            changes.push(`remover ${key} (retirado do kit)`);
+        }
+        else
+            changes.push(`${key} retirado do kit mas alterado por si: preservado e deixa de ser gerido`);
+    }
     for (const [key, { content, owners }] of Object.entries(desired)) {
         const actual = await text(root, key);
         const previous = next.files[key];
@@ -180,7 +198,9 @@ export async function install(project, selected, dryRun = false) {
         changes.push(`registar versão do kit ${kitVersion}${manifest.kit ? ` (era ${manifest.kit})` : ''}`);
     }
     if (!dryRun) {
-        await transaction(root, writes.map(([key]) => key), async () => {
+        await transaction(root, [...obsolete, ...writes.map(([key]) => key)], async () => {
+            for (const key of obsolete)
+                await rm(safe(root, key), { force: true });
             for (const [key, content] of writes) {
                 const path = safe(root, key);
                 await mkdir(dirname(path), { recursive: true });

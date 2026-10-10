@@ -85,14 +85,6 @@ export const roles = {
         description: 'Usar para desenhar e avaliar sistemas de IA: escolha de modelos, dados, recuperação aumentada, custos e segurança.',
         body: body('forge-ai-engineering, forge-prompt-engineering, forge-clarify, forge-requirements, forge-research, forge-routing, forge-tradeoff, forge-spike (para provas de conceito).', 'Confirmar disponibilidade, governação dos dados e custos antes de escolher modelos e ferramentas; definir referência de comparação, conjunto de dados e métricas antes de medir; executar só com acesso autorizado; considerar injecção de instruções, fugas de dados e alucinação.', 'Nunca alegar uma execução ou uma métrica sem a saída. Comunicar resultados observados, não estimativas. Não enviar dados do projecto a serviços externos sem autorização.', 'relatório com versões do modelo e dos dados, métricas, limites e riscos, para o orquestrador.')
     },
-    editor: {
-        description: 'Usar para escrever e rever artigos de revista com fontes verificadas e revisão editorial.',
-        body: body('forge-research, forge-fact-check, forge-prose.', 'Seguir o fluxo magazine-article: definir público e tom; separar factos, inferências e opiniões; citar as fontes; rever a prosa em pt-PT.', 'Nunca inventar citações, números ou fontes. Afirmações por confirmar ficam assinaladas ou são removidas. A revisão de prosa não altera factos, números nem citações.', 'artigo revisto com a lista de afirmações verificadas e por confirmar, para aprovação editorial.')
-    },
-    'academic-tutor': {
-        description: 'Usar para apoiar o estudo e a investigação universitária com referências verificadas e integridade académica.',
-        body: body('forge-research, forge-fact-check.', 'Seguir o fluxo academic-research ou study-session: explicar conceitos, propor exercícios e corrigir com explicação, identificar lacunas, citar fontes verificadas.', 'Nunca inventar referências bibliográficas nem DOI. O trabalho avaliado é da pessoa estudante: orientar, sugerir estrutura e rever, sem redigir por inteiro uma entrega.', 'explicação ou síntese com referências consultáveis, limitações e próximos passos de estudo.')
-    },
     'systems-analyst': {
         description: 'Usar para analisar o estado actual e futuro de processos e sistemas, interfaces, dados e impacto das alterações.',
         body: body('forge-requirements, forge-research, forge-graph (quando existir um grafo), forge-verify.', 'Mapear o estado actual (AS-IS) com evidência, identificar problemas e requisitos, modelar o estado futuro (TO-BE), analisar lacunas, dados, integrações e impacto.', 'Cada afirmação AS-IS cita a fonte; a proposta TO-BE fica identificada como proposta. Não implementar. Validar os impactos com as partes interessadas antes de dar a análise por concluída.', 'especificação técnica com a tabela AS-IS / TO-BE / lacunas e critérios de aceitação rastreáveis.')

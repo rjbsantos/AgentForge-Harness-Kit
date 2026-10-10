@@ -2,6 +2,13 @@
 
 ## Por publicar
 
+- **Composição de fluxos:** cada fluxo declara os sub-fluxos que chama (`uses`: passo, condição e artefacto que passa de um para o outro). `release-closure` passa a orquestrar `repository-audit`, `security-assessment`, `sast-remediation`, `technical-documentation` e `production-cleanup`; `bug-investigation` entrega a `change-request`; `incident-analysis` a `bug-investigation`; `agent-build` chama `guardrail-design`, `prompt-engineering`, `context-memory-setup`, `ai-evaluation` e `red-team`. `plan` devolve `composition`; um teste impede ciclos e referências inexistentes.
+- **Porta de entrada (`agentforge gate`, `agentforge_gate` no MCP, campo `gate` em `plan`):** um pedido vago é recusado com no máximo quatro perguntas e uma recomendação cada, antes de gastar um fluxo. Determinístico, sem modelo. `plan` devolve `status: needs-context`.
+- **Execução de fluxos (`agentforge flow`):** `start`, `status`, `done`, `skip`, `close`, `abandon`. Passos por ordem (os paralelos por qualquer ordem), com evidência (SHA-256) ou nota; passos de decisão humana só com confirmação em terminal; `close` recusa passos pendentes; tudo em `audit.jsonl`.
+- **Fluxos novos:** `sast-remediation` (relatório do Checkmarx: triagem com evidência, correcção com testes, comparação com o scan novo), `edge-modernization` (deixar o modo de compatibilidade do IE, validar e optimizar para o Edge), `guardrail-design` e `red-team`; competências `forge-sast-remediation`, `forge-edge-compat`, `forge-guardrails` e `forge-red-team`.
+- **Removidos** os perfis `magazine-editor` e `university-student`, os fluxos `magazine-article`, `academic-research` e `study-session` e os agentes `editor` e `academic-tutor`. O `upgrade` remove os ficheiros correspondentes se não foram alterados e limpa o manifesto (`src/retired.ts`); um ficheiro alterado pelo utilizador fica onde está e deixa de ser gerido.
+- **Local primeiro:** hook `pre-push` (`npm run hooks:install`) que corre `npm run ci -- --skip-install`; a CI remota passa a correr só em pull request, em tag de release ou à mão; CodeQL em pull request, semanal ou à mão.
+
 ## 0.11.0
 
 Primeira versão da revisão de segurança e rastreabilidade. **Alterações com impacto:** `learn approve` e `learn reseal` exigem um terminal interactivo; os selos antigos de `lessons.json` passam a «sem selo» até `learn reseal`; `record --result passed` exige `--evidence` ou `--no-evidence`; pedidos destrutivos aprovados passam a escalar.

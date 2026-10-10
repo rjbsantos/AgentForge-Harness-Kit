@@ -8,7 +8,6 @@ Na instalação, cada fluxo é escrito em formato JSON em `.agentforge/workflows
 
 Os fluxos combinam competências existentes, sem as duplicar:
 
-- Artigos e investigação académica: `forge-research`, `forge-fact-check` e `forge-verify`.
 - Análise de sistemas: `forge-requirements`, `forge-research` e `forge-verify`.
 - Auditoria de repositórios: `forge-audit`, `forge-research`, `forge-performance` e `forge-verify`.
 - Decisão de solução: `forge-requirements`, `forge-research`, `forge-tradeoff` e `forge-verify`.
@@ -34,6 +33,39 @@ O fluxo `repository-audit` pode repartir a análise de qualidade, segurança e d
 | Manutenção | `change-request` e `bug-investigation` | pedido numerado, análise de impacto, aprovação do âmbito, ramo próprio, testes primeiro, pull request sem merge automático e arquivo |
 
 Os pontos de validação humana usam `forge-checkpoint`: silêncio não é aprovação e cada passagem fica registada em `.agentforge/work/checkpoints/`. Segurança Crítica ou Elevada devolve o trabalho à implementação. `bug-investigation` mantém a regra de implementar só com autorização.
+
+## Composição: fluxos que se completam
+
+Um fluxo grande chama um menor em vez de o repetir. O campo `uses` de cada fluxo diz em que passo, quando e que artefacto passa de um para o outro; `agentforge plan` devolve-o em `composition` e um teste impede ciclos e referências inexistentes.
+
+| Fluxo | Chama | No passo | Quando |
+| --- | --- | --- | --- |
+| `forge-build` | `requirements-analysis` | 2 | os requisitos ainda não estão aprovados |
+| `forge-build` | `security-assessment` | 10 | sempre, antes de fechar o ramo |
+| `change-request` | `security-assessment` | 5 | toca autenticação, dependências ou entradas externas |
+| `bug-investigation` | `change-request` | 4 | a causa está no código e a correcção foi autorizada |
+| `incident-analysis` | `bug-investigation` | 5 | a causa confirmada é um defeito de código |
+| `system-analysis` | `requirements-analysis` | 2 | os requisitos ainda não estão numerados |
+| `solution-briefing` | `tech-exploration` | 3 | a decisão depende de uma experiência |
+| `project-status` | `risk-review` | 2 | não existe um registo de riscos actual |
+| `ai-solution-design` | `guardrail-design` | 3 | sempre |
+| `agent-build` | `guardrail-design`, `context-memory-setup`, `prompt-engineering`, `ai-evaluation`, `red-team` | 3 a 6 | conforme o agente (ferramentas, memória, prompts) |
+| `red-team` | `guardrail-design` | 2 | não existem guardrails escritos |
+| `production-cleanup` | `repository-audit`, `technical-documentation` | 2, 10 | sem auditoria sobre o mesmo commit; documentação desfasada |
+| `release-closure` | `repository-audit`, `security-assessment`, `sast-remediation`, `technical-documentation`, `production-cleanup` | 3, 6, 6, 8, 10 | sem relatório sobre o mesmo commit; SAST por tratar; limpeza aprovada |
+
+Cadeia habitual: `incident-analysis` → `bug-investigation` → `change-request`; e `repository-audit` → `production-cleanup` → `release-closure`.
+
+## Fluxos de qualidade, segurança e compatibilidade
+
+| Fluxo | Agentes | Resultado |
+| --- | --- | --- |
+| `sast-remediation` | `secops`, `lead-developer`, `qa` | Relatório do Checkmarx (ou outro SAST) triado com evidência, correcções com testes e comparação com o relatório novo |
+| `edge-modernization` | `frontend-developer`, `devops`, `qa` | Aplicação sem dependência do modo IE, validada no Edge e optimizada, com plano de reversão |
+| `guardrail-design` | `secops`, `ai-engineer` | Regras GR-NN testáveis por camada, com o que é imposto em código e o que é só instrução |
+| `red-team` | `security-tester`, `lead-developer` | Corpus de ataque, veredicto por caso com três execuções e testes de regressão |
+
+`guardrail-design` e `red-team` complementam-se: o primeiro escreve o contrato, o segundo ataca-o. Em `red-team` e `agent-build` o ataque só corre em ambiente local, com dados sintéticos, nunca em produção nem em sistemas de terceiros.
 
 ## Fluxos de desenvolvimento especializados
 

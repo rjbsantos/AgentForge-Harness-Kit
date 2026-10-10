@@ -49,7 +49,7 @@ test('declared role preference resolves hybrid requests instead of blocking them
   assert.deepEqual(select(hybrid, undefined, ['ai-engineer', 'it-project-manager']),
     { role: 'ai-engineer', workflow: 'ai-solution-design', selectedBy: 'operator' });
   // Uma preferência que não cobre os candidatos não inventa uma escolha.
-  assert.throws(() => select(hybrid, undefined, ['magazine-editor']), /ambíguo/);
+  assert.throws(() => select(hybrid, undefined, ['database-engineer']), /ambíguo/);
   assert.throws(() => select('Do a thing', undefined, ['it-project-manager']), /perfis habituais/);
   assert.equal(select('Analisa este erro da aplicação').selectedBy, 'intent');
   assert.equal(select('Analisa este erro da aplicação', 'senior-developer').selectedBy, 'explicit');

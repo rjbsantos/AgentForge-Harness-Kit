@@ -1,7 +1,9 @@
 name: CI
+# Local primeiro: `npm run ci` repete estes passos na máquina de quem altera (e o hook `pre-push`
+# fá-lo antes de cada envio). Aqui corre só na confirmação final, num pull request, ou à mão.
 on:
-  push:
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

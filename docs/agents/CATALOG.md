@@ -13,8 +13,6 @@
 | `reverse-engineer` | Descreve um sistema existente com base em evidências, para auditoria e documentação. |
 | `secops` | Avalia alterações de risco elevado e decisões de segurança antes da implementação. |
 | `ai-engineer` | Desenha e avalia sistemas de inteligência artificial, incluindo dados, modelos, recuperação aumentada e segurança. |
-| `editor` | Produz artigos para revistas com investigação baseada em fontes e revisão editorial. |
-| `academic-tutor` | Apoia o estudo e a investigação universitária com referências verificáveis. |
 | `systems-analyst` | Analisa processos actuais e futuros, limites de integração e impacto das alterações. |
 | `tech-writer` | Produz documentação funcional e técnica a partir do código lido, sem inventar comportamento. |
 | `frontend-developer` | Implementa interfaces React e TypeScript com o design system do projecto, testes primeiro e estados completos. |

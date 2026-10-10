@@ -6,7 +6,7 @@ Este documento descreve a cobertura actual do AgentForge Harness Kit, os mecanis
 
 | Componente | Localização | Função | Estado |
 | --- | --- | --- | --- |
-| Perfis e fluxos | `src/capabilities.ts` | Define os treze perfis, os fluxos, os requisitos de ferramentas, os passos, as validações e os modelos de saída | Activo |
+| Perfis e fluxos | `src/capabilities.ts` | Define os doze perfis, os fluxos, os requisitos de ferramentas, os passos, as validações e os modelos de saída | Activo |
 | Competências, agentes e instruções | `src/skills.ts`, `src/roles.ts`, `src/docs.ts`, `src/generators.ts` (reunidos em `src/catalog.ts`) | Gera capacidades transversais e formatos nativos dos CLIs suportados | Activo |
 | Encaminhamento | `src/routing.ts` | Classifica complexidade e risco e recomenda um perfil de modelo | Activo; não executa nem escolhe modelos sem configuração |
 | Selecção de perfil e plano | `src/orchestrator.ts` | Associa pedidos a perfis e fluxos e gera uma proposta estruturada | Activo; não executa a proposta |
@@ -23,8 +23,6 @@ Este documento descreve a cobertura actual do AgentForge Harness Kit, os mecanis
 | Gestor de projetos de Sistemas de Informação | `solution-advisor` | Decisões de solução, automação, exploração técnica e melhoria contínua |
 | Engenheiro de IA | `ai-engineer` | Desenho e avaliação de soluções de IA |
 | Programador Sénior | `lead-developer` | Investigação de defeitos, auditoria e implementação |
-| Escritor e Editor de Revistas | `editor` | Produção editorial e verificação de factos |
-| Estudante Universitário | `academic-tutor` | Investigação académica e estudo |
 | Analista de Sistemas | `systems-analyst` | Análise de processos, requisitos e incidentes |
 
 As competências comuns são reutilizadas entre perfis. A existência de um agente ou ferramenta no catálogo não cria permissões no CLI nem garante que o host execute uma delegação.

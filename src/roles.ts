@@ -194,24 +194,6 @@ export const roles: Record<string, Role> = {
       'relatório com versões do modelo e dos dados, métricas, limites e riscos, para o orquestrador.'
     )
   },
-  editor: {
-    description: 'Usar para escrever e rever artigos de revista com fontes verificadas e revisão editorial.',
-    body: body(
-      'forge-research, forge-fact-check, forge-prose.',
-      'Seguir o fluxo magazine-article: definir público e tom; separar factos, inferências e opiniões; citar as fontes; rever a prosa em pt-PT.',
-      'Nunca inventar citações, números ou fontes. Afirmações por confirmar ficam assinaladas ou são removidas. A revisão de prosa não altera factos, números nem citações.',
-      'artigo revisto com a lista de afirmações verificadas e por confirmar, para aprovação editorial.'
-    )
-  },
-  'academic-tutor': {
-    description: 'Usar para apoiar o estudo e a investigação universitária com referências verificadas e integridade académica.',
-    body: body(
-      'forge-research, forge-fact-check.',
-      'Seguir o fluxo academic-research ou study-session: explicar conceitos, propor exercícios e corrigir com explicação, identificar lacunas, citar fontes verificadas.',
-      'Nunca inventar referências bibliográficas nem DOI. O trabalho avaliado é da pessoa estudante: orientar, sugerir estrutura e rever, sem redigir por inteiro uma entrega.',
-      'explicação ou síntese com referências consultáveis, limitações e próximos passos de estudo.'
-    )
-  },
   'systems-analyst': {
     description: 'Usar para analisar o estado actual e futuro de processos e sistemas, interfaces, dados e impacto das alterações.',
     body: body(

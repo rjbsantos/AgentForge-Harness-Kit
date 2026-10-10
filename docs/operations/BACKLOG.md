@@ -6,3 +6,6 @@
 6. **Eventos fora do Claude Code.** O contrato está em [integrations/EVENTS.md](../integrations/EVENTS.md); falta um emissor para Codex e OpenCode.
 7. **Encaminhamento perante paráfrases.** O classificador é por sinais; os termos de risco cobrem pt, en, es e fr e comandos destrutivos comuns, mas não há um conjunto adversarial extenso nem outros idiomas. Prefere falsos positivos (escalar) a falsos negativos.
 8. **Avaliação de qualidade das respostas dos modelos.** Os testes verificam contratos, não o comportamento dos agentes; exige modelos, dados autorizados e uma pessoa a pontuar (ver `docs/testing/EVALUATION.md`).
+9. **Funções de gestor de projecto.** Os fluxos `project-status`, `meeting-followup`, `risk-review` e `requirements-analysis` são curtos (3 passos). Falta decidir que outras funções (plano e marcos, controlo de alterações, comunicação a partes interessadas, orçamento) entram, e ligá-las por composição.
+10. **Referência de «JEV» e «Laya».** A porta de entrada (`agentforge gate`) implementa o comportamento pedido (recusar pedidos vagos e pedir contexto); falta confirmar o conceito de origem para alinhar a terminologia e os critérios.
+11. **Impor, não só aconselhar.** O `flow` regista e recusa fechar; ainda não há um hook que impeça `git commit` em `main` ou `git push` sem passo de validação aprovado (Claude Code `PreToolUse`).

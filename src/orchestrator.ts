@@ -3,6 +3,7 @@ import { route, type Route, type RoutingOptions } from './routing.js';
 import { loadOperator, type Operator } from './operator.js';
 import { type Target } from './catalog.js';
 import { ambiguityMargin, minimumScore, score } from './intent.js';
+import { assessPrompt, type GateResult } from './gate.js';
 
 export type SelectionSource = 'explicit' | 'intent' | 'operator';
 
@@ -30,7 +31,11 @@ export interface Proposal {
     singleWriter: true;
   };
   model: Pick<Route, 'tier' | 'complexity' | 'reasons' | 'model' | 'modelSelection'>;
-  status: 'proposed';
+  /** Sub-fluxos que complementam este: em que passo correm e que artefacto passa de um para o outro. */
+  composition: { workflow: string; step: number; when: string; handoff: string }[];
+  /** Porta de entrada: um pedido vago fica `needs-context` e traz as perguntas que faltam. */
+  gate: GateResult;
+  status: 'proposed' | 'needs-context';
 }
 
 const explicit = Object.entries(profiles).map(([role, profile]) =>
@@ -67,7 +72,7 @@ export function select(prompt: string, requestedRole?: Profile, preference: Prof
     throw new Error(`Fluxo não identificado para ${indicated}; especifique --workflow (${profiles[indicated].workflows.join(', ')})`);
   }
   const hint = preference.length ? ` (perfis habituais: ${preference.join(', ')})` : '';
-  throw new Error(`Perfil e fluxo não identificados; indique --role e --workflow${hint}`);
+  throw new Error(`Perfil e fluxo não identificados; indique --role e --workflow${hint}, ou refine o pedido (\`agentforge gate --prompt …\` diz o que falta)`);
 }
 
 export function choose(prompt: string, requestedRole?: Profile): { role: Profile; workflow: string } {
@@ -90,6 +95,7 @@ export async function plan(project: string, cli: Target, prompt: string,
   const workflow = workflows[selection.workflow];
   const decision = await route(project, cli, prompt, { ...options, cautious: operator.riskPosture === 'cautious' });
   const { tier, complexity, reasons, model, modelSelection } = decision;
+  const gate = assessPrompt(prompt, selection.workflow);
   if (!workflow.tools.every(tool => tool in tools)) throw new Error('Ferramenta desconhecida no catálogo');
   return {
     role: selection.role, agent: profiles[selection.role].agent, workflow: selection.workflow,
@@ -113,6 +119,9 @@ export async function plan(project: string, cli: Target, prompt: string,
       maxDelegationDepth: 1,
       singleWriter: true
     },
-    model: { tier, complexity, reasons, model, modelSelection }, status: 'proposed'
+    model: { tier, complexity, reasons, model, modelSelection },
+    composition: workflow.uses,
+    gate,
+    status: gate.ready ? 'proposed' : 'needs-context'
   };
 }

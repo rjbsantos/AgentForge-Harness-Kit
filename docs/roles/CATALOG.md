@@ -6,12 +6,10 @@ Fonte de verdade: `profiles` em `src/capabilities.ts`; o catálogo instalado no 
 | --- | --- | --- |
 | Gestor de Projetos | `product-manager` | estado, reuniões, riscos e requisitos |
 | Gestor de Projetos de Sistemas de Informação | `solution-advisor` | decisão de solução, automação, exploração técnica, melhoria contínua, requisitos, análise de sistemas e estado |
-| Engenheiro de IA | `ai-engineer` | concepção e avaliação de soluções de IA, requisitos |
-| Programador Sénior | `lead-developer` | investigação de defeitos, auditoria de repositórios e implementação |
-| Escritor e Editor de Revistas | `editor` | artigos com verificação de factos |
-| Estudante Universitário | `academic-tutor` | investigação académica e estudo |
+| Engenheiro de IA | `ai-engineer` | concepção e avaliação de soluções de IA, guardrails e red team, requisitos |
+| Programador Sénior | `lead-developer` | defeitos, auditoria, limpeza, fecho de versão, relatórios SAST, modernização para o Edge e implementação |
 | Analista de Sistemas | `systems-analyst` | análise actual e futura, incidentes e requisitos |
-| Engenheiro de Segurança | `security-tester` | avaliação de segurança |
+| Engenheiro de Segurança | `security-tester` | avaliação de segurança, tratamento de relatórios SAST, red team e guardrails |
 | Programador Frontend | `frontend-developer` | interface web e investigação de defeitos |
 | Programador Backend | `backend-developer` | implementação de ponta a ponta, defeitos e bases de dados |
 | Arquitecto de Design System | `design-system-architect` | interface web com design system |

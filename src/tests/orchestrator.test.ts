@@ -17,7 +17,7 @@ const cases = [
   ['project-manager', 'risk-review', 'Avalia riscos do projecto'],
   ['ai-engineer', 'ai-solution-design', 'Desenha uma solução de IA usando RAG'],
   ['ai-engineer', 'ai-evaluation', 'Preciso de uma avaliação de RAG'],
-  ['senior-developer', 'bug-investigation', 'Analisa este erro da aplicação'],
+  ['senior-developer', 'bug-investigation', 'Analisa este erro 500 na página de pagamentos'],
   ['senior-developer', 'repository-audit', 'Faz uma auditoria ao repositório'],
   ['frontend-developer', 'frontend-build', 'Cria um ecrã React com o design system'],
   ['database-engineer', 'database-optimization', 'Otimiza esta query lenta em PostgreSQL'],
@@ -29,9 +29,6 @@ const cases = [
   ['senior-developer', 'technical-documentation', 'Gera a documentação funcional e técnica deste sistema'],
   ['senior-developer', 'change-request', 'Processa este change request'],
   ['senior-developer', 'repository-audit', 'Identifica código morto, ficheiros obsoletos e dependências não utilizadas'],
-  ['magazine-editor', 'magazine-article', 'Escreve um artigo para revista'],
-  ['university-student', 'academic-research', 'Faz uma pesquisa académica com fontes'],
-  ['university-student', 'study-session', 'Prepara flashcards para exame'],
   ['systems-analyst', 'system-analysis', 'Analisa AS-IS e TO-BE'],
   ['systems-analyst', 'incident-analysis', 'Faz análise de incidente e causa raiz'],
   ['it-project-manager', 'solution-briefing', 'Preciso de um caso de negócio: comprar ou construir o portal'],
@@ -42,7 +39,7 @@ const cases = [
 
 test('catalog contracts: all roles, workflows, skills, tools and templates resolve', () => {
   validateCatalog();
-  assert.equal(Object.keys(profiles).length, 14);
+  assert.equal(Object.keys(profiles).length, 12);
   for (const [id, profile] of Object.entries(profiles)) {
     assert.ok(profile.agent in roles, id);
     for (const workflowName of profile.workflows) assert.ok(workflowName in workflows, workflowName);
@@ -68,7 +65,7 @@ test('role and workflow detection uses functional intent, not role-specific dupl
   for (const [role, workflow, prompt] of cases) {
     assert.deepEqual(choose(prompt), { role, workflow }, prompt);
   }
-  assert.throws(() => choose('Plan a magazine article and RAG architecture'), /ambíguo/);
+  assert.throws(() => choose('Faz uma prova de conceito com um agente MCP'), /ambíguo/);
   assert.throws(() => choose('Do a thing'), /não identificados/);
   assert.throws(() => choose('Hello', 'project-manager'), /Fluxo não identificado/);
 });
@@ -115,13 +112,13 @@ test('every workflow yields a bounded, non-executed proposal and generated outpu
       maxDelegationDepth: 1,
       singleWriter: true
     });
-    const sequential = await plan(root, 'codex', 'Plan a magazine article', {
-      role: 'magazine-editor', workflow: 'magazine-article'
+    const sequential = await plan(root, 'codex', 'Estado do projecto', {
+      role: 'project-manager', workflow: 'project-status'
     });
     assert.deepEqual(sequential.coordination.parallelGroups, []);
     assert.equal(sequential.coordination.mode, 'sequential');
     await assert.rejects(plan(root, 'codex', 'hello', {
-      role: 'magazine-editor', workflow: 'ai-evaluation'
+      role: 'project-manager', workflow: 'ai-evaluation'
     }), /não pertence/);
     assert.match(await readFile(join(root, '.agentforge/CAPABILITIES.md'), 'utf8'), /Analista de Sistemas/);
     assert.match(await readFile(join(root, '.agents/skills/forge-hygiene/SKILL.md'), 'utf8'), /ligações simbólicas que escapem/);
@@ -130,7 +127,7 @@ test('every workflow yields a bounded, non-executed proposal and generated outpu
     assert.match(workflows['repository-audit'].validation.join(' '), /dentro do projecto/);
     assert.match((await status(root))[1], /nenhum/);
     await remove(root, ['antigravity']);
-    await assert.rejects(readFile(join(root, '.agents/workflows/magazine-article.md')));
+    await assert.rejects(readFile(join(root, '.agents/workflows/project-status.md')));
     assert.match(await readFile(join(root, '.agents/skills/forge-research/SKILL.md'), 'utf8'), /forge-research/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
@@ -157,11 +154,11 @@ test('only explicit verified run events are logged; proposals do not claim execu
       result: 'passed', validation: 'passed', durationMs: 230, toolsUsed: [], skillsUsed: ['forge-implementation'] }), /inválido/);
     const cli = fileURLToPath(new URL('../cli/index.js', import.meta.url));
     const proposal = JSON.parse(execFileSync(process.execPath, [cli, 'plan', '--cli', 'claude',
-      '--prompt', 'Escreve um artigo para revista', '--project', root], { encoding: 'utf8' }));
+      '--prompt', 'Prepara o relatório de estado do projecto para sexta', '--project', root], { encoding: 'utf8' }));
     assert.deepEqual([proposal.agent, proposal.workflow, proposal.status],
-      ['editor', 'magazine-article', 'proposed']);
-    execFileSync(process.execPath, [cli, 'record', '--role', 'magazine-editor',
-      '--workflow', 'magazine-article', '--result', 'blocked', '--validation', 'not-run',
+      ['product-manager', 'project-status', 'proposed']);
+    execFileSync(process.execPath, [cli, 'record', '--role', 'project-manager',
+      '--workflow', 'project-status', '--result', 'blocked', '--validation', 'not-run',
       '--duration-ms', '4', '--retries', '1', '--tokens', '25', '--cost', '0.01',
       '--error-code', 'SOURCE_UNAVAILABLE', '--project', root]);
     assert.equal((await readFile(key, 'utf8')).trim().split('\n').length, 2);

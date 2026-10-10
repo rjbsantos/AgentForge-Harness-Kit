@@ -17,8 +17,6 @@ O objectivo dos testes é confirmar os contratos do instalador, do catálogo, do
 | Gestor de projetos | `forge-verify` | `project-status` | Estado do projeto | Relatório com progresso sustentado por evidência |
 | Engenheiro de IA | `forge-research` | `ai-solution-design` | Solução de IA com recuperação aumentada | Requisitos e ferramentas não presumidos |
 | Programador sénior | `forge-audit` | `repository-audit` | Auditoria de repositório | Recomendações antes de qualquer alteração |
-| Editor | `forge-fact-check` | `magazine-article` | Artigo para revista | Factos e opiniões identificados separadamente |
-| Estudante | `forge-fact-check` | `academic-research` | Investigação académica | Referências verificáveis |
 | Analista de sistemas | `forge-requirements` | `system-analysis` | Análise do estado actual e futuro | Lacunas e impactos identificados |
 | Gestor de projetos de SI | `forge-tradeoff` | `solution-briefing` | Comprar ou desenvolver | Opções, situação actual e registo de decisão |
 | Gestor de projetos de SI | `forge-spike` | `tech-exploration` | Prova de conceito | Conclusão apoiada por experiência executada |
