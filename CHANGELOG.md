@@ -2,6 +2,8 @@
 
 ## Por publicar
 
+- Rastreabilidade e validação: `agentforge trace` valida requisitos Must (critério, aprovação, plano, teste); `agentforge record --evidence` guarda o SHA-256 da evidência e `insights.passedEvidence` distingue `passed` verificado, alterado, em falta e sem evidência; `--retries` e `--tokens` deixam de aceitar decimais no CLI. Novo `docs/architecture/REQUIREMENTS.md` com a matriz requisito → teste do kit, validada por `src/tests/requirements.test.ts`.
+- Cadeia de fornecimento: `SECURITY.md`, Dependabot (npm e Actions), CODEOWNERS e CodeQL; acções fixadas por SHA e `permissions` mínimas; `npm audit` passa a falhar em `moderate`; a release publica `SHA256SUMS` e atestação de proveniência; teste do resumo SHA-256 do componente de terceiros embebido.
 - Segurança (primeiros itens da análise de gaps):
   - `learn approve` e `learn reseal` exigem confirmação num terminal interactivo; com stdin redireccionado (um agente) são recusados. O selo de `lessons.json` passa a ser um HMAC-SHA-256 com chave fora do projecto (`AGENTFORGE_HOME` ou `~/.config/agentforge/seal.key`, modo 0600), por isso quem só escreve no repositório não o forja. Os selos antigos (SHA-256 sem chave) ficam como «sem selo» até serem revistos e refeitos com `learn reseal`; um repositório clonado noutra conta também exige `learn reseal`.
   - Novo `.agentforge/work/audit.jsonl` (cadeia de hashes) com `lesson.add`, `lesson.approve`, `lesson.retire` e `lessons.reseal`; nunca guarda o texto das lições.
