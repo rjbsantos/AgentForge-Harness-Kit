@@ -38,7 +38,7 @@
   },
   "homepage": "https://github.com/rjbsantos/AgentForge-Harness-Kit#readme",
   "devDependencies": {
-    "@types/node": "^20.19.43",
+    "@types/node": "^26.6.4",
     "typescript": "^7.0.2"
   }
 }
