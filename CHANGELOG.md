@@ -2,6 +2,7 @@
 
 ## Por publicar
 
+- Robustez e confiança: o `doctor` detecta um hook do AgentForge alterado (só o comando exacto conta; `hooks install` recusa reinstalar sobre ele); `hook-event` limita o stdin a 64 KB e roda `events.jsonl` ao exceder 1 MiB; `operations.jsonl` é arquivado ao exceder 5 MiB; o servidor MCP processa uma mensagem de cada vez, recusa linhas acima de 1 MiB e limita `budgetTokens` a 32000; `approved` pedido pelo MCP só vale com um checkpoint `CP-NNN.md` cujo veredicto é APROVADO. ADRs com estado e novo ADR-0004; `BACKLOG.md` renumerado e actualizado com as lacunas conhecidas.
 - Rastreabilidade e validação: `agentforge trace` valida requisitos Must (critério, aprovação, plano, teste); `agentforge record --evidence` guarda o SHA-256 da evidência e `insights.passedEvidence` distingue `passed` verificado, alterado, em falta e sem evidência; `--retries` e `--tokens` deixam de aceitar decimais no CLI. Novo `docs/architecture/REQUIREMENTS.md` com a matriz requisito → teste do kit, validada por `src/tests/requirements.test.ts`.
 - Cadeia de fornecimento: `SECURITY.md`, Dependabot (npm e Actions), CODEOWNERS e CodeQL; acções fixadas por SHA e `permissions` mínimas; `npm audit` passa a falhar em `moderate`; a release publica `SHA256SUMS` e atestação de proveniência; teste do resumo SHA-256 do componente de terceiros embebido.
 - Segurança (primeiros itens da análise de gaps):

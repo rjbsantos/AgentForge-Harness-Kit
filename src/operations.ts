@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
-import { appendFile, mkdir, readFile, stat } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, rename, stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { profiles, tools, workflows, type Profile } from './capabilities.js';
 import { safe } from './installer.js';
+
+export const maxOperationsBytes = 5_242_880;
 
 export interface RunRecord {
   role: Profile;
@@ -174,6 +176,12 @@ export async function recordRun(project: string, record: Omit<RunRecord, 'eviden
   await readFile(safe(root, '.agentforge/work/state.md'), 'utf8');
   const path = safe(root, '.agentforge/work/operations.jsonl');
   await mkdir(dirname(path), { recursive: true });
+  // Ao exceder o limite, o histórico passa para um arquivo datado; `insights` lê só o ficheiro actual.
+  const size = await stat(path).then(info => info.size, () => 0);
+  if (size > maxOperationsBytes) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    await rename(path, safe(root, `.agentforge/work/operations.${stamp}.jsonl`));
+  }
   await appendFile(path, JSON.stringify({
     timestamp: new Date().toISOString(),
     ...record,

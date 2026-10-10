@@ -8,7 +8,7 @@ import { kitVersion } from '../version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
 import { applyHardening, hardeningApplied, removeHardening } from '../hardening.js';
 import { trace } from '../trace.js';
-import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
+import { eventSummary, hookStatus, installHook, maxHookInputBytes, recordEvent, removeHook } from '../hooks.js';
 import { doctor, install, installedTargets, remove, status, targets, upgrade } from '../installer.js';
 import { route } from '../routing.js';
 import { confirmOnTerminal } from '../approval.js';
@@ -252,7 +252,10 @@ async function main(args: string[]): Promise<void> {
     if (cli !== 'all' || dryRun) usage();
     if (action === 'hook-event') {
       let input = '';
-      for await (const chunk of process.stdin) input += chunk;
+      for await (const chunk of process.stdin) {
+        input += chunk;
+        if (input.length > maxHookInputBytes) break; // um evento legítimo é pequeno; o resto é ignorado
+      }
       await recordEvent(project, input);
     } else if (subcommand === 'install') console.log(await installHook(project));
     else if (subcommand === 'remove') console.log(await removeHook(project));
@@ -274,6 +277,10 @@ async function main(args: string[]): Promise<void> {
     const diagnosis = await doctor(project, () => lessonsIntegrity(project));
     for (const line of diagnosis.lines) console.log(line);
     try {
+      if (await hookStatus(project) === 'altered') {
+        console.log('✗ hook: o comando do AgentForge em .claude/settings.json foi alterado; reveja-o (`agentforge hooks remove` não o reconhece)');
+        process.exitCode = 1;
+      }
       if ((await installedTargets(project)).includes('claude') && !await hardeningApplied(project)) {
         console.log('ℹ segredos: sem regras de recusa de leitura (.env, chaves); `agentforge harden apply` (opcional)');
       }

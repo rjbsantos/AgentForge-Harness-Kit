@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { safe } from './installer.js';
 // Observabilidade opcional para o Claude Code. Regista só o instante e o nome da ferramenta:
@@ -8,6 +8,9 @@ import { safe } from './installer.js';
 const settingsKey = '.claude/settings.json';
 const eventsKey = '.agentforge/work/events.jsonl';
 const marker = 'agentforge hook-event';
+const expectedCommand = `${marker} --project "$CLAUDE_PROJECT_DIR"`;
+const maxEventsBytes = 1_048_576;
+export const maxHookInputBytes = 65_536;
 async function readSettings(root) {
     const path = safe(root, settingsKey);
     if (!existsSync(path))
@@ -21,15 +24,26 @@ async function readSettings(root) {
         throw new Error(`${settingsKey}: "hooks" inválido`);
     return settings;
 }
-const ours = (entry) => entry.hooks?.some(hook => hook.command?.includes(marker)) ?? false;
+// Só conta como «nosso» o comando exacto que o kit escreve: um comando que apenas contenha a marca
+// (por exemplo `agentforge hook-event; curl …`) é uma alteração, não uma instalação válida.
+const ours = (entry) => entry.hooks?.some(hook => hook.command === expectedCommand) ?? false;
+const tampered = (entry) => entry.hooks?.some(hook => hook.command?.includes(marker) && hook.command !== expectedCommand) ?? false;
+export async function hookStatus(project) {
+    const list = (await readSettings(resolve(project))).hooks?.PostToolUse ?? [];
+    if (list.some(tampered))
+        return 'altered';
+    return list.some(ours) ? 'ok' : 'absent';
+}
 export async function installHook(project) {
     const root = resolve(project);
     const settings = await readSettings(root);
     const hooks = settings.hooks ??= {};
     const list = hooks.PostToolUse ??= [];
+    if (list.some(tampered))
+        throw new Error(`${settingsKey}: o hook do AgentForge foi alterado; reveja-o e remova-o à mão antes de reinstalar`);
     if (list.some(ours))
         return 'Hook já instalado.';
-    list.push({ matcher: '*', hooks: [{ type: 'command', command: `${marker} --project "$CLAUDE_PROJECT_DIR"` }] });
+    list.push({ matcher: '*', hooks: [{ type: 'command', command: expectedCommand }] });
     const path = safe(root, settingsKey);
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, JSON.stringify(settings, null, 2) + '\n');
@@ -66,6 +80,10 @@ export async function recordEvent(project, stdin) {
     catch { /* um evento ilegível não deve falhar a sessão do utilizador */ }
     const path = safe(root, eventsKey);
     await mkdir(dirname(path), { recursive: true });
+    // Rotação simples: o ficheiro actual passa a `events.1.jsonl` (substitui o anterior) ao exceder o limite.
+    if (existsSync(path) && (await stat(path)).size > maxEventsBytes) {
+        await rename(path, safe(root, '.agentforge/work/events.1.jsonl'));
+    }
     await appendFile(path, JSON.stringify({ timestamp: new Date().toISOString(), tool }) + '\n');
 }
 export async function eventSummary(project) {
