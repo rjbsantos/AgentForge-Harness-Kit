@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { install, targets } from '../installer.js';
+import { install, remove, targets } from '../installer.js';
+import { generated } from '../generators.js';
+import { loadModels } from '../routing.js';
+import { applyHardening, denyRules, hardeningApplied, removeHardening } from '../hardening.js';
 import { roles } from '../roles.js';
 import { skills } from '../skills.js';
 import { workflows } from '../capabilities.js';
@@ -61,4 +64,65 @@ test('os fluxos de construção, alteração e avaliação incluem modelo de ame
   const workers = workflows['forge-build'].parallelGroups.flatMap(group => group.workers.map(worker => worker.role));
   assert.ok(workers.includes('secops') && workers.includes('security-tester'));
   assert.match(workflows['security-assessment'].steps[0], /sem produção nem sistemas de terceiros/);
+});
+
+test('papéis só de leitura do OpenCode recusam flags do git que escrevem ou executam programas', () => {
+  const file = generated('opencode')['.opencode/agents/secops.md'];
+  const rules = [...file.matchAll(/^ {4}"(.+)": (allow|deny)$/gm)].map(match => [match[1], match[2]]);
+  const last = (command: string) => {
+    const escape = (text: string) => text.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    return rules.filter(([pattern]) => new RegExp(`^${escape(pattern)}$`).test(command)).at(-1)?.[1];
+  };
+  assert.equal(last('git diff HEAD'), 'allow');
+  assert.equal(last('git diff --output=/tmp/x'), 'deny');
+  assert.equal(last('git log --output=x'), 'deny');
+  assert.equal(last('git show --ext-diff'), 'deny');
+  assert.equal(last('rm -rf .'), 'deny');
+});
+
+test('model-profiles.json não é lido através de um symlink', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentforge-link-'));
+  const outside = await mkdtemp(join(tmpdir(), 'agentforge-outside-'));
+  try {
+    await mkdir(join(root, '.agentforge/work'), { recursive: true });
+    await writeFile(join(outside, 'm.json'), '{"claude":{"thinking":"EXFIL"}}');
+    await symlink(join(outside, 'm.json'), join(root, '.agentforge/work/model-profiles.json'));
+    await assert.rejects(loadModels(root), /Symlink não permitido/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(outside, { recursive: true, force: true });
+  }
+});
+
+test('um temporário obsoleto do manifesto não bloqueia a instalação', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentforge-tmp-'));
+  try {
+    await install(root, ['codex']);
+    await writeFile(join(root, '.agentforge/manifest.json.tmp'), 'lixo');
+    await install(root, ['claude']);
+    await remove(root, ['claude']);
+    assert.deepEqual(await install(root, ['codex']), ['Instalação já atualizada.']);
+    assert.ok((await readdir(join(root, '.agentforge'))).every(name => !name.endsWith('.tmp')));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('harden acrescenta e remove só as regras do AgentForge, preservando as do utilizador', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentforge-harden-'));
+  try {
+    await mkdir(join(root, '.claude'));
+    const settings = join(root, '.claude/settings.json');
+    await writeFile(settings, JSON.stringify({ model: 'x', permissions: { allow: ['Bash(ls)'], deny: ['Read(./.env)', 'Bash(rm *)'] } }));
+    assert.equal(await hardeningApplied(root), false);
+    await applyHardening(root);
+    assert.equal(await hardeningApplied(root), true);
+    const applied = JSON.parse(await readFile(settings, 'utf8'));
+    assert.equal(applied.model, 'x');
+    assert.deepEqual(applied.permissions.allow, ['Bash(ls)']);
+    assert.equal(applied.permissions.deny.filter((rule: string) => rule === 'Read(./.env)').length, 1);
+    assert.equal(await applyHardening(root), 'Regras de recusa já presentes.');
+    await removeHardening(root);
+    const restored = JSON.parse(await readFile(settings, 'utf8'));
+    assert.deepEqual(restored.permissions.deny, ['Read(./.env)', 'Bash(rm *)']);
+    assert.ok(denyRules.length > 5);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });

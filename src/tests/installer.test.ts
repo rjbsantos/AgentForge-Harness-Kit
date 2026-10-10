@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { mkdtemp, readFile, rm, writeFile, mkdir, symlink } from 'node:fs/promises';
+import { chmod, mkdtemp, readFile, rm, writeFile, mkdir, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { install, remove, safe, status } from '../installer.js';
@@ -140,19 +140,25 @@ test('blocks generated paths through symlinks', async () => project(async root =
   } finally { await rm(external, { recursive: true, force: true }); }
 }));
 
-test('failed install rolls back every file and allows a clean retry', async () => project(async root => {
-  await mkdir(join(root, '.agentforge'), { recursive: true });
-  await writeFile(join(root, 'AGENTS.md'), '# Mine\n');
-  // Força a falha na gravação do manifesto, depois de os restantes ficheiros terem sido escritos.
-  await writeFile(join(root, '.agentforge/manifest.json.tmp'), 'stale');
-  await assert.rejects(install(root, ['codex']), /temporário/);
-  assert.equal(await readFile(join(root, 'AGENTS.md'), 'utf8'), '# Mine\n');
-  await assert.rejects(readFile(join(root, '.agentforge/HARNESS.md'), 'utf8'), /ENOENT/);
-  await assert.rejects(readFile(join(root, '.agentforge/manifest.json'), 'utf8'), /ENOENT/);
-  await rm(join(root, '.agentforge/manifest.json.tmp'));
-  await install(root, ['codex']);
-  assert.match(await readFile(join(root, 'AGENTS.md'), 'utf8'), /agentforge:codex:begin/);
-}));
+test('failed install rolls back every file and allows a clean retry', async t => {
+  if (process.platform === 'win32' || process.getuid?.() === 0) return t.skip('permissões POSIX necessárias');
+  await project(async root => {
+    await writeFile(join(root, 'AGENTS.md'), '# Mine\n');
+    // Um directório sem permissão de escrita faz falhar uma gravação a meio da instalação.
+    await mkdir(join(root, '.agents'));
+    await chmod(join(root, '.agents'), 0o555);
+    try {
+      await assert.rejects(install(root, ['codex']), /EACCES/);
+      assert.equal(await readFile(join(root, 'AGENTS.md'), 'utf8'), '# Mine\n');
+      await assert.rejects(readFile(join(root, '.agentforge/HARNESS.md'), 'utf8'), /ENOENT/);
+      await assert.rejects(readFile(join(root, '.agentforge/manifest.json'), 'utf8'), /ENOENT/);
+    } finally {
+      await chmod(join(root, '.agents'), 0o755);
+    }
+    await install(root, ['codex']);
+    assert.match(await readFile(join(root, 'AGENTS.md'), 'utf8'), /agentforge:codex:begin/);
+  });
+});
 
 test('upgrades the 0.8.x instruction block that read OPERATOR.md at startup', async () => project(async root => {
   const [release] = superseded('claude');

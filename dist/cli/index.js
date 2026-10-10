@@ -6,18 +6,21 @@ import { applyGateway } from '../gateway.js';
 import { tokenReport } from '../tokens.js';
 import { kitVersion } from '../version.js';
 import { buildGraph, explain, path as graphPath, query as graphQuery, report as graphReport } from '../graph.js';
+import { applyHardening, hardeningApplied, removeHardening } from '../hardening.js';
 import { eventSummary, installHook, recordEvent, removeHook } from '../hooks.js';
-import { doctor, install, remove, status, targets, upgrade } from '../installer.js';
+import { doctor, install, installedTargets, remove, status, targets, upgrade } from '../installer.js';
 import { route } from '../routing.js';
+import { confirmOnTerminal } from '../approval.js';
 import { addLesson, changeLesson, getContext, lessonsIntegrity, listLessons, resealLessons, saveContext } from '../memory.js';
 import { plan } from '../orchestrator.js';
 import { loadOperator, setOperator } from '../operator.js';
 import { operationInsights, recordRun } from '../operations.js';
 import { profiles } from '../capabilities.js';
-const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO] | --version\n' +
+const help = 'Uso: agentforge <install|upgrade|doctor|tokens|mcp|graph|gateway|hooks|harden|hook-event|status|uninstall|route|plan|record|context|learn|insights|operator> [--project CAMINHO] | --version\n' +
     '  context [save --summary TEXTO --next TEXTO] [--topic TEXTO] [--budget-tokens N]\n' +
     '  learn <add --lesson TEXTO --evidence CAMINHO[:LINHA] [--scope project|reusable --anchor TEXTO]|list|approve --id ID|retire --id ID|reseal>\n' +
     '  hooks <install|remove>  regista (opcional, Claude Code) hora e nome das ferramentas usadas; hook-event é chamado pelo hook\n' +
+    '  harden <apply|remove>  (opcional, Claude Code) recusa a leitura de .env, chaves e credenciais em .claude/settings.json\n' +
     '  graph <query --prompt TEXTO [--budget-tokens N]|path --from NÓ --to NÓ|explain --node NÓ|report>  grafo do catálogo, com confiança EXTRACTED/INFERRED/AMBIGUOUS\n' +
     '  tokens  mede o que o harness põe em contexto (arranque, instruções do utilizador, estado); termina com 1 se houver excessos\n' +
     '  gateway omniroute [--cli NOME] [--write]  propõe (ou grava com --write) o mapeamento thinking/economy para o gateway OmniRoute\n' +
@@ -40,9 +43,9 @@ async function main(args) {
         console.log(help);
         return;
     }
-    if (!action || !['install', 'upgrade', 'doctor', 'tokens', 'mcp', 'graph', 'gateway', 'hooks', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action))
+    if (!action || !['install', 'upgrade', 'doctor', 'tokens', 'mcp', 'graph', 'gateway', 'hooks', 'harden', 'hook-event', 'status', 'uninstall', 'route', 'plan', 'record', 'context', 'learn', 'insights', 'operator'].includes(action))
         usage();
-    const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks' || action === 'graph' || action === 'gateway') && args[0] && !args[0].startsWith('--') ? args.shift()
+    const subcommand = (action === 'learn' || action === 'operator' || action === 'hooks' || action === 'harden' || action === 'graph' || action === 'gateway') && args[0] && !args[0].startsWith('--') ? args.shift()
         : action === 'context' && args[0] === 'save' ? args.shift() : undefined;
     let parsed;
     try {
@@ -220,12 +223,21 @@ async function main(args) {
         else if (action === 'learn' && subcommand === 'reseal') {
             if (lesson || evidence || id || summary || next || topic || scope || anchor)
                 usage();
+            const items = await listLessons(project);
+            const counts = ['pending', 'approved', 'retired'].map(status => `${items.filter(item => item.status === status).length} ${status}`);
+            await confirmOnTerminal(`Aceitar o estado actual de lessons.json (${counts.join(', ')}) como revisto por si?`);
             await resealLessons(project);
             console.log('Selo de lessons.json actualizado.');
         }
         else if (action === 'learn' && (subcommand === 'approve' || subcommand === 'retire')) {
             if (!id || lesson || evidence || summary || next || topic || scope || anchor)
                 usage();
+            if (subcommand === 'approve') {
+                const item = (await listLessons(project)).find(entry => entry.id === id);
+                if (!item)
+                    throw new Error(`Lição desconhecida: ${id}`);
+                await confirmOnTerminal(`Aprovar a lição (${item.scope}${item.anchor ? `, ${item.anchor}` : ''}):\n  ${item.lesson}\n  evidência: ${item.evidence}\nSerá reinjectada nos prompts dos agentes.`);
+            }
             console.log(JSON.stringify(await changeLesson(project, id, subcommand)));
         }
         else
@@ -264,6 +276,17 @@ async function main(args) {
     }
     if (prompt || planned || approved || highRisk || role || workflow || result || validation || durationMs !== undefined || toolsUsed.length || (action === 'status' && dryRun))
         usage();
+    if (action === 'harden') {
+        if (cli !== 'all' || dryRun)
+            usage();
+        if (subcommand === 'apply')
+            console.log(await applyHardening(project));
+        else if (subcommand === 'remove')
+            console.log(await removeHardening(project));
+        else
+            usage();
+        return;
+    }
     if (action === 'hooks' || action === 'hook-event') {
         if (cli !== 'all' || dryRun)
             usage();
@@ -300,6 +323,12 @@ async function main(args) {
         const diagnosis = await doctor(project, () => lessonsIntegrity(project));
         for (const line of diagnosis.lines)
             console.log(line);
+        try {
+            if ((await installedTargets(project)).includes('claude') && !await hardeningApplied(project)) {
+                console.log('ℹ segredos: sem regras de recusa de leitura (.env, chaves); `agentforge harden apply` (opcional)');
+            }
+        }
+        catch { /* o diagnóstico principal já reportou o problema */ }
         if (diagnosis.problems.length)
             process.exitCode = 1;
         return;

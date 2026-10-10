@@ -2,6 +2,13 @@
 
 ## Por publicar
 
+- Segurança (primeiros itens da análise de gaps):
+  - `learn approve` e `learn reseal` exigem confirmação num terminal interactivo; com stdin redireccionado (um agente) são recusados. O selo de `lessons.json` passa a ser um HMAC-SHA-256 com chave fora do projecto (`AGENTFORGE_HOME` ou `~/.config/agentforge/seal.key`, modo 0600), por isso quem só escreve no repositório não o forja. Os selos antigos (SHA-256 sem chave) ficam como «sem selo» até serem revistos e refeitos com `learn reseal`; um repositório clonado noutra conta também exige `learn reseal`.
+  - Novo `.agentforge/work/audit.jsonl` (cadeia de hashes) com `lesson.add`, `lesson.approve`, `lesson.retire` e `lessons.reseal`; nunca guarda o texto das lições.
+  - Novo `agentforge harden apply|remove` (opcional, Claude Code): `permissions.deny` para `.env`, chaves, `secrets/`, `~/.ssh` e `~/.aws`, preservando as regras do utilizador. `doctor` sugere-o. Não cobre leituras por Bash.
+  - Papéis só de leitura do OpenCode passam a recusar `--output` e `--ext-diff` (o git escrevia ficheiros ou executava programas apesar de `edit: deny`).
+  - `model-profiles.json` passa a respeitar a política de symlinks (`safe()`), como o resto do kit.
+  - Escrita atómica com temporário único no instalador: um `manifest.json.tmp` deixado por uma falha deixa de bloquear `install`/`upgrade`.
 - `npm run ci`: repete localmente os passos da CI (instalação limpa, testes, auditoria, `dist/` sincronizado, smoke e Node 20 e 22) para quando a CI remota não está disponível; processo de release manual documentado em `CONTRIBUTING.md`.
 
 ## 0.10.0

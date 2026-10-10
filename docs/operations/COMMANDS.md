@@ -31,7 +31,7 @@ Uma lição exige evidência dentro do projeto e começa como pendente. Só pass
 ```bash
 agentforge learn add --project <projeto> --lesson "Validar os contratos entre o cliente e o servidor" --evidence "tests\contracts.test.ts:42"
 agentforge learn list --project <projeto>
-agentforge learn approve --project <projeto> --id <identificador>
+agentforge learn approve --project <projeto> --id <identificador>   # exige terminal interactivo
 agentforge learn retire --project <projeto> --id <identificador>
 agentforge insights --project <projeto>
 ```
@@ -51,7 +51,10 @@ agentforge mcp --project <projeto>            # servidor MCP só de leitura
 ```
 
 - `upgrade` reaplica a versão instalada aos CLIs já presentes no manifesto. `doctor` verifica ficheiros alterados, actualizações pendentes e a integridade das lições.
-- `lessons.json` tem um selo (`lessons.seal`) escrito pelo CLI. Se o ficheiro for editado fora dele, as lições deixam de ser reutilizadas e novas lições são recusadas até `learn reseal`.
+- `lessons.json` tem um selo (`lessons.seal`), um HMAC com uma chave guardada fora do projecto (`AGENTFORGE_HOME` ou `~/.config/agentforge/seal.key`). Se o ficheiro for editado fora do CLI, ou vier de outra conta (por exemplo, um clone), as lições deixam de ser reutilizadas e novas lições são recusadas até `learn reseal`.
+- `learn approve` e `learn reseal` pedem confirmação num terminal interactivo e recusam stdin redireccionado, para que um agente não aprove as próprias lições. Não impede quem simule um pseudo-terminal nem quem já corra código com a sua conta e leia a chave: é uma barreira contra uso inadvertido e contra ficheiros adulterados no repositório, não uma sandbox.
+- `.agentforge/work/audit.jsonl` regista, com cadeia de hashes, quem adicionou, aprovou ou retirou lições e quem refez o selo.
+- `agentforge harden apply|remove` (opcional, Claude Code) acrescenta a `.claude/settings.json` regras `permissions.deny` para `.env`, chaves, `secrets/`, `~/.ssh` e `~/.aws`, e remove só as que acrescentou. Não impede leituras por Bash; para isso é preciso uma sandbox.
 - `hooks install` acrescenta um hook `PostToolUse` a `.claude/settings.json`, preservando o resto da configuração. Regista apenas a hora e o nome da ferramenta em `.agentforge/work/events.jsonl` (nunca argumentos, resultados ou conversas) e requer o comando `agentforge` no PATH. `agentforge hooks remove` desfaz a alteração. O `insights` inclui a contagem por ferramenta.
 - `agentforge mcp` expõe `agentforge_plan`, `agentforge_route`, `agentforge_context`, `agentforge_lessons` e `agentforge_insights`. Não aprova lições, não regista execuções e não altera ficheiros. Exemplo de configuração: `{ "mcpServers": { "agentforge": { "command": "agentforge", "args": ["mcp", "--project", "/caminho/do/projeto"] } } }`.
 

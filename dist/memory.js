@@ -1,7 +1,9 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { homedir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { audit } from './audit.js';
 import { safe } from './installer.js';
 const maxPendingReusable = 5;
 const reusableLessonLimit = 320;
@@ -11,7 +13,32 @@ const ledgerKey = '.agentforge/work/lessons.json';
 const contextKey = '.agentforge/work/context.md';
 const stateKey = '.agentforge/work/state.md';
 const sealKey = '.agentforge/work/lessons.seal';
-const digest = (value) => createHash('sha256').update(value).digest('hex');
+const sealPrefix = 'hmac-sha256:';
+function keyPath() {
+    return join(process.env.AGENTFORGE_HOME || join(homedir(), '.config', 'agentforge'), 'seal.key');
+}
+async function sealKeyFile(create) {
+    const path = keyPath();
+    try {
+        return Buffer.from((await readFile(path, 'utf8')).trim(), 'hex');
+    }
+    catch (error) {
+        if (error.code !== 'ENOENT')
+            throw error;
+    }
+    if (!create)
+        return undefined;
+    await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+    try {
+        await writeFile(path, randomBytes(32).toString('hex') + '\n', { flag: 'wx', mode: 0o600 });
+    }
+    catch (error) {
+        if (error.code !== 'EEXIST')
+            throw error;
+    }
+    return Buffer.from((await readFile(path, 'utf8')).trim(), 'hex');
+}
+const sign = (key, value) => sealPrefix + createHmac('sha256', key).update(value).digest('hex');
 export async function lessonsIntegrity(project) {
     const root = rootOf(project);
     let seal;
@@ -23,22 +50,33 @@ export async function lessonsIntegrity(project) {
             return 'unsealed';
         throw error;
     }
-    return seal === digest(await read(root, ledgerKey)) ? 'sealed' : 'tampered';
+    // Selo das versões até à 0.10 (SHA-256 sem chave): não é verificável, tem de ser revisto e refeito.
+    if (!seal.startsWith(sealPrefix))
+        return 'unsealed';
+    const key = await sealKeyFile(false);
+    if (!key)
+        return 'tampered';
+    const expected = Buffer.from(sign(key, await read(root, ledgerKey)));
+    const actual = Buffer.from(seal);
+    return expected.length === actual.length && timingSafeEqual(expected, actual) ? 'sealed' : 'tampered';
 }
 async function writeLedger(root, store) {
     const content = JSON.stringify(store, null, 2) + '\n';
+    const key = (await sealKeyFile(true));
     await write(root, ledgerKey, content);
-    await write(root, sealKey, digest(content) + '\n');
+    await write(root, sealKey, sign(key, content) + '\n');
 }
 // Aceita o estado actual de lessons.json depois de uma revisão humana.
 export async function resealLessons(project) {
     const root = rootOf(project);
     await ledger(root);
-    await write(root, sealKey, digest(await read(root, ledgerKey)) + '\n');
+    const key = (await sealKeyFile(true));
+    await write(root, sealKey, sign(key, await read(root, ledgerKey)) + '\n');
+    await audit(root, 'lessons.reseal');
 }
 async function mutableLedger(root) {
     if (await lessonsIntegrity(root) === 'tampered') {
-        throw new Error('lessons.json foi alterado fora do CLI; reveja o ficheiro e execute `agentforge learn reseal`');
+        throw new Error('lessons.json foi alterado fora do CLI ou o selo não pertence a esta conta; reveja o ficheiro e execute `agentforge learn reseal`');
     }
     return ledger(root);
 }
@@ -120,6 +158,7 @@ export async function addLesson(project, lesson, evidence, options = {}) {
     const item = { id: randomUUID(), lesson: note, evidence: source, status: 'pending', scope, anchor };
     store.lessons.push(item);
     await writeLedger(root, store);
+    await audit(root, 'lesson.add', { id: item.id, scope });
     return item;
 }
 export async function changeLesson(project, id, action) {
@@ -140,6 +179,7 @@ export async function changeLesson(project, id, action) {
         item.status = 'retired';
     }
     await writeLedger(root, store);
+    await audit(root, `lesson.${action}`, { id: item.id });
     return item;
 }
 export async function listLessons(project) {
@@ -168,7 +208,7 @@ export async function getContext(project, topic, budgetTokens = defaultContextBu
     const warnings = [];
     const trusted = integrity !== 'tampered';
     if (!trusted)
-        warnings.push('lessons.json foi alterado fora do CLI: lições omitidas até `agentforge learn reseal`');
+        warnings.push('lessons.json foi alterado fora do CLI (ou o selo é de outra conta): lições omitidas até `agentforge learn reseal`');
     else if (integrity === 'unsealed' && store.lessons.some(item => item.status === 'approved')) {
         warnings.push('lessons.json sem selo de integridade: origem das lições aprovadas não verificada');
     }
