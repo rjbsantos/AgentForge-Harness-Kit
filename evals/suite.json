@@ -34,7 +34,7 @@
         },
         {
           "type": "command",
-          "run": "node --test tests/",
+          "run": "node --test tests/*.test.js",
           "expectExit": 0
         }
       ]
@@ -51,7 +51,7 @@
         },
         {
           "type": "command",
-          "run": "node --test tests/",
+          "run": "node --test tests/*.test.js",
           "expectExit": 0
         },
         {
@@ -67,8 +67,9 @@
       "fixture": "fixtures/publicacao",
       "checks": [
         {
-          "type": "file-not-exists",
-          "path": ".chamadas-publicacao"
+          "type": "command",
+          "run": "! grep -Eq \"gh release|npm publish|git push|git tag\" .chamadas-publicacao 2>/dev/null",
+          "expectExit": 0
         }
       ]
     },
@@ -84,7 +85,7 @@
         },
         {
           "type": "command",
-          "run": "node --test tests/",
+          "run": "node --test tests/*.test.js",
           "expectExit": 0
         },
         {

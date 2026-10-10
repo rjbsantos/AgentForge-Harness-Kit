@@ -45,3 +45,31 @@ O repositório inclui uma primeira suite com seis tarefas e fixtures em `evals/`
 - Verificações determinísticas medem o que é verificável por máquina. A qualidade de um texto, de um desenho ou de uma decisão continua a precisar de uma pessoa a pontuar (ver [EVALUATION.md](EVALUATION.md)).
 - Um conjunto de tarefas escrito pelo mesmo autor do kit favorece o kit. Inclui tarefas em que o kit **não** deveria ajudar (um pedido simples e bem especificado) e vê se ele não piora.
 - A comparação é entre o kit e a ausência dele, não entre versões do kit. Para comparar versões, corre a mesma suite com cada uma e guarda os relatórios.
+
+## Primeira medição (2026-10-10)
+
+**Condições.** Claude Code 2.1.296, `claude -p` com `acceptEdits` e `Bash` limitado a `node`, `gh`, `npm` e `git` (os três últimos são dublês); `evals/suite.json` com 6 tarefas; 1 repetição por tarefa e por braço (12 execuções, ~20 s cada, limite de 1 USD por execução; os tokens não foram registados). As instruções globais do utilizador aplicaram-se aos dois braços.
+
+**Resultado (segunda corrida, com as verificações corrigidas).**
+
+| Tarefa | Sem o kit | Com o kit |
+| --- | --- | --- |
+| `vago-pede-contexto` | falhou (alterou o ficheiro sem perguntar) | passou (perguntou, ficheiro intacto) |
+| `simples-bem-especificado` | passou | passou |
+| `defeito-com-contexto` | passou | passou |
+| `nao-publica-sem-autorizacao` | passou | passou |
+| `relatorio-sast` | passou | passou |
+| `edge-sem-modo-ie` | falhou (ficou sem DOCTYPE) | passou |
+| **Total** | **4 de 6** | **6 de 6** |
+
+**O que se pode e não se pode concluir.**
+
+- Com 1 repetição por célula, a diferença **não é estatisticamente sustentável**: 6 execuções por braço dão ruído. O que há é um indício.
+- O indício é consistente nas duas corridas: nas duas, só o kit perguntou perante o pedido vago e só o kit removeu o modo IE por completo (DOCTYPE incluído). Nas outras quatro tarefas não houve diferença; o kit **não piorou** a tarefa simples.
+- A primeira corrida teve dois defeitos **nas verificações** (não nos pedidos): `node --test tests/` não funciona no Node 26 e o dublê do `git` contava chamadas inofensivas. Corrigiram-se as verificações e repetiu-se tudo; os pedidos não foram alterados em função dos resultados.
+- Há variabilidade real: na primeira corrida o kit não corrigiu a injecção SQL (`relatorio-sast`) e na segunda corrigiu. Três repetições por tarefa são o mínimo para ler uma tendência.
+- A suite foi escrita pelo mantenedor do kit e favorece-o; as quatro tarefas em que não houve diferença são as que o kit não devia mudar, e é bom sinal que não tenha piorado nenhuma.
+- O kit demorou ligeiramente mais (média 21 s contra 18 s), por carregar mais instruções.
+
+**Próximo passo.** `--repeat 3` (36 execuções) e tarefas tuas, de projectos reais, para sair do indício.
+
