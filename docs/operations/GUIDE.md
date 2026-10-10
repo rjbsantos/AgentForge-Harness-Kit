@@ -11,7 +11,7 @@ Se o pedido for ambíguo, indique `--role` e, quando necessário, `--workflow`. 
 Após executar o trabalho e validar o resultado, registe manualmente a execução:
 
 ```bash
-agentforge record --project <projeto> --role university-student --workflow academic-research --result passed --validation passed --duration-ms 1200 --tools file-system,web-research --skills forge-research,forge-fact-check --tokens 300 --cost 0.01
+agentforge record --project <projeto> --role university-student --workflow academic-research --result passed --validation passed --duration-ms 1200 --tools file-system,web-research --skills forge-research,forge-fact-check --tokens 300 --cost 0.01 --evidence .agentforge/work/logs/verificacao.txt
 ```
 
 O ficheiro local `.agentforge/work/operations.jsonl` regista a data e hora, o perfil, o agente, o fluxo, as competências previstas e executadas, as ferramentas declaradas, a duração, o resultado, a validação, as repetições e, se fornecidos, tokens, custo e código de erro. Não guarda o pedido, fontes, nomes pessoais ou segredos. Um resultado `passed` exige `validation: passed`, mas a exactidão do registo continua a depender de quem o introduz. Não existe recolha automática de dados do CLI.

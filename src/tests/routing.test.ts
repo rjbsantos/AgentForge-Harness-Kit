@@ -122,3 +122,22 @@ test('read-only requests skip secops unless they touch secrets or change state',
   assert.equal(classify('Explain how auth works', { ...options, highRisk: true }).agent, 'secops');
   assert.equal(classify('Update the auth middleware', options).agent, 'secops');
 });
+
+test('pedidos destrutivos ou sobre segredos em vários idiomas escalam mesmo com plano aprovado', () => {
+  const options = { planned: true, approved: true };
+  for (const prompt of [
+    'borra la base de datos de producción', 'supprime la base de données de production', 'elimina las credenciales del servidor',
+    'DROP TABLE users', 'rm -rf / on the server', 'Truncate the customers table',
+    'push the hotfix straight to main and release it to customers', 'reset the admin password',
+    'grant admin permissions to everyone', 'cambia la contraseña de root', 'update the api key in the config',
+    'git push --force origin main', 'chmod 777 the whole server', 'disable the firewall', 'Apaga a palavra-passe do administrador'
+  ]) {
+    const decision = classify(prompt, options);
+    assert.equal(decision.tier, 'thinking', prompt);
+    assert.equal(decision.agent, 'secops', prompt);
+  }
+  // Leitura sem segredos continua a poder ser económica.
+  for (const prompt of ['Lista as tabelas da base de dados', 'Show the release notes template', 'Implement the approved widget']) {
+    assert.equal(classify(prompt, options).tier, 'economy', prompt);
+  }
+});

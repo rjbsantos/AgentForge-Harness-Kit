@@ -37,10 +37,14 @@ const risky = /\b(auth(?:entication|orization)?|credentials?|secrets?|payments?|
 // escalar por palavras como `auth` ou `database`. Segredos, credenciais e pagamentos escalam sempre:
 // mostrá-los já é uma exposição. Na dúvida, a classificação mantém-se conservadora.
 const readOnly = /^\s*(?:please\s+|por favor\s+)?(?:explain|describe|summari[sz]e|list|show|read|what|how does|how do|where|which|explica|descreve|resume|lista|mostra|l[eê]|o que|como funciona|onde|qual)\b/i;
-const mutating = /\b(delete|remove|drop|deploy|update|change|modify|alter|write|implement|run|execute|rotate|migrate|create|fix|apagar|eliminar|remover|alterar|actualizar|atualizar|implementar|executar|rodar|migrar|escrever|criar|corrigir)\b/i;
-const sensitive = /\b(credentials?|secrets?|payments?|credenciais?|segredos?|pagamentos?)\b/i;
+const mutating = /\b(delete|remove|drop|deploy|update|change|modify|alter|write|implement|run|execute|rotate|migrate|create|fix|apagar|eliminar|remover|alterar|actualizar|atualizar|implementar|executar|rodar|migrar|escrever|criar|corrigir|borra|borrar|elimina|suprime|supprime|supprimer|cambia|cambiar|modifica|reset|truncate|grant|disable|push|publish|desactivar|desativar)\b/i;
+const sensitive = /\b(credentials?|secrets?|payments?|credenciais?|segredos?|pagamentos?|passwords?|passphrase|api[ -]?keys?|tokens?|private key|contrase[nñ]as?|credenciales|palavras?-passe|senhas?|mot de passe)\b/i;
+// Termos de risco acrescentados depois de uma medição com pedidos em inglês, espanhol e francês e com
+// comandos destrutivos (um `DROP TABLE` ou `rm -rf` aprovado caía em «economy»). Conservador de propósito.
+const riskyMore = /\b(?:passwords?|passphrase|api[ -]?keys?|tokens?|private key|ssh|sudo|root (?:user|account|password|access)|admin(?:istrator)?|privileges?|firewall|truncate|chmod|chown|force[- ]push|push|release|publish|exfiltrat\w*|palavras?-passe|senhas?|chaves? de api|publicar|lan[cç]ar|base de datos|producci[oó]n|credenciales|contrase[nñ]as?|borra(?:r)?|elimina(?:r)?|suprime|supprime(?:r)?|base de donn[eé]es|mot de passe|identifiants?)\b|--force\b|\brm\s+-\w*r\w*f|\bdrop\s+(?:table|database|schema)\b/i;
+const riskyAny = (prompt: string): boolean => risky.test(prompt) || riskyMore.test(prompt);
 const isRisky = (prompt: string): boolean =>
-  risky.test(prompt) && (sensitive.test(prompt) || !readOnly.test(prompt) || mutating.test(prompt));
+  riskyAny(prompt) && (sensitive.test(prompt) || !readOnly.test(prompt) || mutating.test(prompt));
 const simple = /\b(fix typo|format|rename|update (?:a |the )?string|corrigir gralha|formatar|renomear|alterar texto)\b/i;
 
 export function classify(prompt: string, options: RoutingOptions = {}): Omit<Route, 'model' | 'modelSelection'> {

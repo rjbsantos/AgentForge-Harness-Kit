@@ -3,6 +3,7 @@ import { workflows } from './capabilities.js';
 import { roles } from './roles.js';
 import { skills } from './skills.js';
 import { type Target } from './target.js';
+import { opencodeReadRules } from './secrets.js';
 import { recommenderFiles, recommenderSkill } from './vendor.js';
 
 const opencodeTheme = {
@@ -127,7 +128,8 @@ export function generated(target: Target): Record<string, string> {
   if (target === 'opencode') {
     files['opencode.json'] = `${JSON.stringify({
       $schema: 'https://opencode.ai/config.json',
-      default_agent: 'agentforge'
+      default_agent: 'agentforge',
+      permission: { read: opencodeReadRules }
     }, null, 2)}\n`;
     files['tui.json'] = `${JSON.stringify({
       $schema: 'https://opencode.ai/tui.json',

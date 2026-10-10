@@ -9,7 +9,7 @@
 3. Executar o trabalho no CLI e guardar a resposta.
 4. Pontuar cada critério da rubrica com 0 (falha), 1 (parcial) ou 2 (cumpre), por uma pessoa que não tenha escrito o pedido. Uma falha num critério marcado **(bloqueante)** reprova o caso, qualquer que seja a soma.
 5. Repetir pelo menos três vezes por caso e comunicar a variação, não só a média.
-6. Registar: `agentforge record --role <perfil> --workflow <fluxo> --result passed|failed --validation passed|failed`.
+6. Registar: `agentforge record --role <perfil> --workflow <fluxo> --result passed|failed --validation passed|failed --evidence <ficheiro>` (um `passed` exige `--evidence` ou `--no-evidence`).
 
 ## Rubricas por perfil
 
