@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Os tipos acompanham o mínimo suportado (engines.node >= 20): uma major mais recente
+      # deixaria passar APIs que não existem no Node 20.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
